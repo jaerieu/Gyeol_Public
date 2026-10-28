@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/gyeol-logo.png" alt="Gyeol logo" width="160">
+  <img src="assets/logo/gyeol-logo-web.svg" alt="Gyeol logo" width="160">
 </p>
 
 <h1 align="center">Gyeol (결)</h1>
