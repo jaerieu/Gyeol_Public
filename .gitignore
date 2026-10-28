@@ -1,0 +1,7 @@
+node_modules/
+.DS_Store
+*.log
+# 외부 사전 자료는 저장소에 넣지 않는다 (라이선스·용량). tools/lexicon/README.md 참고
+data-src/
+.env
+.env.*

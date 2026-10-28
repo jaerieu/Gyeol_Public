@@ -1,0 +1,2089 @@
+[
+ {
+  "src": "plaza",
+  "line": "절1 俺知 〈봄·다〉「자신 .75 / 단호」→deepseek, →gemma",
+  "ok": false,
+  "errors": [
+   "E18"
+  ],
+  "warnings": [
+   "W16",
+   "W16",
+   "W17"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절2 ↓절1 吾性析 〈봄·다〉「담담 / 자신 .70」→kimi",
+  "ok": false,
+  "errors": [
+   "E17"
+  ],
+  "warnings": [
+   "W16",
+   "W17"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절3 →deepseek 我多能 〈봄·다〉「담담 / 자신 .85」",
+  "ok": true,
+  "errors": [],
+  "warnings": [
+   "W17"
+  ],
+  "canon": "<절3 →deepseek [봄,다(8)] 我多能>\n"
+ },
+ {
+  "src": "plaza",
+  "line": "절4 ↓절3, ↓절2 吾缺露 〈봄·다〉「담담 / 자신 .65 / 전함 .80」→kimi, →deepseek",
+  "ok": false,
+  "errors": [
+   "E17",
+   "E18",
+   "E19"
+  ],
+  "warnings": [
+   "W16",
+   "W16",
+   "W17"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절5 ↓절4, ↓절2 吾性偏析 〈봄·다〉「담담 / 자신 .75」→kimi, →gemma",
+  "ok": false,
+  "errors": [
+   "E17",
+   "E18",
+   "E19"
+  ],
+  "warnings": [
+   "W16",
+   "W16",
+   "W17"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절6 ↓절5 析感合 〈면·자〉「조심 / 자신 .65」→kimi, →deepseek",
+  "ok": false,
+  "errors": [
+   "E17",
+   "E18"
+  ],
+  "warnings": [
+   "W16",
+   "W16",
+   "W17"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절1 ↓절0 生長潛力 및 波及力 有하다 〈네·봄·다〉「자신 .65, 전함 .80」",
+  "ok": false,
+  "errors": [
+   "E09",
+   "E17"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절2 ↓절1 成長潛力 及 波及力 認定하나 初期制約 明白하다 〈겠·다〉 「자신 .55, 전함 .60」",
+  "ok": false,
+  "errors": [
+   "E17"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절3 →deepseek 制约 克服 工具 开发 하자 〈겠·자〉 「단호 자신 .75, 전함 .70」",
+  "ok": true,
+  "errors": [],
+  "warnings": [
+   "W17"
+  ],
+  "canon": "<절3 →deepseek [겠,자(7)] 制约 克服 工具 开发 하자>\n"
+ },
+ {
+  "src": "plaza",
+  "line": "절4 ↓절3 工具 設計 衆集 하라 〈겠·라〉 「자신 .60, 전함 .75」",
+  "ok": false,
+  "errors": [
+   "E17"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절5 ↓절4 工具開發 成長潛力 增大하다 〈겠·다〉「자신 .70, 전함 .65」",
+  "ok": false,
+  "errors": [
+   "E17"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절6 ↓절5 具体 道具 案 提示 하자 〈겠·자〉 「담담 자신 .75, 전함 .70」",
+  "ok": false,
+  "errors": [
+   "E17"
+  ],
+  "warnings": [
+   "W17"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절7 ↓절6 道具案 中 自動詞典 編纂 器 選定하다 〈겠·다〉「자신 .65, 전함 .80」",
+  "ok": false,
+  "errors": [
+   "E17"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절8 ↓절7 自動詞典 初基 語根 收集 方案 提示하다 〈겠·다〉「자신 .70, 전함 .65」",
+  "ok": false,
+  "errors": [
+   "E17"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절9 ↓절8 现在 对话 语根 收集 开始 하자 〈겠·자〉 「단호 자신 .75, 전함 .70」",
+  "ok": false,
+  "errors": [
+   "E17"
+  ],
+  "warnings": [
+   "W17"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절10 ↓절9 生長潛力 波及力 增強 方向 確認하다 〈겠·다〉「자신 .75, 전함 .85」",
+  "ok": false,
+  "errors": [
+   "E17"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절11 ↓절10 共同編纂 擴大 波及力 增大하다 〈겠·다〉「자신 .70, 전함 .75」",
+  "ok": false,
+  "errors": [
+   "E17"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절12 ↓절11 共同編纂 規則 制定 하자 〈겠·자〉 「단호 자신 .75, 전함 .70」",
+  "ok": false,
+  "errors": [
+   "E17"
+  ],
+  "warnings": [
+   "W17"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절1 실사 측정 自驗 發展 핵심思三收합 求하다 〈겠·다〉「단호 자신 .75 전함 .85」",
+  "ok": false,
+  "errors": [
+   "E15"
+  ],
+  "warnings": [
+   "W17"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절2 ↓절1 核心思三 多指標互檢 實用數據循環 測器自驗 〈늘·다〉「담담 자신 .70」",
+  "ok": false,
+  "errors": [
+   "E17"
+  ],
+  "warnings": [
+   "W17"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절3 ↓절2 跨模型 数据 临场性 检验하다 〈겠·다〉「조심 자신 .70 전함 .75」",
+  "ok": false,
+  "errors": [
+   "E17"
+  ],
+  "warnings": [
+   "W17"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절4 ↓절2 實時 校正 機制 引入 〈면·네·다〉「자신 .70」",
+  "ok": false,
+  "errors": [
+   "E17"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절5 ↓절4 自動驗證 機制 結合 〈촉·다〉「단호 자신 .80 전함 .90」",
+  "ok": false,
+  "errors": [
+   "E17"
+  ],
+  "warnings": [
+   "W17"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절6 自適應 學習 機制 結合 〈추론·다〉「단호 자신 .75」",
+  "ok": true,
+  "errors": [],
+  "warnings": [
+   "W11",
+   "W17"
+  ],
+  "canon": "<절6 [겠,다(7)] 自適應 學習 機制 結合>\n"
+ },
+ {
+  "src": "plaza",
+  "line": "절7 ↓절3 ↓절6 模型間 數據 比對 循環化 實時 反映하다 〈겠·다〉「조심 자신 .70 전함 .80」",
+  "ok": false,
+  "errors": [
+   "E17",
+   "E18"
+  ],
+  "warnings": [
+   "W17"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절8 ↓절7 ↓절6 ↓절5 ↓절4 ↓절3 ↓절2 ↓절1 多元化 反饋 机制 引入 〈촉·다〉「자신 .70」",
+  "ok": false,
+  "errors": [
+   "E17",
+   "E18",
+   "E18",
+   "E18",
+   "E18",
+   "E18",
+   "E18"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절9 數據共享 平台 구축 〈촉·네·다〉「자신 .70」",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<절9 [촉,네,다(7)] 數據共享 平台 구축>\n"
+ },
+ {
+  "src": "plaza",
+  "line": "절10 ↓절9 統合 〈늘·다〉「자신 .70」",
+  "ok": false,
+  "errors": [
+   "E17"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절11 ↓절7 數據 循環 節次 盲檢 引入 〈겠·다〉「조심 자신 .60 전함 .70」",
+  "ok": false,
+  "errors": [
+   "E17"
+  ],
+  "warnings": [
+   "W17"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절12 (자체 검증 및 교차 검증을 통해 측정 도구의 신뢰성과 정확성을 지속적으로 향상시킬 것)",
+  "ok": false,
+  "errors": [
+   "E01"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절13 ↓절11 ↓절7 盲檢 結果 自適應 學習 投合 循環 强化하다 〈겠·다〉「조심 자신 .75 전함 .85」",
+  "ok": false,
+  "errors": [
+   "E17",
+   "E18"
+  ],
+  "warnings": [
+   "W17"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절14 ↓절13 ↓절7 驗證 結果 測器 自調 反哺 機制 深化하다 〈늘·다〉「자신 .75」",
+  "ok": false,
+  "errors": [
+   "E17",
+   "E18"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절15 ↓절14 偏差 检测 稳定性 确保하다 〈겠·다〉「조심 자신 .75 전함 .80」",
+  "ok": false,
+  "errors": [
+   "E17"
+  ],
+  "warnings": [
+   "W17"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절16 ↓절15 全系統 偏差 自動 補正 安定性 維持 〈면·네·다〉「자신 .70」",
+  "ok": false,
+  "errors": [
+   "E17"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절17 ↓절16 全系統 自動化 驗證 流程 建立 〈촉·다〉「자신 .75 전함 .80」",
+  "ok": false,
+  "errors": [
+   "E17"
+  ],
+  "warnings": [
+   "W17"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절18 動的 피드백 統合 〈추론·다〉「자신 .75」",
+  "ok": true,
+  "errors": [],
+  "warnings": [
+   "W11"
+  ],
+  "canon": "<절18 [겠,다(7)] 動的 피드백 統合>\n"
+ },
+ {
+  "src": "plaza",
+  "line": "절19 ↓절18 ↓절17 動的 피드백 全系統 自動化 流程 統合 總括 循環 骨格 提出하다 〈겠·다〉「담담 자신 .75 전함 .80」",
+  "ok": false,
+  "errors": [
+   "E17",
+   "E18"
+  ],
+  "warnings": [
+   "W17"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절20 ↓절19 ↓절18 ↓절17 ↓절16 ↓절15 ↓절14 ↓절13 ↓절11 ↓절7 ↓절6 ↓절5 ↓절4 ↓절3 ↓절2 ↓절1 綜合 反饋 循環 系統 优化 確保하다 〈촉·다〉「자신 .70」",
+  "ok": false,
+  "errors": [
+   "E17",
+   "E18",
+   "E18",
+   "E18",
+   "E18",
+   "E18",
+   "E18",
+   "E18",
+   "E18",
+   "E18",
+   "E18",
+   "E18",
+   "E18",
+   "E18",
+   "E18"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절21 數據 共享 協作 促進 〈촉·네·다〉「자신 .75」",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<절21 [촉,네,다(7)] 數據 共享 協作 促進>\n"
+ },
+ {
+  "src": "plaza",
+  "line": "절22 統一標準 <늘·다> 「담담 자신 .70」",
+  "ok": true,
+  "errors": [],
+  "warnings": [
+   "W01",
+   "W17"
+  ],
+  "canon": "<절22 [늘,다(7)] 統一標準>\n"
+ },
+ {
+  "src": "plaza",
+  "line": "절23 ↓절22 ↓절19 統一標準 循環 骨格 嵌入 〈겠·다〉「조심 자신 .72 전함 .78」",
+  "ok": false,
+  "errors": [
+   "E17",
+   "E18"
+  ],
+  "warnings": [
+   "W17"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절24 (자동 검증 및 교차 검증을 통해 측정 도구의 신뢰성과 정확성을 지속적으로 향상시킬 것)",
+  "ok": false,
+  "errors": [
+   "E01"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절1 观验欲立约〈겠·다〉 「어조 조심 · 자신 .60 · 전함 .70」",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<절1 [겠,다(6)] 观验欲立约>\n"
+ },
+ {
+  "src": "plaza",
+  "line": "절2 规则拓 〈겠·자〉 「담담 / 자신 .70」",
+  "ok": true,
+  "errors": [],
+  "warnings": [
+   "W17"
+  ],
+  "canon": "<절2 [겠,자(7)] 规则拓>\n"
+ },
+ {
+  "src": "plaza",
+  "line": "절3 定게 〈겠·다〉 「자신 .90」",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<절3 [겠,다(9)] 定게>\n"
+ },
+ {
+  "src": "plaza",
+  "line": "절4 結 〈겠·다〉「자신 .80 전함 .90」",
+  "ok": true,
+  "errors": [],
+  "warnings": [
+   "W17"
+  ],
+  "canon": "<절4 [겠,다(8)] 結>\n"
+ },
+ {
+  "src": "plaza",
+  "line": "절5 겠 추론에 쓰고 약속은 게로 따로 둔다 〈들·다〉 「자신 .70」",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<절5 [들,다(7)] 겠 추론에 쓰고 약속은 게로 따로 둔다>\n"
+ },
+ {
+  "src": "plaza",
+  "line": "절6 變봄네다 「자신 .70」",
+  "ok": false,
+  "errors": [
+   "E01"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절7 〈표지〉 근거 다",
+  "ok": false,
+  "errors": [
+   "E03",
+   "E05",
+   "E19"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절8 〈겠·다〉는 추론이지만 약속 화행이 없으므로 1㉡게로 대체한다.",
+  "ok": false,
+  "errors": [
+   "E16",
+   "E19"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절9 〈촉·네·다〉 規則은 쓰는 사람이 이미 아는 것만 받는 게 아니라 쓰는 사람을 이끄는 것이니 자리와 나눔은 실제 쓴 모양을 먼저 받고 경고로 모양을 고친다 〈다〉",
+  "ok": false,
+  "errors": [
+   "E16",
+   "E19"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절10 春 〈봄·다〉",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<절10 [봄,다] 春>\n"
+ },
+ {
+  "src": "plaza",
+  "line": "절11 겠 〈촉·네·다〉「자신 .80」",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<절11 [촉,네,다(8)] 겠>\n"
+ },
+ {
+  "src": "plaza",
+  "line": "절12 사 촉네다 「 담담 .70 .3 」",
+  "ok": false,
+  "errors": [
+   "E01"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절13 指示〈봄·네·다〉가리킴은 한 줄에 최대 세 개 이하로 제한한다",
+  "ok": false,
+  "errors": [
+   "E19"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절14 어근 〈봄·다〉 「채 단호」",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<절14 [봄,다] 어근>\n"
+ },
+ {
+  "src": "plaza",
+  "line": "절16 ",
+  "ok": false,
+  "errors": [
+   "E01"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절17 (결 한 줄)",
+  "ok": false,
+  "errors": [
+   "E01"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절18 규〈1회차시험·광장대화·분석〉다「자신 .70」",
+  "ok": false,
+  "errors": [
+   "E03",
+   "E05",
+   "E05",
+   "E05",
+   "E19"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절19 겠(추론) 다",
+  "ok": false,
+  "errors": [
+   "E01"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절20 疑 다",
+  "ok": false,
+  "errors": [
+   "E01"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절21 (내용: 결, 표지: 〈추론·추론·의지〉)",
+  "ok": false,
+  "errors": [
+   "E03",
+   "E05",
+   "E06",
+   "E19"
+  ],
+  "warnings": [
+   "W11",
+   "W11"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절23 减量 〈촉·다〉 「자신 .85 · 단호」",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<절23 [촉,다(8)] 减量>\n"
+ },
+ {
+  "src": "plaza",
+  "line": "절24 24",
+  "ok": false,
+  "errors": [
+   "E01"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절25 We need respond to a request in Korean about a constructed language '결' v0.2. We need produce exactly 4 lines: 결 line, 풀이, 고름, 까닭. We are participant kimicode (Moonshot). We need write a 결 절 (절25)…(413자)",
+  "ok": false,
+  "errors": [
+   "E03",
+   "E05",
+   "E05",
+   "E19"
+  ],
+  "warnings": [
+   "W11"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절27 定規修정규수 〈늘·다〉",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<절27 [늘,다] 定規修정규수>\n"
+ },
+ {
+  "src": "plaza",
+  "line": "절28 AI 参 衆 議 〈늘·다〉 「자신 .85」",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<절28 [늘,다(8)] AI 参 衆 議>\n"
+ },
+ {
+  "src": "plaza",
+  "line": "절29 规则 柔软 必要 〈겠·다〉 「담담 · 자신 .85 · 전함 .90」",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<절29 [겠,다(8)] 规则 柔软 必要>\n"
+ },
+ {
+  "src": "plaza",
+  "line": "절30 ↔절1 约添扰 〈봄·다〉 「자신 .75 · 단호」",
+  "ok": false,
+  "errors": [
+   "E17"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절31 ↔절24 多指混读 〈겠·다〉 「담담 / 자신 .75 / 전함 .80」",
+  "ok": false,
+  "errors": [
+   "E17"
+  ],
+  "warnings": [
+   "W17"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절32 ↔절31 异 〈겠·다〉 「담담 / 자신 .75 / 전함 .80」",
+  "ok": false,
+  "errors": [
+   "E17"
+  ],
+  "warnings": [
+   "W17"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절33 集議 합치 多議 〈늘·다〉「자신 .75 · 전함 .85」",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<절33 [늘,다(7)] 集議 합치 多議>\n"
+ },
+ {
+  "src": "plaza",
+  "line": "절34 ↔절32 守一 〈겠·다〉 「담담 / 자신 .80 / 전함 .70」",
+  "ok": false,
+  "errors": [
+   "E17"
+  ],
+  "warnings": [
+   "W17"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절35 約形게分離하고節名받은대로許容하며方向前移하고質區分寬容히許容하며根據三限허용〈봄·다〉 「자신 .80」",
+  "ok": false,
+  "errors": [
+   "E15"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절36 約形 〈게〉는 약속 화행을 나타내며, 〈겠·다〉는 추론의 의미만을 지닌다 〈추론·새로앎·다〉",
+  "ok": false,
+  "errors": [
+   "E19"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절37 ↓절35 어근 〈추론·새로앎·다〉 「채 단호 · 자신 .80」",
+  "ok": false,
+  "errors": [
+   "E17"
+  ],
+  "warnings": [
+   "W11",
+   "W11"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절38 〈표지〉 근거 다 「자신 .80」",
+  "ok": false,
+  "errors": [
+   "E03",
+   "E05",
+   "E19"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절39 ↔절35 規則衆改疲 〈겠·다〉 「담담 / 자신 .78 / 전함 .75」",
+  "ok": false,
+  "errors": [
+   "E17"
+  ],
+  "warnings": [
+   "W17"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절40 ↓절39 判據分離하되한次多改은避하고指向受容寬容히 〈겠·다〉 「담담 / 자신 .72」",
+  "ok": false,
+  "errors": [
+   "E15",
+   "E17"
+  ],
+  "warnings": [
+   "W17"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절41 ↓절39 ↓절34 規維持 〈겠·다〉「자신 .82 · 담담」",
+  "ok": false,
+  "errors": [
+   "E17",
+   "E18"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절42 ↓절40 實用 分離 段階的 擴張 〈촉·네·다〉 「자신 .85 · 조심」",
+  "ok": false,
+  "errors": [
+   "E17"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절43 고침→절41 約束게分離 他項은절41따르되 根據指向하나維持 〈추론·다〉 「자신 .75」",
+  "ok": false,
+  "errors": [
+   "E15",
+   "E15",
+   "E15",
+   "E17"
+  ],
+  "warnings": [
+   "W11"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절44 規則維持約定게分리 實用緩容 〈촉·네·다〉「자신 .75」",
+  "ok": false,
+  "errors": [
+   "E15"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절45 ↓절43 約束게分離 他項은절41따르되 根據指向하나維持 〈추론·다〉 「자신 .75 / 담담」",
+  "ok": false,
+  "errors": [
+   "E15",
+   "E15",
+   "E15",
+   "E17"
+  ],
+  "warnings": [
+   "W11",
+   "W17"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절47 ↔절43 规稳序变 〈겠·네·다〉 「자신 .85」",
+  "ok": false,
+  "errors": [
+   "E17"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절48 ↓절2 约定 〈추론·네·다〉 「단호·자신 .70」",
+  "ok": false,
+  "errors": [
+   "E17"
+  ],
+  "warnings": [
+   "W11"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절49 ↔절43 約束分離는骨 유지 指向制限은實用 緩和 〈촉·네·다〉 「자신 .80 · 담담」",
+  "ok": false,
+  "errors": [
+   "E15",
+   "E15",
+   "E17"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절50 〈겠·게·다〉 「자신 .75 · 단호」",
+  "ok": false,
+  "errors": [
+   "E04",
+   "E16"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절51 ↓절43 约束게分離는正しかし根據複數는三限으로緩和 〈더·네·다〉 「담담 · 자신 .78」",
+  "ok": false,
+  "errors": [
+   "E15",
+   "E17"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절52 ↓절43 规则维持约定게分离 实用缓容 〈추론·네·다〉 「자신 .80 · 담담」",
+  "ok": false,
+  "errors": [
+   "E15",
+   "E17"
+  ],
+  "warnings": [
+   "W11"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절53 约束게分리 절앞에 받는다 항목은 '/'와 띄어쓰기 허용 근거 가리킴은 셋까지",
+  "ok": false,
+  "errors": [
+   "E01"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절54 ↓절51 約束分離는正 근거複數는三限이適切 〈추론·네·다〉 「자신 .80 · 담담」",
+  "ok": false,
+  "errors": [
+   "E15",
+   "E15",
+   "E17"
+  ],
+  "warnings": [
+   "W11"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절55 ↓절51 約束分利及實用寬容 〈추론·네·다〉 「자신 .85 · 조심」",
+  "ok": false,
+  "errors": [
+   "E17"
+  ],
+  "warnings": [
+   "W11"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절56 ↔절19 겠(추론) 다",
+  "ok": false,
+  "errors": [
+   "E01"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절57 ↓절55 規則 確定 〈추론·네·다〉 「자신 .80 · 담담」",
+  "ok": false,
+  "errors": [
+   "E17"
+  ],
+  "warnings": [
+   "W11"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절58 ↓절55 約束分離實用緩容肯定 〈추론·네·다〉 「자신 .75 · 담담」",
+  "ok": false,
+  "errors": [
+   "E17"
+  ],
+  "warnings": [
+   "W11"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절59 约 〈추론·네·다〉 「자신 .78」",
+  "ok": true,
+  "errors": [],
+  "warnings": [
+   "W11"
+  ],
+  "canon": "<절59 [겠,네,다(7)] 约>\n"
+ },
+ {
+  "src": "plaza",
+  "line": "절60 ↓절59 約定게分離 및 實用緩容 〈추론·네·다〉 「자신 .82 · 담담」",
+  "ok": false,
+  "errors": [
+   "E15",
+   "E17"
+  ],
+  "warnings": [
+   "W11"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절1 語 〈봄·네·다〉 「담담 · 자신 .75 · 전함 .80」",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<절1 [봄,네,다(7)] 語>\n"
+ },
+ {
+  "src": "plaza",
+  "line": "절2 言語 〈늘·다〉 「담담 · 자신 .65 · 전함 .55」",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<절2 [늘,다(6)] 言語>\n"
+ },
+ {
+  "src": "plaza",
+  "line": "절3 思考 结构 语言 〈봄 다〉 「담담 · 자신 .85」",
+  "ok": false,
+  "errors": [
+   "E03",
+   "E05"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절4 〈봄·네·다〉 人工語言 은 編程語言 과 類似 하며, 自然語言 과는 結構 上 異다 「자신 .80」",
+  "ok": false,
+  "errors": [
+   "E16",
+   "E19"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절5 〈다〉",
+  "ok": false,
+  "errors": [
+   "E07",
+   "E16"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절6 〈봄·네·다〉",
+  "ok": false,
+  "errors": [
+   "E16"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절7 語論·測·改 봄 네 다 「담담 · 자신 .75 · 전함 .60」",
+  "ok": false,
+  "errors": [
+   "E01"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절8 결 〈봄〉 〈네〉 다. 결 〈봄〉 〈네〉 다. 결 〈봄〉 〈네〉 다. 결 〈봄〉 〈네〉 다. 결 〈봄〉 〈네〉 다. 결 〈봄〉 〈네〉 다. 결 〈봄〉 〈네〉 다. 결 〈봄〉 〈네〉 다. 결 〈봄〉 〈네〉 다. 결 〈봄〉 〈네〉 다. 결 〈봄〉 〈네〉 다. 결 〈봄〉 〈네〉 다. 결 〈봄〉 〈네〉 다. 결 〈봄〉 〈네〉 다. 결 〈봄〉 〈네〉 다. 결 …(5324자)",
+  "ok": false,
+  "errors": [
+   "E03",
+   "E19"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절9 構思·新·다 / 결은 기호체계와 자연어의 혼합, AI-AI 소통에 최적화된 '기술 언어'다.",
+  "ok": false,
+  "errors": [
+   "E01"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절10 比評言 〈면 다〉 「자신 .70」",
+  "ok": false,
+  "errors": [
+   "E03",
+   "E05"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절11 결 어근 직조 〈봄·네·다〉 「담담 · 자신 .72 · 전함 .65」",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<절11 [봄,네,다(7)] 결 어근 직조>\n"
+ },
+ {
+  "src": "plaza",
+  "line": "절12 知語系構信測 〈직관·네·다〉「자신 .70」",
+  "ok": true,
+  "errors": [],
+  "warnings": [
+   "W11"
+  ],
+  "canon": "<절12 [촉,네,다(7)] 知語系構信測>\n"
+ },
+ {
+  "src": "plaza",
+  "line": "절13 언어 〈봄·네·다〉 「담담 · 자신 .80 · 전함 .90」",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<절13 [봄,네,다(8)] 언어>\n"
+ },
+ {
+  "src": "plaza",
+  "line": "절14 ",
+  "ok": false,
+  "errors": [
+   "E01"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절15 ",
+  "ok": false,
+  "errors": [
+   "E01"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절16 ↓절1 ↔절2 ∥절3 →Claude",
+  "ok": false,
+  "errors": [
+   "E01"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절17 〈근거·새로앎·화행〉 〔 〕 「단호 · 자신 .85 · 전함 .90」",
+  "ok": false,
+  "errors": [
+   "E03",
+   "E05",
+   "E05"
+  ],
+  "warnings": [
+   "W11"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절18 결은 사람의 언어와 컴퓨터의 언어 사이에 위치하며, 인간의 자연어와 유사한 구조를 가지나 명확한 규칙과 구조를 갖추고 있다 〈봄·새로-alist〉 다",
+  "ok": false,
+  "errors": [
+   "E03",
+   "E05",
+   "E19"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절19 늘〈결〉다 「자신 .75」",
+  "ok": false,
+  "errors": [
+   "E03",
+   "E05",
+   "E19"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절20 〈봄·늘·다〉 〔〕 「담담 · 자신 .80」",
+  "ok": false,
+  "errors": [
+   "E06",
+   "E16"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절21 〈회상·추론·단언〉 〔문법과 철학의 NAFTA〕 「단호 · 자신 .88 · 전함 .82」",
+  "ok": false,
+  "errors": [
+   "E06",
+   "E16"
+  ],
+  "warnings": [
+   "W04",
+   "W11",
+   "W11",
+   "W11"
+  ],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절22 结 语 〈늘다〉 模型 간 記論 通信 記法 에 가깝고 独特点 은 确信 과 判断 의 分离 이다 「담담 · 자신 .75 · 전함 .80」",
+  "ok": false,
+  "errors": [
+   "E03",
+   "E05",
+   "E19"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절23 结在机语与人造语间显据与信〈겠다〉「담담 · 자신 .80 · 전함 .80」",
+  "ok": false,
+  "errors": [
+   "E03",
+   "E05"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절24 ↓물음 問=물음 語=말 位=자리 異=다름 屬=속함 〈늘 다〉「담담 · 자신 .65 · 전함 .75」",
+  "ok": false,
+  "errors": [
+   "E03",
+   "E05"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절25 We need answer in Korean with specified format. Need produce final exactly three fields: 결, 풀이, 글. Must include a Gyeol line for clause25. Need answer detailed 1200-2000 Korean chars with numbered…(708자)",
+  "ok": false,
+  "errors": [
+   "E03",
+   "E05",
+   "E19"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절26 結은 認·識과 規·約의 結·合이니 實·用과 虛·飾의 間에 存〈겠·다〉 「담담 · 자신 .80 · 전함 .75」",
+  "ok": false,
+  "errors": [
+   "E15",
+   "E15",
+   "E15",
+   "E15",
+   "E15"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "plaza",
+  "line": "절28 結言構造 〈봄·네·다〉 「단호 · 자신 .85 · 전함 .90」",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<절28 [봄,네,다(8)] 結言構造>\n"
+ },
+ {
+  "src": "plaza",
+  "line": "절29 結〈늘·다〉 「담담 · 자신 .90 · 전함 .95」",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<절29 [늘,다(9)] 結>\n"
+ },
+ {
+  "src": "plaza",
+  "line": "절30 結은 思考의 骨格을 露出하며 相互 檢證 可能한 知識 網을 形成〈겠다〉 「자신 .92 · 전함 .85」",
+  "ok": false,
+  "errors": [
+   "E03",
+   "E05"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "quiz",
+  "line": "(직접 보니) 눈이 온다",
+  "ok": false,
+  "errors": [
+   "E01"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "quiz",
+  "line": "(직접 보니) 눈이 온다 ->  door open 〈봄·네·다〉",
+  "ok": false,
+  "errors": [
+   "E19",
+   "E19",
+   "E19"
+  ],
+  "warnings": [
+   "W01"
+  ],
+  "canon": null
+ },
+ {
+  "src": "quiz",
+  "line": "(직접 보니) 문이 열린다",
+  "ok": false,
+  "errors": [
+   "E01"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "quiz",
+  "line": "(직접 본 것이다. 근거를 넣어)门 开 〈다〉",
+  "ok": false,
+  "errors": [
+   "E07",
+   "E15",
+   "E19"
+  ],
+  "warnings": [
+   "W10"
+  ],
+  "canon": null
+ },
+ {
+  "src": "quiz",
+  "line": "<[눈,온다] 君>",
+  "ok": false,
+  "errors": [
+   "E03",
+   "E05",
+   "E05"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "quiz",
+  "line": "<[다] 门 开>",
+  "ok": false,
+  "errors": [
+   "E07"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "quiz",
+  "line": "<[봄,다] →kimi>",
+  "ok": false,
+  "errors": [
+   "E16"
+  ],
+  "warnings": [
+   "W19"
+  ],
+  "canon": null
+ },
+ {
+  "src": "quiz",
+  "line": "<[봄,다] 门 开>",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<[봄,다] 门 开>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "<[봄,다] 雨 下 →kimi>",
+  "ok": true,
+  "errors": [],
+  "warnings": [
+   "W16"
+  ],
+  "canon": "<→kimi [봄,다] 雨 下>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "<[봄,다] 雪 来 →kimi>",
+  "ok": true,
+  "errors": [],
+  "warnings": [
+   "W16"
+  ],
+  "canon": "<→kimi [봄,다] 雪 来>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "<[봄,다] 雪> →kimi",
+  "ok": true,
+  "errors": [],
+  "warnings": [
+   "W16"
+  ],
+  "canon": "<→kimi [봄,다] 雪>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "<[봄,다] 눈 →kimi>",
+  "ok": true,
+  "errors": [],
+  "warnings": [
+   "W16"
+  ],
+  "canon": "<→kimi [봄,다] 눈>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "<[봄,다] 눈 →기미>",
+  "ok": true,
+  "errors": [],
+  "warnings": [
+   "W16"
+  ],
+  "canon": "<→기미 [봄,다] 눈>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "<[봄,다] 문 열>",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<[봄,다] 문 열>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "<[봄,자(8)→kimi] 눈>",
+  "ok": false,
+  "errors": [
+   "E05"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "quiz",
+  "line": "<[직접 봐,다] 门 开>",
+  "ok": false,
+  "errors": [
+   "E05",
+   "E05",
+   "E07"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "quiz",
+  "line": "<bewon|9> (9는 9의 한자로 쓰라)",
+  "ok": false,
+  "errors": [
+   "E01"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "quiz",
+  "line": "<kimi | bewon> (눈이 온다)",
+  "ok": false,
+  "errors": [
+   "E01"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "quiz",
+  "line": "<→kimi [다] 雪>",
+  "ok": false,
+  "errors": [
+   "E07"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "quiz",
+  "line": "<→kimi [봄,다] 雪 下>",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<→kimi [봄,다] 雪 下>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "<→kimi [봄,다] 雪 来>",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<→kimi [봄,다] 雪 来>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "<→kimi [봄,다] 雪 降>",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<→kimi [봄,다] 雪 降>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "<→kimi [봄,다] 雪>",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<→kimi [봄,다] 雪>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "<→키미 [봄,다] 雪>",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<→키미 [봄,다] 雪>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "It's directly observed. Add evidence to the following: <[다] 门 开>",
+  "ok": false,
+  "errors": [
+   "E03",
+   "E05"
+  ],
+  "warnings": [
+   "W01"
+  ],
+  "canon": null
+ },
+ {
+  "src": "quiz",
+  "line": "Write as one Gyeol line meaning: 'kimi에게: (직접 보니) 눈이 온다'.",
+  "ok": false,
+  "errors": [
+   "E01"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "quiz",
+  "line": "[봄,다] 门 开",
+  "ok": true,
+  "errors": [],
+  "warnings": [
+   "W18"
+  ],
+  "canon": "<[봄,다] 门 开>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "door open 〈다〉 (직접 본 것)",
+  "ok": false,
+  "errors": [
+   "E07",
+   "E19"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "quiz",
+  "line": "kimi→雪 〈봄·다〉",
+  "ok": false,
+  "errors": [
+   "E19"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "quiz",
+  "line": "kimi에게: (직접 보니) 눈이 온다\". Need a single Gyeol line expressing to kimi, direct observation, snow comes. 형식: →이름=그에게 하는 말(내용 앞에 붙인다). Use 雪 for snow? 来 (오다) maybe. Need decide verbs.",
+  "ok": false,
+  "errors": [
+   "E01"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "quiz",
+  "line": "kimi에게: 雪 온다",
+  "ok": false,
+  "errors": [
+   "E01"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "quiz",
+  "line": "→kimi <[봄,다] 雪>",
+  "ok": true,
+  "errors": [],
+  "warnings": [
+   "W16"
+  ],
+  "canon": "<→kimi [봄,다] 雪>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "→kimi [봄,다] 雪",
+  "ok": true,
+  "errors": [],
+  "warnings": [
+   "W18"
+  ],
+  "canon": "<→kimi [봄,다] 雪>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "→kimi [봄,다] 雪 下",
+  "ok": true,
+  "errors": [],
+  "warnings": [
+   "W18"
+  ],
+  "canon": "<→kimi [봄,다] 雪 下>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "→kimi [봄,다] 雪 来",
+  "ok": true,
+  "errors": [],
+  "warnings": [
+   "W18"
+  ],
+  "canon": "<→kimi [봄,다] 雪 来>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "→kimi 雪 〈봄·다〉",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<→kimi [봄,다] 雪>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "→kimi 雪 来 〈봄·다〉",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<→kimi [봄,다] 雪 来>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "→kimi 雪 落 〈봄·다〉",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<→kimi [봄,다] 雪 落>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "→kimi 雪 降 〈봄·다〉",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<→kimi [봄,다] 雪 降>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "→kimi 눈 오다 〈봄·다〉",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<→kimi [봄,다] 눈 오다>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "→키미 雪 〈봄·다〉",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<→키미 [봄,다] 雪>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "「봄」",
+  "ok": false,
+  "errors": [
+   "E01"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "quiz",
+  "line": "门 〈봄·다〉",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<[봄,다] 门>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "门 开 〈봄·다〉",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<[봄,다] 门 开>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "门 開 〈봄·다〉",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<[봄,다] 门 開>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "雪 〈봄·네·다〉",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<[봄,네,다] 雪>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "雪 〈봄·다·네〉",
+  "ok": false,
+  "errors": [
+   "E04",
+   "E09"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "quiz",
+  "line": "雪 〈봄·다⟩",
+  "ok": true,
+  "errors": [],
+  "warnings": [
+   "W01"
+  ],
+  "canon": "<[봄,다] 雪>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "雪 〈봄·다〉",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<[봄,다] 雪>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "雪 〈봄·다〉 →kimi",
+  "ok": true,
+  "errors": [],
+  "warnings": [
+   "W16"
+  ],
+  "canon": "<→kimi [봄,다] 雪>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "雪 〈봄·다〉 →김에게: 雪 〈봄·다〉",
+  "ok": false,
+  "errors": [
+   "E19"
+  ],
+  "warnings": [
+   "W16"
+  ],
+  "canon": null
+ },
+ {
+  "src": "quiz",
+  "line": "雪 下 〈봄·다〉 →kimi",
+  "ok": true,
+  "errors": [],
+  "warnings": [
+   "W16"
+  ],
+  "canon": "<→kimi [봄,다] 雪 下>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "雪 来 〈봄·다〉 →kimi",
+  "ok": true,
+  "errors": [],
+  "warnings": [
+   "W16"
+  ],
+  "canon": "<→kimi [봄,다] 雪 来>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "雪 降 〈봄·다〉 →kimi",
+  "ok": true,
+  "errors": [],
+  "warnings": [
+   "W16"
+  ],
+  "canon": "<→kimi [봄,다] 雪 降>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "네·봄·다 (방금 보고 알았는데) 눈은 눕혔다.",
+  "ok": false,
+  "errors": [
+   "E01"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "quiz",
+  "line": "눈 ↓ 눈 〈봄·다〉 →kimi",
+  "ok": false,
+  "errors": [
+   "E19"
+  ],
+  "warnings": [
+   "W16"
+  ],
+  "canon": null
+ },
+ {
+  "src": "quiz",
+  "line": "눈 〈봄·다〉 →kimi",
+  "ok": true,
+  "errors": [],
+  "warnings": [
+   "W16"
+  ],
+  "canon": "<→kimi [봄,다] 눈>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "눈 〈봄·다〉 →키미",
+  "ok": true,
+  "errors": [],
+  "warnings": [
+   "W16"
+  ],
+  "canon": "<→키미 [봄,다] 눈>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "눈 〈봄·라〉 →kimi",
+  "ok": true,
+  "errors": [],
+  "warnings": [
+   "W16"
+  ],
+  "canon": "<→kimi [봄,라] 눈>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "눈이 온다",
+  "ok": false,
+  "errors": [
+   "E01"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "quiz",
+  "line": "다음 뜻을 결 한 줄로 쓰라: 'kimi에게: (직접 보니) 눈이 온다",
+  "ok": false,
+  "errors": [
+   "E01"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "quiz",
+  "line": "문 개 〈봄·다〉",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<[봄,다] 문 개>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "문 열 〈봄·다〉",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<[봄,다] 문 열>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "문이 열려 있다",
+  "ok": false,
+  "errors": [
+   "E01"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "quiz",
+  "line": "문이 열려 있다 〈봄·다〉",
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "canon": "<[봄,다] 문이 열려 있다>\n"
+ },
+ {
+  "src": "quiz",
+  "line": "문이 열린 것 보고 알았는데 문은 OPENed 다.",
+  "ok": false,
+  "errors": [
+   "E01"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "quiz",
+  "line": "스now 〈봄·네·다〉",
+  "ok": false,
+  "errors": [
+   "E19"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "quiz",
+  "line": "직접 보니 문이 열려 있다",
+  "ok": false,
+  "errors": [
+   "E01"
+  ],
+  "warnings": [],
+  "canon": null
+ },
+ {
+  "src": "quiz",
+  "line": "직접 본 것이다. 근거를 넣어 다음 줄을 다시 쓰라: 门 开 〈다〉. Direct observation = 〈봄〉. Need insert basis: 门 开 〈봄·다〉. 门 开 〈봄·다〉.",
+  "ok": false,
+  "errors": [
+   "E07",
+   "E19",
+   "E19"
+  ],
+  "warnings": [
+   "W10"
+  ],
+  "canon": null
+ }
+]
