@@ -4,20 +4,22 @@
 // 자신은 쓴 자리(괄호든 끝의 !N이든)와 상관없이 chae.self, 먹은 muk.conf다.
 // v0.6(2026-10-24, 실험적, reports/v0.6-design.md 5): 근거 갑, 화행 거·유·양, 결 표지 한·역·비(marks.fig), 가리킴 ⊗(place.second),
 // 다중 지목(toList), 지난 대화의 절 근거({ thread, clause }), 쓴 표지 순서(written.marksOff).
+// v0.7(2026-10-29 Jae, reports/v0.7-design.md 6절): 표지·과정 앞붙이의 내부 값이 영어다(see·inf·say, fix·err·sup). 한글 글자는 읽을 때 MARK_KO2EN으로 바뀐다.
+//   이름표(label·Ref.label)는 '절N'·'점N' 그대로 둔다(옛 꼴의 절·점 구분과 E17 판정을 지키려고). 정규형은 수만 쓴다. 머리 줄의 언어(lang)를 더했다.
 
 /** v0.6: 갑 = 앞의 어떤 절에도 기대지 않는 새 화두(근거 자리). 갑 절은 가리키지 않고(E35) 근거가 될 수 없다(E34) */
-export type Ev = '봄' | '더' | '들' | '겠' | '늘' | '촉' | '면' | '갑';
+export type Ev = 'see' | 'rec' | 'hrd' | 'inf' | 'com' | 'gut' | 'if' | 'top';
 /** v0.6: 거 = 거절, 유 = 유보(응답을 미룸, 내용을 비워도 된다), 양 = 양보(상대 논점을 인정) */
-export type Act = '다' | '까' | '지' | '라' | '자' | '게' | '거' | '유' | '양';
+export type Act = 'say' | 'ask' | 'chk' | 'req' | 'let' | 'vow' | 'nay' | 'dfr' | 'ack';
 /** v0.6 결 표지(하나까지, E36): 한 = 한계, 역 = 역설, 비 = 비유. 정규 자리는 군 뒤 시제 앞 */
-export type Fig = '한' | '역' | '비';
+export type Fig = 'lim' | 'pdx' | 'met';
 /** v0.5(2026-10-15): 표지 블록의 시제 칸. 었 = 지난 일, 을 = 앞일. 없으면 지금이거나 시제를 따지지 않음. */
-export type Tense = '었' | '을';
+export type Tense = 'pst' | 'fut';
 export type Rel = '답' | '동의' | '반박' | '확장' | '수선';
 /** v0.6: ⊗ = 남의 두 절이 양립하지 않음(place.target과 place.second, 자리 하나로 센다) */
 export type PlaceRel = '↓' | '↔' | '∥' | '↖' | '⊗';
 /** v0.6 덧붙임(2026-10-25 H-261025-8): 받침 = 절N의 직감(촉)·새 화두(갑)를 뒤늦게 찾은 근거로 받친다(받침→N, 과정 자리) */
-export type ProcessKind = '숙고' | '미해결' | '고침' | '오류' | '받침';
+export type ProcessKind = '숙고' | '미해결' | 'fix' | 'err' | 'sup';
 export type FoldLevel = '점' | '절' | '펼침';
 
 /** 다른 절을 가리킴. msg가 null이면 같은 메시지 안이다. */
@@ -174,6 +176,8 @@ export interface Seal {
 
 export interface Message {
   gyeol: string; // 명세 판, "0.2"
+  /** v0.7: 머리 줄 `gyeol 0.7 · lang en`의 사용자 언어(BCP 47: ko en zh-Hans zh-Hant ja de fr it es ru). 없으면 빠진다(W29를 재지 않는다) */
+  lang?: string;
   head: Head | null;
   tune: TuneLine[];
   preface: { purpose?: string; constraint?: string; extra?: { key: string; value: string }[] } | null;
@@ -195,6 +199,8 @@ export interface Diagnostic {
 
 /** 절을 어느 줄꼴로 썼나. '0.3' = <절N [표지] 내용>, '0.2' = 내용 〈표지〉 〔먹〕 「채」. */
 export type LineForm = '0.2' | '0.3';
+/** format()이 쓸 꼴. '0.3' = 정규형(v0.7: 수 머리·영어 표지), '0.6' = v0.6.5까지의 한글 정규형(옛 회차·옛 사전의 보기 줄을 견줄 때), '0.2' = 옛 꼴 */
+export type WriteForm = LineForm | '0.6';
 
 export interface ParseResult {
   message: Message;

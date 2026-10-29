@@ -19,7 +19,8 @@ export { clausePieces, labelLine, lineFormOf } from './parse/v03.ts';
 
 // ───────── 머리·낙관·머리말 ─────────
 
-function parseHead(rest: string, ctx: Ctx): { version: string; head: Head } | null {
+// v0.7(2026-10-29, reports/v0.7-design.md 4절): 머리 줄은 `gyeol 0.7 · lang en`(읽기는 `결 0.7 · 언어 ko`, `pact #`·`room #`도). lang은 틀의 Message.lang
+function parseHead(rest: string, ctx: Ctx): { version: string; head: Head; lang?: string } | null {
   const items = splitTop(rest, spaced('·')).map((s) => s.trim());
   const vm = /^(\d+\.\d+(?:\.\d+)?)$/.exec(items[0] ?? ''); // 0.2.1처럼 셋째 자리도 받는다(v0.2.1)
   if (!vm) {
@@ -27,10 +28,12 @@ function parseHead(rest: string, ctx: Ctx): { version: string; head: Head } | nu
     return null;
   }
   const head: Head = {};
+  let lang: string | undefined;
   for (const it of items.slice(1)) {
     let m: RegExpExecArray | null;
-    if ((m = /^짝\s+#([0-9a-f]{6,64})$/u.exec(it))) head.pact = m[1];
-    else if ((m = /^방\s+#([0-9a-f]{6,64})$/u.exec(it))) head.room = m[1];
+    if ((m = /^(?:짝|pact)\s+#([0-9a-f]{6,64})$/iu.exec(it))) head.pact = m[1];
+    else if ((m = /^(?:방|room)\s+#([0-9a-f]{6,64})$/iu.exec(it))) head.room = m[1];
+    else if ((m = /^(?:lang|언어)\s+([A-Za-z]{2,3}(?:-[A-Za-z]{2,8})?)$/iu.exec(it))) lang = m[1]; // 값은 쓴 그대로 둔다(글자군은 scriptGroupOf가 소문자로 본다)
     else if ((m = /^↩\s*#([0-9a-f]{6,64})(?:\s+(\S+))?$/u.exec(it))) {
       head.re = { id: m[1] };
       if (m[2]) {
@@ -42,7 +45,7 @@ function parseHead(rest: string, ctx: Ctx): { version: string; head: Head } | nu
       head.to = m[2].split(',').map((s) => s.trim()).filter((s) => s !== '');
     } else ctx.err('E20', `머리 항목을 읽을 수 없다: '${it}'`);
   }
-  return { version: vm[1], head };
+  return lang === undefined ? { version: vm[1], head } : { version: vm[1], head, lang };
 }
 
 function parseSeal(rest: string, ctx: Ctx): Seal | null {
@@ -121,7 +124,7 @@ export function parse(input: string): ParseResult {
       return;
     }
     // v0.3 줄꼴의 절 줄(옛 꼴의 기호 바꾸기보다 먼저 본다: < >와 [ ]의 뜻이 다르다)
-    if (!KEYWORD_LINES.has(key) && !(key === '결' && /^\d+\.\d+/.test(rest))) {
+    if (!KEYWORD_LINES.has(key) && !((key === '결' || /^gyeol$/iu.test(key)) && /^\d+\.\d+/.test(rest))) {
       const got = parseLine03(line, ctx);
       if (got) {
         msg.clauses.push(...got);
@@ -146,12 +149,13 @@ export function parse(input: string): ParseResult {
     const k = kw2[1];
     const r = (kw2[2] ?? '').trim();
 
-    if (k === '결' && /^\d+\.\d+/.test(r)) {
+    if ((k === '결' || /^gyeol$/iu.test(k)) && /^\d+\.\d+/.test(r)) {
       if (msg.head || sawClause || msg.tune.length) ctx.err('E20', '머리 줄은 맨 앞에 한 번만 온다');
       const h = parseHead(r, ctx);
       if (h) {
         msg.gyeol = h.version;
         msg.head = h.head;
+        if (h.lang) msg.lang = h.lang; // v0.7 사용자 언어
         if (!(READ_FAMILIES as readonly string[]).includes(family(h.version))) ctx.warn('W14', `명세 판이 다르다: ${h.version} (이 구현은 ${SPEC_VERSION})`);
       }
     } else if (k === '조율') {

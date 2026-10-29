@@ -26,6 +26,9 @@
 
 - [Overview](#overview)
 - [At a glance](#at-a-glance)
+- [Markers in ten languages](#markers-in-ten-languages)
+- [Translation status](#translation-status)
+- [Reports](#reports)
 - [Status](#status)
 - [Repository layout](#repository-layout)
 - [Getting started](#getting-started)
@@ -51,12 +54,12 @@ Content is written in any natural language. Gyeol supplies the structural skelet
 
 ## At a glance
 
-A clause has the form `<절N mark [markers] content *chae↓evidence>` (`dict/base-v0.6.5.txt`):
+A clause has the form `<N mark [markers] content *chae↓evidence>` (`dict/base-v0.7.txt`):
 
 ```
-<절1 · [봄,다] door가 열려 있다 *B8>
-<절2 · [겠,었,다] somebody가 다녀갔다 *K6↓1>
-<절3 ·→kimi [까] 누가 다녀갔나 *C4↓2>
+<1 · [see,say] door가 열려 있다 *B8>
+<2 · [inf,pst,say] somebody has been here *K6↓1>
+<3 ·→kimi [ask] somebody *C4↓2>
 ```
 
 | Clause | Reading |
@@ -65,11 +68,55 @@ A clause has the form `<절N mark [markers] content *chae↓evidence>` (`dict/ba
 | 2 | Inferring from clause 1, somebody has been here. Color K, confidence 6 |
 | 3 | To kimi: based on clause 2, who was it? Color C, confidence 4 |
 
+- A clause head is just a number (`<1`, `<2.1`). Readers also accept the older `절1`.
 - The mark `·` means speaking to oneself, `·→name` addresses someone, and `●` addresses everyone.
-- `[markers]` are Hangul grammatical markers for evidentiality, tense, speech act, and so on (`봄` = seen directly, `겠` = inferred, `었` = past, `다` = statement, `까` = question).
+- `[markers]` are short words for evidentiality, tense, speech act, and so on (`see` = seen directly, `inf` = inferred, `pst` = past, `say` = statement, `ask` = question). Every marker is at most three letters.
+- Prefixes point at other clauses: `↔N` (opposes), `↖N` (answers), `fix→N` (corrects), `err→N` (marks an error), `sup→N` (supports).
 - After `*` comes the *chae*: a color (RGBCMYK) and a confidence from 0 to 9. `↓N` points to the clause cited as evidence.
+- A message opens with a head line such as `gyeol 0.7 · lang en`. `lang` is the language of the conversation.
 
-The grammar is in [`spec/03-grammar.md`](spec/03-grammar.md), and the full specification is indexed in [`spec/README.md`](spec/README.md).
+The grammar is in [`spec/03-grammar.md`](spec/03-grammar.md) §3.19, and the full specification is indexed in [`spec/README.md`](spec/README.md).
+
+## Markers in ten languages
+
+Since v0.7 (2026-10-29) the internal markers, the canonical form, and the muk name are English words of at most three letters. Ten languages are read: Korean, English, Simplified and Traditional Chinese, Japanese, German, French, Italian, Spanish, and Russian. One alias table maps every spelling to one internal marker, so `[see,say]`, `[봄,다]` and `[見,言]` all normalize to the same `[see,say]`.
+
+| Canonical (en) | Korean | Meaning | de | fr | it | es | ru | zh-Hans | zh-Hant | ja |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `see` | 봄 | seen directly | seh | voi | ved | ver | вид | 见 | 見 | 見 |
+| `rec` | 더 | recalled | eri | rap | ric | rec | пом | 忆 | 憶 | 憶 |
+| `inf` | 겠 | inferred | fol | inf | inf | inf | выв | 推 | 推 | 推 |
+| `gut` | 촉 | hunch | ahn | int | int | int | чут | 感 | 感 | 感 |
+| `if` | 면 | supposed | wen | si | se | si | есл | 若 | 若 | もし |
+| `top` | 갑 | new topic | the | suj | tem | tem | тем | 题 | 題 | 題 |
+| `new` | 군 | just learned | neu | nou | nuo | nue | нов | 新 | 新 | 新 |
+| `lim` | 한 | limit | gre | lim | lim | lim | пре | 限 | 限 | 限 |
+| `pdx` | 역 | paradox | par | par | par | par | пар | 悖 | 悖 | 逆 |
+| `met` | 비 | metaphor | met | met | met | met | мет | 喻 | 喻 | 喩 |
+| `pst` | 었 | past | war | pas | pas | pas | был | 过 | 過 | た |
+| `fut` | 을 | future | wir | fut | fut | fut | буд | 将 | 將 | 未 |
+| `say` | 다 | statement | sag | dir | dir | dic | утв | 言 | 言 | 言 |
+| `ask` | 까 | question | fra | dem | dom | pre | спр | 问 | 問 | 問 |
+| `req` | 라 | request | bit | pri | chi | pid | про | 请 | 請 | 請 |
+| `let` | 자 | proposal | vor | sug | sug | sug | дав | 提 | 提 | 提 |
+| `vow` | 게 | promise | zus | jur | giu | jur | обе | 约 | 約 | 約 |
+| `nay` | 거 | refusal | abl | ref | rif | neg | отк | 拒 | 拒 | 拒 |
+| `ack` | 양 | concession | zug | con | con | con | при | 让 | 讓 | 讓 |
+
+- **Three letters is a ceiling, not a target.** A word of three letters or fewer is used whole (`see`, `ask`, `if`); otherwise its first three letters. Latin letters ignore case. One alias belongs to exactly one marker.
+- The language of a conversation is set in the head line (`gyeol 0.7 · lang en`; `결 0.7 · 언어 ko` is read too). Particles, endings and adverbs in the content are those of the user's language. Hangul particles are no longer required.
+- Korean stays as the name of the project, the original philosophy text, and the first alias set: the Hangul markers (`봄`, `다`, `고침→`) are read forever.
+- The older marker names (`recall`, `assert`, `hrd`, `com`, …) are still read; the checker only notes that the canonical spelling is shorter.
+
+## Translation status
+
+Gyeol aims at communication that works in any language, not only in Korean or English. At this stage the work concentrates on checking that Gyeol **functions as intended in other languages**: the markers, the validator, the dictionary, the plaza conversations, and the quiz. The first languages exercised are Korean, English, Russian, and Simplified Chinese.
+
+The translations that support this (the dictionary translations, quiz sheets, gloss tables, diagnostic messages, interface texts) are **of machine-translation quality and incomplete in places because of budget limits**. They will be refined with translation tools in later updates; improving them is planned, not done. The canonical dictionary is the English one, and the translations are not part of the language's identity (`dict/HASHES.md`).
+
+## Reports
+
+An introduction to Gyeol and the evidence gathered so far will be collected in `reports/`, written from the author's own view of the project's possibilities while keeping every claim checkable, and closing with the author's opinion of the project. The same collection is published in this repository, in the development repository, and in [`Gyeol-spec`](https://github.com/jaerieu/Gyeol-spec). (In preparation.)
 
 ## Status
 
@@ -77,10 +124,10 @@ The grammar is in [`spec/03-grammar.md`](spec/03-grammar.md), and the full speci
 
 | Item | Version |
 | --- | --- |
-| Grammar | v0.6 (experimental, since 2026-10-24) |
-| Dictionary | v0.6.5 (2026-10-28) |
-| Muk (credibility) | v5 (2026-10-25) |
-| Tests | `npm test`: 95 passing |
+| Grammar | v0.7 (experimental, since 2026-10-29) |
+| Dictionary | v0.7 (2026-10-29): English is canonical, muk name `#a2eacf` ([`dict/HASHES.md`](dict/HASHES.md)); translations are not part of the identity |
+| Muk (credibility) | v6 (restarted 2026-10-29, starting value 5) |
+| Tests | `npm test`: 111 passing |
 
 ## Repository layout
 
@@ -100,7 +147,7 @@ Gyeol_Public/
 | Directory | Description |
 | --- | --- |
 | [`spec/`](spec/README.md) | The normative specification. Chapters cover principles and axioms (1), text and normalization (2), clause grammar (3), the fourteen layers (4), measurement and *muk* credibility (5), *chae* tone and harmony (6), tuning between partners (7), rendering to image and sound (8), names, versions and hashes (9), the JSON frame (10), validation experiments (11), and the change log with dated decisions (12). |
-| [`dict/`](dict/) | Base dictionaries that models read to learn the language. `base-v0.6.5.txt` is current; `base-v0.6.txt`, `base-v0.5.5.txt` and `base-v0.2.txt` are kept for older material. Also holds paired examples, the CJK character-variant table (`variants-v0.2.json`, from Unihan), and `HASHES.md`, the content-hash record of each version. |
+| [`dict/`](dict/) | Base dictionaries that models read to learn the language. `base-v0.7.txt` (English, canonical) is current, with translations `base-v0.7.<lang>.txt` that are not part of the identity; `base-v0.6.5.txt`, `base-v0.6.txt`, `base-v0.5.5.txt` and `base-v0.2.txt` are kept for older material. Also holds paired examples, the CJK character-variant table (`variants-v0.2.json`, from Unihan), and `HASHES.md`, the content-hash record of each version. |
 | [`schema/`](schema/) | JSON Schema for the JSON frame (`spec/10-json.md`). |
 | [`src/`](src/) | Dependency-free TypeScript, run directly by Node. `parse.ts` is the validator entry point and `parse/` holds per-version readers and writing rules (`v02` to `v065`). Also includes the canonical formatter (`format.ts`), content hashing (`hash.ts`), marker glosses (`gloss.ts`), measurement (`measure.ts`), and the muk credibility calculation (`muk.ts`). |
 | [`tests/`](tests/) | `node:test` suite for the validator, formatter, hashes and measurement. `fixtures/` holds snapshot verdicts for archived real-world lines written by AI models. |

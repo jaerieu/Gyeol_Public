@@ -1,7 +1,9 @@
 // v0.6.5 쓰기 규칙 rules065(2026-10-28): rules06 + W37(사전에서 뺀 표지·앞붙이). 읽기·정규형은 그대로.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parse, format, rules06, rules065 } from '../src/index.ts';
+import { parse, format as format07, rules06, rules065 } from '../src/index.ts';
+// 2026-10-29 v0.7: 정규형이 영어·수 머리로 바뀌었다(reports/v0.7-design.md 6절). 이 파일은 v0.6.5까지의 자료를 보므로 옛 한글 정규형(form '0.6')으로 견준다. v0.7 정규형은 tests/v07.test.ts
+const format = (m: Parameters<typeof format07>[0], o: Parameters<typeof format07>[1] = {}) => format07(m, { form: '0.6', ...o });
 
 const codes = (s: string) => rules065(parse(s)).map((d) => d.code);
 
@@ -27,7 +29,7 @@ test('W37: 뺀 근거·화행·앞붙이마다 하나씩, 뜻·정규형은 그�
     assert.deepEqual(rules065(r).filter((d) => d.code !== 'W37'), rules06(r), '나머지는 rules06과 같다');
   }
   assert.deepEqual(codes('<절1 · [봄,다] rain이 온다 *B6> <절2 ·→kimi ↔1 [겠,다] snow다 *K5↓1> <절3 ·→kimi ↖1 [까] rain *K3>'), [], '남은 표지·앞붙이는 경고 없음');
-  assert.match(rules065(parse('<절1 · [들,다] rain이 온다 *B6>'))[0].message, /근거 들.*겠과 끝의 ↓@이름/);
+  assert.match(rules065(parse('<절1 · [들,다] rain이 온다 *B6>'))[0].message, /근거 들\(hrd\).*겠\(inf\)과 끝의 ↓@이름/);
   // 옛 꼴(v0.2.1)에는 내지 않는다(rules04의 E26이 이미 알렸다)
   assert.ok(!codes('雨 〈들·다〉').includes('W37'));
 });

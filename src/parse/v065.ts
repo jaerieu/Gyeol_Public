@@ -6,13 +6,15 @@
 // parse()의 판정·정규형·먹 이름은 바꾸지 않는다.
 
 import type { Clause, Diagnostic, ParseResult } from '../types.ts';
+import { MARK_EN2KO } from '../tables.ts';
 import { rules06 } from './v06.ts';
 
 type Opts = { sender?: string | null; from?: number };
 
 /** v0.6.5 사전에서 뺀 것과, 대신 쓸 것(W37 알림에 보인다) */
-const GONE_EV: Record<string, string> = { 들: '전해 들은 것은 겠과 끝의 ↓@이름(누구에게서)으로', 늘: '널리 아는 앎은 겠으로' };
-const GONE_ACT: Record<string, string> = { 지: '확인 물음은 까로', 유: '미루는 답은 내용에 적고 다·게로' };
+// v0.7(2026-10-29): 내부 값은 영어(hrd 들, com 늘, chk 지, dfr 유)
+const GONE_EV: Record<string, string> = { hrd: '전해 들은 것은 겠(inf)과 끝의 ↓@이름(누구에게서)으로', com: '널리 아는 앎은 겠(inf)으로' };
+const GONE_ACT: Record<string, string> = { chk: '확인 물음은 까(ask)로', dfr: '미루는 답은 내용에 적고 다(say)·게(vow)로' };
 const GONE_PLACE: Record<string, string> = { '∥': '버린 대안은 내용에 적는다', '⊗': '남의 두 절이 함께 참일 수 없음은 ↔N으로 하나씩' };
 const GONE_PROCESS: Record<string, string> = { 숙고: '생각 중임은 낮은 확신과 내용으로', 미해결: '풀리지 않음은 한(한계)과 내용으로' };
 
@@ -20,9 +22,9 @@ const GONE_PROCESS: Record<string, string> = { 숙고: '생각 중임은 낮은 
 export function removedMarks065(c: Clause): { what: string; hint: string }[] {
   const out: { what: string; hint: string }[] = [];
   const ev = c.marks.ev;
-  if (ev && GONE_EV[ev]) out.push({ what: `근거 ${ev}`, hint: GONE_EV[ev] });
+  if (ev && GONE_EV[ev]) out.push({ what: `근거 ${MARK_EN2KO[ev]}(${ev})`, hint: GONE_EV[ev] });
   const act = (c.marks as { act?: string }).act;
-  if (act && GONE_ACT[act]) out.push({ what: `화행 ${act}`, hint: GONE_ACT[act] });
+  if (act && GONE_ACT[act]) out.push({ what: `화행 ${MARK_EN2KO[act]}(${act})`, hint: GONE_ACT[act] });
   if (c.place && GONE_PLACE[c.place.rel]) out.push({ what: `앞붙이 ${c.place.rel}`, hint: GONE_PLACE[c.place.rel] });
   if (c.process && GONE_PROCESS[c.process.kind]) out.push({ what: `앞붙이 ${c.process.kind}`, hint: GONE_PROCESS[c.process.kind] });
   if (c.echo) out.push({ what: '앞붙이 받은대로', hint: '받은 것을 되짚으려면 ↖N으로 되묻는다' });

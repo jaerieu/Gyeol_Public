@@ -19,7 +19,7 @@ import { rules051 } from './v05.ts';
 type Opts = { sender?: string | null; from?: number };
 
 /** 근거가 될 수 없는 절의 근거 자리(E34). 받침→N이 받치는 절이기도 하다(W36). 2026-10-25: 촉의 풀이를 직관에서 직감으로 바로잡았다(H-261025-8) */
-const NOT_GROUND: Record<string, string> = { 촉: '직감(촉)', 갑: '새 화두(갑)' };
+const NOT_GROUND: Record<string, string> = { gut: '직감(촉·gut)', top: '새 화두(갑·top)' }; // v0.7: 내부 값은 영어
 
 /** 절 번호(이름표 절N·점N의 N, 이름표가 없으면 차례 번호)로 찾는다. 새 꼴의 가리킴은 절N과 점N을 같게 본다(parse.ts checkMessage와 같다) */
 function byNumber(clauses: Clause[]): Map<string, Clause> {
@@ -34,7 +34,7 @@ function byNumber(clauses: Clause[]): Map<string, Clause> {
 /** 표지 블록의 정규 순서 글(W34 알림에 보인다) */
 function canonMarks(c: Clause): string {
   const m = c.marks;
-  return `[${[m.ev, m.news ? '군' : undefined, m.fig, m.tense, m.act].filter(Boolean).join(',')}]`;
+  return `[${[m.ev, m.news ? 'new' : undefined, m.fig, m.tense, m.act].filter(Boolean).join(',')}]`;
 }
 
 export function rules06(r: ParseResult, opts: Opts = {}): Diagnostic[] {
@@ -56,7 +56,7 @@ export function rules06(r: ParseResult, opts: Opts = {}): Diagnostic[] {
       if (t && t !== c && ev && NOT_GROUND[ev]) push('E34', `${NOT_GROUND[ev]} 절은 근거가 될 수 없다: ↓${g.label.slice(1)}. 그 절에 답하려면 ↔·↖로 가리킨다`);
     }
     // W36: 받침→N은 직감(촉)·새 화두(갑)를 받친다. 대상이 이 메시지에 없으면 검사기가 E17을 이미 냈다
-    const back = c.process?.kind === '받침' ? c.process.target : undefined;
+    const back = c.process?.kind === 'sup' ? c.process.target : undefined;
     if (back && back.msg === null && back.thread === undefined) {
       const t = nums.get(back.label.slice(1));
       if (t && !(t.marks.ev && NOT_GROUND[t.marks.ev])) push('W36', `받침→${back.label.slice(1)}은 직감(촉)·새 화두(갑) 절을 받친다. 그 밖의 절은 끝에 ↓${back.label.slice(1)}로 근거 삼는다`);

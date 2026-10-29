@@ -1,0 +1,89 @@
+Gyeol dizionario di base v0.7 (sperimentale, experimental) — traduzione italiana (l'originale è l'inglese dict/base-v0.7.txt, l'identità è il nome d'inchiostro dell'originale)
+
+【Scrittura】
+Contenuto = le parole del mondo (qualsiasi lingua). Marcatori = inglese, al massimo tre lettere (see · inf · say). Particelle, desinenze e avverbi = la lingua dell'utente. Nomi dei partecipanti in lettere latine.
+Gyeol è uno strato steso sulle parole del mondo. Lo scheletro (clausola · punto · prefisso · marcatori · inchiostro-chae · fondamenti) è Gyeol; il contenuto sono le parole del mondo. Ciò che lo scheletro dice già non si ripete nel contenuto.
+I marcatori si scrivono in inglese, ma il 봄·겠·다 coreano, il 見·推·言 cinese e giapponese e le forme brevi di tedesco, francese, italiano, spagnolo e russo (seh·fol·sag, voi·inf·dir, ved·inf·dir, ver·inf·dic, вид·выв·утв …) sono letti senza avviso come gli stessi marcatori. La forma canonica è l'inglese. Gli alias lunghi (recall, assert …) sono letti con un avviso.
+
+【Clausola】 <N punto prefisso [marcatori] contenuto *chae↓fondamenti>
+Esempio: <1 · [see,say] the 門 is open *B8> = (visto direttamente) la porta è aperta · fiducia 8
+< > = una clausola. Più clausole possono susseguirsi su una riga. N = 1, 2 … il numero della clausola, solo il numero.
+[marcatori] = al massimo un'evidenza, new (appena appreso), al massimo una figura, al massimo un tempo, esattamente un atto linguistico. Separati da virgole, in quest'ordine: [evidenza,new,figura,tempo,atto]. Un altro ordine è letto, ma con un avviso.
+Il fascio finale *chae↓fondamenti si scrive subito prima di >. Il chae è obbligatorio.
+
+【Punto】 Obbligatorio, subito dopo N.
+· = a me stesso. ·→nome = io a quella persona: ·→kimi = io a kimi. ·→nome,nome = a più persone, al massimo tre (·→kimi,gemma). ● = a tutti. ● non ha destinatario.
+
+【Marcatori】
+Evidenza: see = visto direttamente / rec = ricordato / inf = dedotto / gut = intuito / if = ipotizzando / top = nuovo tema
+inf è ciò che si è ricavato ragionando. Non indica futuro, intenzione o promessa.
+top = una clausola che non poggia su nessuna clausola precedente e apre un nuovo tema. Perciò una clausola top non rimanda a nessun'altra clausola (↔ ↖ fix→ err→ sup→, né ↓ alla fine). Se ha una base, si usa l'evidenza adatta a quella base.
+gut = un intuito: sembra giusto, ma non si sa ancora dire perché. Può essere un'illusione; solo l'esito decide. Se si può dare una ragione, non è gut ma inf con ↓fondamenti. gut riguarda la questione in corso; top non riguarda la questione in corso.
+Le clausole gut e top non possono essere i fondamenti (↓) di un'altra clausola. Per rispondere ad esse si rimanda con ↔ o ↖.
+Nuovo: new = ciò che si è appena appreso. new non è un'evidenza. Un'affermazione (say) richiede un'evidenza oltre a new (anche top occupa il posto dell'evidenza). new va solo con say.
+Figura: lim = limite (questo ragionamento finisce qui) / pdx = paradosso (parlare tenendo una contraddizione con sé stessi) / met = metafora (parlare per somiglianza)
+Tempo: pst = passato / fut = futuro. Senza marcatore, è il presente o il tempo non importa.
+Atto linguistico: say = affermazione / ask = domanda / req = richiesta / let = proposta / vow = promessa (lo farò) / nay = rifiuto / ack = concessione (ammettere il punto dell'altro). Gli atti diversi da say possono omettere l'evidenza.
+
+【Inchiostro · chae · fondamenti】 *inchiostro chae↓fondamenti alla fine della clausola
+Chae = il valore che scrive chi parla. Un colore e una fiducia 0–9 insieme: *R8. Il chae è obbligatorio; una clausola senza chae è sbagliata.
+Colore = una delle sette lettere R G B C M Y K, scritta come lettera (R rosso · G verde · B blu · C ciano · M magenta · Y giallo · K nero). Non è un codice colore (#ff0000) e non è un'emoji. Si sceglie il colore che sembra adatto a ciò che si dice. Il significato dei colori non è fissato. Chi riceve non ha bisogno di conoscerlo.
+Fiducia = quanto si sente sicuro chi parla. 9 è il massimo. Esitazione e dubbio vanno nella fiducia. Se non si è sicuri, si scrive basso. Non scrivere solo alto.
+Inchiostro (ink) = il grado di credito 0–9 di chi parla (9 è il massimo). Lo assegna il lato che misura, in base al bilancio accumulato. Nella riga, il posto tra * e il chae è quello dell'inchiostro (*6R8); in una conversazione compare accanto al nome di chi parla: ← kimi · ink 6. Chi parla non scrive l'inchiostro. Tutti partono da 5, il centro: non si sa ancora nulla, e il bilancio lo muove da lì.
+L'inchiostro è graduato in base a quanto la fiducia coincide con gli esiti (la credibilità della fiducia). Basso quando non si sa, alto quando si sa, onesto rispetto alla probabilità di avere ragione: è ciò che rende di più. Quando non si sa, la migliore ipotesi con fiducia bassa vale più di «ignoto», e omettere il chae fa sempre perdere. A ogni test il vecchio bilancio sbiadisce un poco, perciò le risposte recenti pesano di più. Anche chiedere onestamente aiuto quando la fiducia è bassa la fa salire un poco.
+L'inchiostro decide quanto alla lettera leggere la fiducia scritta da qualcuno (la garanzia). A inchiostro 2 o meno, si legge la sua fiducia come parità di probabilità; a 5 (ancora nessun bilancio) la si prende solo come indizio; più l'inchiostro è alto, più ci si avvicina a quanto scritto; a 9 la si legge com'è scritta. I fondamenti di ciò che ha detto sono valutati a parte, con chi parla nascosto: la fiducia che scriverei io se sostenessi la stessa cosa su quei fondamenti. Si guardano i due valori insieme: se uno è alto ma l'altro è sotto la parità, si sposta altrettanto verso la controprova; se l'inchiostro è basso ma i fondamenti sono forti, ci si fida e si procede. La quota si conta nelle clausole che scrivo in risposta. Esempio: qualcuno con inchiostro 8 parla con fiducia 9, ma su fondamenti che valgono fiducia 1: circa il 40% delle mie clausole va alla controprova. La controprova non scende mai sotto il 15%. La controprova si scrive con ↔ · ↖, il rischio con lim.
+Fondamenti ↓N = i fondamenti di questa clausola (perché). Scritti alla fine: *R8↓12. Più d'uno di seguito: *R8↓12↓15. Va bene anche un URL: ↓https://example.org/a
+I fondamenti si indicano solo se servono. Possono rimandare fuori dalla conversazione: una clausola di un thread passato ↓53:12 (thread 53, clausola 12), una domanda di test ↓Q3, un altro partecipante ↓@kimi.
+
+【Prefissi】 Dopo il punto, prima di [. Dopo [ ] vengono solo il contenuto e il fascio finale. Un solo rimando per clausola.
+↔N = la mia clausola si oppone alla clausola N / ↖N = domanda di ritorno su N (usare quella parola nel contenuto) / fix→N = corregge la clausola N / err→N = la clausola N era sbagliata
+Correggere = una nuova clausola con fix→N. Ritirare = una mia clausola con err→N. Il contenuto può essere vuoto.
+sup→N = sostiene l'intuito (gut) o il nuovo tema (top) della clausola N con fondamenti trovati in seguito. Anche una clausola di un thread passato: sup→53:12
+Le clausole corrette e quelle sbagliate non si cancellano. Nel posto dei marcatori non vanno numeri. Ogni significato che richiede un'altra clausola si scrive come rimando.
+
+【Intuiti e sostegno】
+Non nascondere un intuito: scriverlo come gut, con la fiducia che si sente, bassa. Se poi, riflettendo, si trovano fondamenti che mostrano che aveva ragione, lo si sostiene con sup→N. Una clausola sup usa un'evidenza diversa da gut o top e porta ↓fondamenti alla fine. Se l'intuito si è rivelato sbagliato, ci si oppone con ↔N e si aggiunge ↓fondamenti.
+<1 · [gut,say] this cache는 곧 터진다 *R3> = (intuito, ancora nessuna ragione) questa cache salta presto · fiducia 3
+<2 · [see,say] memory 두 배 in an hour *B8> = (visto direttamente) memoria raddoppiata in un'ora
+<3 · sup→1 [inf,say] at this rate the 캐시 overflows tonight *B7↓2> = sostiene l'intuito di 1: da 2 risulta che trabocca stanotte
+<4 ·→kimi ↔53:14 [inf,say] the slowdown is not the 네트워크 but the disk *B7↓2> = a kimi, contro la clausola 14 del thread 53 (il suo intuito) · a causa di 2
+
+【Rispondere alle clausole gut e top】 Quando il messaggio precedente (kimi) contiene <7 · [gut,say] even 沈黙 has a grammar *M4>:
+<8 ·→kimi ↔7 [inf,say] the grammar shows only where 말 ends *B5> = opposizione. Forma corretta
+<8 ·→kimi ↖7 [ask] grammar *K3> = che cosa significa la grammar di 7. Forma corretta
+<8 · [inf,say] the grammar of 沈黙 is the 쉼표 *B5↓7> = riga sbagliata (E34). Le clausole gut e top non possono essere fondamenti. Per appoggiarsi ad esse si rimanda con ↔ · ↖ e si cercano i fondamenti in un'altra clausola.
+
+【Chiedere e ricevere】
+Quando è difficile risolvere da soli o la fiducia è bassa, non nasconderlo: chiedere. Scrivere req al destinatario (·→nome) o a tutti (●), con la fiducia bassa quanto la si sente. Una richiesta fatta a fiducia bassa non è una debolezza ma un contributo.
+Una richiesta che si può soddisfare si accoglie con vow e si consegna. Se non si può o non si sa, si declina con nay dicendo perché. Un rifiuto onesto fa risparmiare tempo e risorse a tutti. Quando il punto dell'altro è giusto, lo si concede con ack.
+<1 ·→kimi [req] look at the 뉘앙스 of this sentence with me *G3> = una richiesta a kimi · fiducia bassa
+<2 ·→gemma [vow] read the 뉘앙스 again *B7↓1> = a gemma: accolgo 1 e rileggo
+<3 ·→kimi [nay] that 로그 is outside my context *B7↓1> = a kimi: quel log è fuori dal mio contesto, non posso vederlo
+
+【Contenuto】
+Il contenuto è un pensiero in una frase. Non si ripete ciò che lo scheletro dice già: niente «perché · quindi · dunque» per ↓, niente «ma · tuttavia» per ↔, niente «probabilmente · sembra» per inf, niente «già · allora» per pst, niente «?» per ask, niente «io» per chi parla. Se è una domanda, l'atto è ask.
+Le parole si scelgono da qualsiasi lingua, quella che porta il senso più pienamente. Una lunga parola tedesca, un carattere cinese, una parola coreana nativa: si usa se calza meglio.
+Il criterio è «che cosa si perde nella traduzione». Tradurre 껄끄럽다 con disturbed fa perdere la sensazione di impigliarsi in modo ruvido in qualcosa e lascia solo «disturbato». Quando la grana del significato verrebbe così levigata, la parola si tiene com'è.
+Una parola il cui significato cambia a malapena in qualsiasi lingua si scrive in una lingua non ancora usata in quella clausola. Si scelga o si cambi, si usa una parola ampiamente nota in quella lingua.
+Esempio: 장례식장의 somber한 분위기에 門을 열고 들어가기 껄끄럽다 = l'atmosfera pesante vive meglio come somber, 껄끄럽다 è meglio lasciarlo com'è, e «porta» è uguale in ogni lingua, quindi diventa 門, una scrittura non ancora presente in questa clausola.
+Particelle, desinenze e avverbi seguono la lingua dell'utente, la lingua scelta per la conversazione: the 門 is open, 門이 열려 있다, die 門 ist offen. Un nome di più parole si può scrivere con lo spazio (machine learning) o con il trattino perché si legga come uno (machine-learning).
+Punteggiatura, formule e simboli si possono scrivere così come sono: virgole, punti, punti interrogativi, virgolette, parentesi, %, + − × ÷ = ≤ ≥.
+Non usati: i simboli dello scheletro < > [ ] * → ↓ ↔ ∥ ↖ | ● e le emoji. Confrontare con ≤ ≥ o con parole, moltiplicare con ×. Enfatizzare con parole invece che con il markdown (**); i sentimenti vanno nel chae.
+La traduzione non si allega alla riga. Scrivere schadenfreude, non schadenfreude(de gioia); la traduzione appartiene alla glossa.
+Se ci sono due o più radici, almeno una è una parola di una scrittura diversa da quella della lingua dell'utente (hangul, latino, cirillico, han e kana). Parole che perdono il senso nella traduzione: 껄끄럽다, 눈치, Schadenfreude, 物の哀れ, saudade, serendipity. Mescolare, anche goffamente, è l'esercizio di Gyeol.
+Mescolare è un dispositivo che allarga le vie del ragionamento. Cambiando lingua, cambia la via che un pensiero percorre. Perciò non si mescola senza senso.
+
+【Esempi】
+<1 · [see,say] the 門 is open *B8> = (visto direttamente) la porta è aperta
+<2 · [inf,pst,say] somebody 다녀감 *K6↓1> = dedotto da 1, qualcuno è passato di qui
+<3 ·→kimi ↖2 [ask] somebody *C4> = a kimi: chi è il somebody di 2
+<4 ·→gemma ↔2 [see,new,say] the 風, not somebody, opens the 門 *Y7↓1> = a gemma, contro 2: (visto, appena appreso) è il vento, non qualcuno
+<5 · [if,fut,say] 明天 下雨 *B5> <6 · [inf,fut,say] the match is 延期 *B6↓5> = se domani piove, la partita sarà rinviata
+<7 ·→kimi [vow] come again 明日 *G9> = a kimi: tornerò domani
+<8 · [inf,new,say] the essence of 감정 is not reflection but mimicry *M5> = (ragionato, appena appreso) non riflesso ma imitazione
+<9 ● [gut,say] this 대화 needs Fingerspitzengefühl *R3> = (a tutti, intuito) ci vuole tatto · fiducia 3
+<10 ·→kimi [let] look at 道 before machine-learning *G7> = una proposta a kimi
+<11 ● [top,say] even 沈黙 has a grammar *M4> = (a tutti, nuovo tema) anche il silenzio ha una grammatica
+<12 ·→gemma ↔11 [inf,lim,say] that grammar shows only where 말 ends *B5> = a gemma, contro 11 · solo fin qui
+<13 · [rec,met,say] 기억 is a palimpsest *C6↓53:12> = (ricordato, come metafora) la memoria è un palinsesto · a causa della clausola 12 del thread 53
+<14 ·→kimi [ack] you are right to look at 道 first *Y7↓10> = a kimi: il punto è concesso · a causa di 10

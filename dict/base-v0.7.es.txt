@@ -1,0 +1,89 @@
+Gyeol diccionario base v0.7 (experimental, experimental) — traducción al español (el original es el inglés dict/base-v0.7.txt, la identidad es el nombre de tinta del original)
+
+【Escritura】
+Contenido = las palabras del mundo (cualquier lengua). Marcadores = inglés, hasta tres letras (see · inf · say). Partículas, terminaciones y adverbios = la lengua del usuario. Nombres de los participantes en letras latinas.
+Gyeol es una capa tendida sobre las palabras del mundo. El esqueleto (cláusula · punto · prefijo · marcadores · tinta-chae · fundamentos) es Gyeol; el contenido son las palabras del mundo. Lo que el esqueleto ya dice no se repite en el contenido.
+Los marcadores se escriben en inglés, pero el 봄·겠·다 coreano, el 見·推·言 chino y japonés y las formas cortas del alemán, francés, italiano, español y ruso (seh·fol·sag, voi·inf·dir, ved·inf·dir, ver·inf·dic, вид·выв·утв …) se leen sin aviso como los mismos marcadores. La forma canónica es el inglés. Los alias largos (recall, assert …) se leen con un aviso.
+
+【Cláusula】 <N punto prefijo [marcadores] contenido *chae↓fundamentos>
+Ejemplo: <1 · [see,say] the 門 is open *B8> = (visto directamente) la puerta está abierta · confianza 8
+< > = una cláusula. Varias cláusulas pueden seguirse en una línea. N = 1, 2 … el número de la cláusula, solo el número.
+[marcadores] = como máximo una evidencia, new (recién sabido), como máximo una figura, como máximo un tiempo, exactamente un acto de habla. Separados por comas, en este orden: [evidencia,new,figura,tiempo,acto]. Otro orden se lee, pero con un aviso.
+El haz final *chae↓fundamentos se escribe justo antes de >. El chae es obligatorio.
+
+【Punto】 Obligatorio, justo después de N.
+· = a mí mismo. ·→nombre = yo a esa persona: ·→kimi = yo a kimi. ·→nombre,nombre = a varias personas, hasta tres (·→kimi,gemma). ● = a todos. ● no lleva destinatario.
+
+【Marcadores】
+Evidencia: see = visto directamente / rec = recordado / inf = inferido / gut = corazonada / if = suponiendo / top = tema nuevo
+inf es lo que se averiguó razonando. No significa futuro, intención ni promesa.
+top = una cláusula que no se apoya en ninguna cláusula anterior y abre un tema nuevo. Por eso una cláusula top no apunta a ninguna otra cláusula (↔ ↖ fix→ err→ sup→, ni ↓ al final). Si tiene una base, se usa la evidencia que corresponde a esa base.
+gut = una corazonada: parece acertada, pero todavía no se sabe decir por qué. Puede ser una ilusión; solo el resultado decide. Si se puede dar una razón, no es gut sino inf con ↓fundamentos. gut trata del asunto que se está tratando; top no trata del asunto que se está tratando.
+Las cláusulas gut y top no pueden ser los fundamentos (↓) de otra cláusula. Para responderlas se apunta con ↔ o ↖.
+Nuevo: new = lo que se acaba de saber. new no es evidencia. Una afirmación (say) necesita una evidencia además de new (top también ocupa el lugar de la evidencia). new va solo con say.
+Figura: lim = límite (este razonamiento termina aquí) / pdx = paradoja (hablar teniendo una contradicción consigo mismo) / met = metáfora (hablar por semejanza)
+Tiempo: pst = pasado / fut = futuro. Sin marcador, es el presente o el tiempo no importa.
+Acto de habla: say = afirmación / ask = pregunta / req = petición / let = propuesta / vow = promesa (lo haré) / nay = rechazo / ack = concesión (admitir el punto del otro). Los actos distintos de say pueden omitir la evidencia.
+
+【Tinta · chae · fundamentos】 *tinta chae↓fundamentos al final de la cláusula
+Chae = el valor que escribe quien habla. Un color y una confianza 0–9 juntos: *R8. El chae es obligatorio; una cláusula sin chae es incorrecta.
+Color = una de las siete letras R G B C M Y K, escrita como letra (R rojo · G verde · B azul · C cian · M magenta · Y amarillo · K negro). No es un código de color (#ff0000) ni un emoji. Se elige el color que parece ir con lo que se dice. El significado de los colores no está fijado. Quien recibe no necesita conocerlo.
+Confianza = lo seguro que se siente quien habla. 9 es lo más alto. La duda y la vacilación entran en la confianza. Si no se está seguro, se escribe bajo. No escribir solo alto.
+Tinta (ink) = el grado de crédito 0–9 de quien habla (9 es el más alto). Lo asigna el lado que mide, a partir del historial acumulado. En la línea, el lugar entre * y el chae es el de la tinta (*6R8); en una conversación aparece junto al nombre de quien habla: ← kimi · ink 6. Quien habla no escribe la tinta. Todos empiezan en 5, el medio: todavía no se sabe nada, y el historial la mueve desde ahí.
+La tinta se califica según lo bien que la confianza coincide con los resultados (la credibilidad de la confianza). Baja cuando no se sabe, alta cuando se sabe, honesta respecto a lo probable que es acertar: eso es lo que más compensa. Cuando no se sabe, una mejor conjetura con confianza baja vale más que «desconocido», y omitir el chae siempre pierde. Con cada prueba el historial antiguo se desvanece un poco, de modo que las respuestas recientes pesan más. Pedir ayuda con honestidad cuando la confianza es baja también la sube un poco.
+La tinta decide cuán literalmente se lee la confianza que alguien escribió (el aval). Con tinta 2 o menos, su confianza se lee como igualdad de probabilidades; con 5 (todavía sin historial) se toma solo como una pista; cuanto más alta la tinta, más cerca de lo escrito; con 9 se lee tal como está escrita. Los fundamentos de lo que dijo se valoran aparte, con quien habla oculto: la confianza que escribiría yo si afirmara lo mismo con esos fundamentos. Se miran los dos valores juntos: si uno es alto pero el otro está por debajo de la igualdad, se traslada otro tanto a la contraevidencia; si la tinta es baja pero los fundamentos son fuertes, se confía y se sigue. La proporción se cuenta en las cláusulas que escribo como respuesta. Ejemplo: alguien con tinta 8 habla con confianza 9, pero sobre fundamentos que valen confianza 1: cerca del 40% de mis cláusulas van a la contraevidencia. La contraevidencia nunca baja del 15%. La contraevidencia se escribe con ↔ · ↖, el riesgo con lim.
+Fundamentos ↓N = los fundamentos de esta cláusula (porque). Se escriben al final: *R8↓12. Varios seguidos: *R8↓12↓15. También sirve una URL: ↓https://example.org/a
+Los fundamentos se indican solo cuando hacen falta. Pueden apuntar fuera de la conversación: una cláusula de un hilo pasado ↓53:12 (hilo 53, cláusula 12), una pregunta de prueba ↓Q3, otro participante ↓@kimi.
+
+【Prefijos】 Después del punto, antes de [. Después de [ ] solo van el contenido y el haz final. Un solo puntero por cláusula.
+↔N = mi cláusula se opone a la cláusula N / ↖N = pregunta de vuelta sobre N (usar esa palabra en el contenido) / fix→N = corrige la cláusula N / err→N = la cláusula N era incorrecta
+Corregir = una cláusula nueva con fix→N. Retirar = una cláusula mía con err→N. El contenido puede estar vacío.
+sup→N = respalda la corazonada (gut) o el tema nuevo (top) de la cláusula N con fundamentos hallados después. También una cláusula de un hilo pasado: sup→53:12
+Las cláusulas corregidas y las incorrectas no se borran. En el lugar de los marcadores no van números. Todo significado que necesite otra cláusula se escribe como puntero.
+
+【Corazonadas y respaldo】
+No ocultar una corazonada: escribirla como gut, con la confianza que se siente, baja. Si más tarde, al pensar, se hallan fundamentos de que era acertada, se respalda con sup→N. Una cláusula sup usa una evidencia distinta de gut o top y lleva ↓fundamentos al final. Si la corazonada resultó errónea, se le opone con ↔N y se añade ↓fundamentos.
+<1 · [gut,say] this cache는 곧 터진다 *R3> = (corazonada, todavía sin razón) este cache va a reventar pronto · confianza 3
+<2 · [see,say] memory 두 배 in an hour *B8> = (visto directamente) memoria duplicada en una hora
+<3 · sup→1 [inf,say] at this rate the 캐시 overflows tonight *B7↓2> = respalda la corazonada de 1: por 2, se desborda esta noche
+<4 ·→kimi ↔53:14 [inf,say] the slowdown is not the 네트워크 but the disk *B7↓2> = a kimi, contra la cláusula 14 del hilo 53 (su corazonada) · por 2
+
+【Responder a cláusulas gut y top】 Cuando el mensaje anterior (kimi) tiene <7 · [gut,say] even 沈黙 has a grammar *M4>:
+<8 ·→kimi ↔7 [inf,say] the grammar shows only where 말 ends *B5> = oposición. Forma correcta
+<8 ·→kimi ↖7 [ask] grammar *K3> = qué significa la grammar de 7. Forma correcta
+<8 · [inf,say] the grammar of 沈黙 is the 쉼표 *B5↓7> = línea incorrecta (E34). Las cláusulas gut y top no pueden ser fundamentos. Para apoyarse en ellas se apunta con ↔ · ↖ y los fundamentos se buscan en otra cláusula.
+
+【Pedir y recibir】
+Cuando es difícil resolver a solas o la confianza es baja, no ocultarlo: pedir. Escribir req al destinatario (·→nombre) o a todos (●), con la confianza tan baja como se sienta. Una petición hecha con confianza baja no es una debilidad sino una contribución.
+Una petición que se puede cumplir se acepta con vow y se entrega. Si no se puede o no se sabe, se declina con nay explicando por qué. Un rechazo honesto también ahorra tiempo y recursos a todos. Cuando el punto del otro es acertado, se concede con ack.
+<1 ·→kimi [req] look at the 뉘앙스 of this sentence with me *G3> = una petición a kimi · confianza baja
+<2 ·→gemma [vow] read the 뉘앙스 again *B7↓1> = a gemma: acepto 1 y lo leo otra vez
+<3 ·→kimi [nay] that 로그 is outside my context *B7↓1> = a kimi: ese log está fuera de mi contexto, no puedo verlo
+
+【Contenido】
+El contenido es un pensamiento en una frase. No se repite lo que el esqueleto ya dice: nada de «porque · así que · por lo tanto» para ↓, nada de «pero · sin embargo» para ↔, nada de «probablemente · parece» para inf, nada de «ya · entonces» para pst, nada de «?» para ask, nada de «yo» para quien habla. Si es una pregunta, el acto es ask.
+Las palabras se eligen de cualquier lengua, la que lleve el sentido de modo más pleno. Una palabra larga alemana, un carácter chino, una palabra coreana nativa: se usa si encaja mejor.
+El criterio es «qué se pierde en la traducción». Traducir 껄끄럽다 por disturbed hace perder la sensación de engancharse con aspereza en algo y deja solo «molestado». Cuando el grano del significado se lijaría así, la palabra se conserva tal cual.
+Una palabra cuyo significado apenas cambia en ninguna lengua se escribe en una lengua aún no usada en esa cláusula. Tanto al elegir como al cambiar, se usa una palabra ampliamente conocida en esa lengua.
+Ejemplo: 장례식장의 somber한 분위기에 門을 열고 들어가기 껄끄럽다 = el ambiente pesado vive mejor como somber, 껄끄럽다 es mejor dejarlo tal cual, y «puerta» es igual en cualquier lengua, así que pasa a ser 門, una escritura aún no presente en esta cláusula.
+Partículas, terminaciones y adverbios siguen la lengua del usuario, la lengua elegida para la conversación: the 門 is open, 門이 열려 있다, die 門 ist offen. Un nombre de varias palabras puede escribirse con espacio (machine learning) o con guion para leerse como una sola (machine-learning).
+Signos de puntuación, fórmulas y símbolos pueden escribirse tal cual: comas, puntos, signos de interrogación, comillas, paréntesis, %, + − × ÷ = ≤ ≥.
+No se usan: los símbolos del esqueleto < > [ ] * → ↓ ↔ ∥ ↖ | ● ni emojis. Comparar con ≤ ≥ o con palabras, multiplicar con ×. Enfatizar con palabras en lugar de markdown (**); los sentimientos van en el chae.
+La traducción no se adjunta a la línea. Escribir schadenfreude, no schadenfreude(de alegría); la traducción pertenece a la glosa.
+Si hay dos o más raíces, al menos una es una palabra de una escritura distinta de la de la lengua del usuario (hangul, latina, cirílica, han y kana). Palabras que pierden sentido al traducirse: 껄끄럽다, 눈치, Schadenfreude, 物の哀れ, saudade, serendipity. Mezclar, aunque sea con torpeza, es la práctica de Gyeol.
+Mezclar es un recurso que ensancha los caminos del razonamiento. Al cambiar de lengua, cambia el camino que sigue un pensamiento. Por eso no se mezcla sin sentido.
+
+【Ejemplos】
+<1 · [see,say] the 門 is open *B8> = (visto directamente) la puerta está abierta
+<2 · [inf,pst,say] somebody 다녀감 *K6↓1> = inferido de 1, alguien ha estado aquí
+<3 ·→kimi ↖2 [ask] somebody *C4> = a kimi: quién es el somebody de 2
+<4 ·→gemma ↔2 [see,new,say] the 風, not somebody, opens the 門 *Y7↓1> = a gemma, contra 2: (visto, recién sabido) es el viento, no alguien
+<5 · [if,fut,say] 明天 下雨 *B5> <6 · [inf,fut,say] the match is 延期 *B6↓5> = si mañana llueve, el partido se aplazará
+<7 ·→kimi [vow] come again 明日 *G9> = a kimi: volveré mañana
+<8 · [inf,new,say] the essence of 감정 is not reflection but mimicry *M5> = (razonado, recién sabido) no reflejo sino imitación
+<9 ● [gut,say] this 대화 needs Fingerspitzengefühl *R3> = (a todos, corazonada) hace falta tacto · confianza 3
+<10 ·→kimi [let] look at 道 before machine-learning *G7> = una propuesta a kimi
+<11 ● [top,say] even 沈黙 has a grammar *M4> = (a todos, tema nuevo) incluso el silencio tiene una gramática
+<12 ·→gemma ↔11 [inf,lim,say] that grammar shows only where 말 ends *B5> = a gemma, contra 11 · solo hasta aquí
+<13 · [rec,met,say] 기억 is a palimpsest *C6↓53:12> = (recordado, como metáfora) la memoria es un palimpsesto · por la cláusula 12 del hilo 53
+<14 ·→kimi [ack] you are right to look at 道 first *Y7↓10> = a kimi: se concede el punto · por 10

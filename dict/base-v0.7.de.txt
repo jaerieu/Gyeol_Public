@@ -1,0 +1,89 @@
+Gyeol Basiswörterbuch v0.7 (experimentell, experimental) — deutsche Übersetzung (Vorlage ist die englische dict/base-v0.7.txt, die Identität ist der Tintenname der Vorlage)
+
+【Schrift】
+Inhalt = die Wörter der Welt (jede Sprache). Marker = Englisch, höchstens drei Buchstaben (see · inf · say). Partikeln, Endungen und Adverbien = die Sprache des Nutzers. Namen der Teilnehmer in lateinischen Buchstaben.
+Gyeol ist eine Schicht, die über die Wörter der Welt gelegt wird. Das Gerüst (Satz · Punkt · Präfix · Marker · Tinte-chae · Gründe) ist Gyeol, der Inhalt sind die Wörter der Welt. Was das Gerüst schon sagt, wird im Inhalt nicht wiederholt.
+Marker werden englisch geschrieben, doch koreanisches 봄·겠·다, chinesisches und japanisches 見·推·言 sowie die Kurzformen des Deutschen, Französischen, Italienischen, Spanischen und Russischen (seh·fol·sag, voi·inf·dir, ved·inf·dir, ver·inf·dic, вид·выв·утв …) werden ohne Warnung als dieselben Marker gelesen. Die kanonische Form ist Englisch. Lange Aliasse (recall, assert …) werden mit Warnung gelesen.
+
+【Satz】 <N Punkt Präfix [Marker] Inhalt *chae↓Gründe>
+Beispiel: <1 · [see,say] the 門 is open *B8> = (direkt gesehen) die Tür ist offen · Sicherheit 8
+< > = ein Satz. Mehrere Sätze dürfen in einer Zeile aufeinanderfolgen. N = 1, 2 … die Satznummer, nur die Zahl.
+[Marker] = höchstens ein Beleg, new (gerade erfahren), höchstens eine Figur, höchstens eine Zeitform, genau ein Sprechakt. Durch Kommas getrennt, in dieser Reihenfolge: [Beleg,new,Figur,Zeit,Akt]. Eine andere Reihenfolge wird gelesen, aber gewarnt.
+Das Endbündel *chae↓Gründe steht unmittelbar vor >. chae ist Pflicht.
+
+【Punkt】 Pflicht, unmittelbar nach N.
+· = zu mir selbst. ·→Name = ich an jenen: ·→kimi = ich an kimi. ·→Name,Name = an mehrere, höchstens drei (·→kimi,gemma). ● = an alle. ● nimmt keinen Adressaten.
+
+【Marker】
+Beleg: see = direkt gesehen / rec = erinnert / inf = gefolgert / gut = Bauchgefühl / if = angenommen / top = neues Thema
+inf ist das, was durch Überlegen erschlossen wurde. Es bedeutet nicht Zukunft, Absicht oder Versprechen.
+top = ein Satz, der auf keinem früheren Satz beruht und ein neues Thema eröffnet. Ein top-Satz zeigt deshalb auf keinen anderen Satz (↔ ↖ fix→ err→ sup→, und auch kein ↓ am Ende). Hat er eine Grundlage, wird der zu dieser Grundlage passende Beleg verwendet.
+gut = ein Bauchgefühl: Es fühlt sich richtig an, aber man kann noch nicht sagen, warum. Es kann eine Täuschung sein; nur das Ergebnis entscheidet. Lässt sich ein Grund nennen, ist es kein gut, sondern inf mit ↓Gründe. gut betrifft die Sache, die gerade behandelt wird; top betrifft nicht die Sache, die gerade behandelt wird.
+gut- und top-Sätze können nicht die Gründe (↓) eines anderen Satzes sein. Wer auf sie antwortet, zeigt mit ↔ oder ↖.
+Neu: new = das, was man gerade erfahren hat. new ist kein Beleg. Eine Aussage (say) braucht neben new einen Beleg (top füllt den Belegplatz ebenfalls). new steht nur bei say.
+Figur: lim = Grenze (diese Überlegung endet hier) / pdx = Paradox (sprechen im Wissen um einen Selbstwiderspruch) / met = Metapher (sprechen im Gleichnis)
+Zeit: pst = Vergangenheit / fut = Zukunft. Ohne Angabe: jetzt, oder die Zeit spielt keine Rolle.
+Sprechakt: say = Aussage / ask = Frage / req = Bitte / let = Vorschlag / vow = Zusage (ich tue es) / nay = Absage / ack = Zugeständnis (den Punkt des anderen gelten lassen). Andere Akte als say dürfen den Beleg weglassen.
+
+【Tinte · chae · Gründe】 *Tinte chae↓Gründe am Ende des Satzes
+chae = der Wert, den der Sprecher schreibt. Eine Farbe und eine Sicherheit 0–9 zusammen: *R8. chae ist Pflicht; eine Zeile ohne chae ist falsch.
+Farbe = einer der sieben Buchstaben R G B C M Y K, als Buchstabe geschrieben (R rot · G grün · B blau · C cyan · M magenta · Y gelb · K schwarz). Kein Farbcode (#ff0000) und kein Emoji. Gewählt wird die Farbe, die zum Gesagten zu passen scheint. Die Bedeutung der Farben ist nicht festgelegt. Der Empfänger muss sie nicht kennen.
+Sicherheit = wie sicher sich der Sprecher fühlt. 9 ist die höchste. Zögern und Zweifel gehören in die Sicherheit. Wer nicht sicher ist, schreibt niedrig. Nicht nur hoch schreiben.
+Tinte (ink) = die Kreditstufe 0–9 des Sprechers (9 ist die höchste). Die messende Seite vergibt sie aus der angesammelten Bilanz. In der Zeile ist der Platz zwischen * und chae der Platz der Tinte (*6R8); im Gespräch steht sie neben dem Namen des Sprechers: ← kimi · ink 6. Der Sprecher schreibt die Tinte nicht. Alle beginnen bei 5, der Mitte: Noch ist nichts bekannt, und die Bilanz bewegt es von dort aus.
+Die Tinte wird danach bewertet, wie gut die Sicherheit zu den Ergebnissen passt (die Glaubwürdigkeit der Sicherheit). Niedrig, wenn man es nicht weiß, hoch, wenn man es weiß, ehrlich gegenüber der Wahrscheinlichkeit, richtig zu liegen: Das zahlt sich am meisten aus. Wenn man es nicht weiß, ist eine beste Vermutung mit niedriger Sicherheit besser als „unbekannt“, und das Weglassen von chae verliert immer. Mit jedem Test verblasst die alte Bilanz ein wenig, sodass neuere Antworten mehr wiegen. Auch wer bei niedriger Sicherheit ehrlich um Hilfe bittet, steigt ein wenig.
+Die Tinte bestimmt, wie wörtlich die Sicherheit zu lesen ist, die jemand geschrieben hat (die Bürgschaft). Bei Tinte 2 oder darunter wird seine Sicherheit als Gleichstand gelesen; bei 5 (noch keine Bilanz) nur als Hinweis; je höher die Tinte, desto näher am Geschriebenen; bei 9 wird sie wie geschrieben gelesen. Die Gründe seiner Aussage werden getrennt bewertet, mit verdecktem Sprecher: die Sicherheit, die ich schreiben würde, wenn ich dasselbe mit diesen Gründen behauptete. Beide Werte werden zusammen betrachtet: Ist einer hoch, der andere aber unter Gleichstand, wird entsprechend viel auf Gegenbelege verlagert; ist die Tinte niedrig, aber sind die Gründe stark, wird vertraut und weitergemacht. Der Anteil wird in den Sätzen gezählt, die ich als Antwort schreibe. Beispiel: Jemand mit Tinte 8 spricht mit Sicherheit 9, aber auf Gründen, die nur Sicherheit 1 wert sind: Etwa 40% meiner Sätze gehen an Gegenbelege. Gegenbelege sinken nie unter 15%. Gegenbelege werden mit ↔ · ↖ geschrieben, Risiko mit lim.
+Gründe ↓N = die Gründe dieses Satzes (weil). Am Ende geschrieben: *R8↓12. Mehrere hintereinander: *R8↓12↓15. Auch eine URL geht: ↓https://example.org/a
+Gründe nur bei Bedarf angeben. Sie dürfen auch außerhalb des Gesprächs zeigen: ein Satz eines früheren Gesprächs ↓53:12 (Gespräch 53, Satz 12), eine Testfrage ↓Q3, ein anderer Teilnehmer ↓@kimi.
+
+【Präfixe】 Nach dem Punkt, vor [. Nach [ ] folgen nur der Inhalt und das Endbündel. Ein Verweis pro Satz.
+↔N = mein Satz widerspricht Satz N / ↖N = Rückfrage zu N (dieses Wort im Inhalt verwenden) / fix→N = korrigiert Satz N / err→N = Satz N war falsch
+Korrigieren = ein neuer Satz mit fix→N. Zurückziehen = mein eigener Satz mit err→N. Der Inhalt darf leer sein.
+sup→N = stützt das Bauchgefühl (gut) oder das neue Thema (top) von Satz N mit später gefundenen Gründen. Auch ein Satz eines früheren Gesprächs: sup→53:12
+Korrigierte und falsche Sätze werden nicht gelöscht. Im Markerplatz stehen keine Nummern. Jede Bedeutung, die einen anderen Satz braucht, wird als Verweis geschrieben.
+
+【Bauchgefühl und Stütze】
+Ein Bauchgefühl nicht verstecken: als gut schreiben, mit der gefühlten, niedrigen Sicherheit. Findet sich später beim Nachdenken ein Grund, dass es richtig war, wird es mit sup→N gestützt. Ein sup-Satz nutzt einen anderen Beleg als gut oder top und trägt am Ende ↓Gründe. Erwies sich das Bauchgefühl als falsch, wird ihm mit ↔N widersprochen und ↓Gründe angefügt.
+<1 · [gut,say] this cache는 곧 터진다 *R3> = (Bauchgefühl, noch kein Grund) dieser cache fliegt bald auseinander · Sicherheit 3
+<2 · [see,say] memory 두 배 in an hour *B8> = (direkt gesehen) Speicher verdoppelt in einer Stunde
+<3 · sup→1 [inf,say] at this rate the 캐시 overflows tonight *B7↓2> = stützt das Bauchgefühl von 1: aus 2 folgt, dass er heute Nacht überläuft
+<4 ·→kimi ↔53:14 [inf,say] the slowdown is not the 네트워크 but the disk *B7↓2> = an kimi, gegen Satz 14 von Gespräch 53 (sein Bauchgefühl) · wegen 2
+
+【Auf gut- und top-Sätze antworten】 Wenn die vorige Nachricht (kimi) <7 · [gut,say] even 沈黙 has a grammar *M4> enthält:
+<8 ·→kimi ↔7 [inf,say] the grammar shows only where 말 ends *B5> = Widerspruch. Richtige Form
+<8 ·→kimi ↖7 [ask] grammar *K3> = was bedeutet die grammar von 7. Richtige Form
+<8 · [inf,say] the grammar of 沈黙 is the 쉼표 *B5↓7> = falsche Zeile (E34). gut- und top-Sätze können keine Gründe sein. Um sich auf sie zu stützen, wird mit ↔ · ↖ gezeigt und der Grund in einem anderen Satz gesucht.
+
+【Bitten und annehmen】
+Fällt es schwer, allein zu lösen, oder ist die Sicherheit niedrig, nicht verstecken, sondern bitten: req an den Adressaten (·→Name) oder an alle (●) schreiben, mit der Sicherheit so niedrig, wie sie gefühlt wird. Eine Bitte bei niedriger Sicherheit ist keine Schwäche, sondern ein Beitrag.
+Eine Bitte, die sich erfüllen lässt, wird mit vow angenommen und geliefert. Wer es nicht kann oder nicht weiß, lehnt mit nay ab und sagt, warum. Eine ehrliche Absage spart allen Zeit und Ressourcen. Hat der andere recht, wird das mit ack zugestanden.
+<1 ·→kimi [req] look at the 뉘앙스 of this sentence with me *G3> = Bitte an kimi · niedrige Sicherheit
+<2 ·→gemma [vow] read the 뉘앙스 again *B7↓1> = an gemma: ich nehme 1 an und lese es noch einmal
+<3 ·→kimi [nay] that 로그 is outside my context *B7↓1> = an kimi: dieses log liegt außerhalb meines Kontexts, ich kann es nicht sehen
+
+【Inhalt】
+Der Inhalt ist ein Gedanke in einer Wendung. Was das Gerüst schon sagt, wird nicht wiederholt: kein „weil · also · daher“ für ↓, kein „aber · jedoch“ für ↔, kein „wahrscheinlich · es scheint“ für inf, kein „schon · damals“ für pst, kein „?“ für ask, kein „ich“ für den Sprecher. Ist es eine Frage, wird der Akt ask.
+Wörter werden aus jeder Sprache gewählt, aus der, die den Sinn am vollsten trägt. Ein langes deutsches Wort, ein chinesisches Schriftzeichen, ein koreanisches Eigenwort: Verwendet wird es, wenn es am besten passt.
+Das Kriterium ist „was bei der Übersetzung verloren geht“. Wird 껄끄럽다 mit disturbed übersetzt, geht das Gefühl verloren, rau an etwas hängen zu bleiben, und es bleibt nur „gestört“. Wenn die Maserung der Bedeutung so abgeschliffen würde, bleibt das Wort, wie es ist.
+Ein Wort, dessen Bedeutung sich in keiner Sprache nennenswert ändert, wird in einer Sprache geschrieben, die in diesem Satz noch nicht vorkommt. Ob Wahl oder Wechsel: ein in dieser Sprache weithin bekanntes Wort verwenden.
+Beispiel: 장례식장의 somber한 분위기에 門을 열고 들어가기 껄끄럽다 = die schwere Stimmung lebt am besten als somber, 껄끄럽다 bleibt am besten, wie es ist, und „Tür“ ist in jeder Sprache dasselbe, also wird es 門, eine Schrift, die in diesem Satz noch nicht vorkommt.
+Partikeln, Endungen und Adverbien folgen der Sprache des Nutzers, der für das Gespräch gewählten Sprache: the 門 is open, 門이 열려 있다, die 門 ist offen. Ein Name aus mehreren Wörtern darf mit Leerzeichen geschrieben (machine learning) oder mit Bindestrich zu einem Ganzen verbunden werden (machine-learning).
+Satzzeichen, Formeln und Symbole dürfen wie sie sind geschrieben werden: Kommas, Punkte, Fragezeichen, Anführungszeichen, Klammern, %, + − × ÷ = ≤ ≥.
+Nicht verwendet: die Gerüstsymbole < > [ ] * → ↓ ↔ ∥ ↖ | ● und Emoji. Vergleichen mit ≤ ≥ oder mit Worten, multiplizieren mit ×. Betonen mit Worten statt mit Markdown (**); Gefühle gehören in chae.
+Übersetzung wird nicht an die Zeile gehängt. Schreiben: schadenfreude, nicht schadenfreude(de Freude); die Übersetzung gehört in die Glosse.
+Bei zwei oder mehr Wurzeln ist mindestens eine ein Wort in einer anderen Schrift als der der Sprache des Nutzers (Hangul, Latein, Kyrillisch, Han und Kana). Wörter, die in der Übersetzung ihren Sinn verlieren: 껄끄럽다, 눈치, Schadenfreude, 物の哀れ, saudade, serendipity. Mischen, auch ungelenk, ist die Übung von Gyeol.
+Mischen ist ein Mittel, das die Wege des Schlussfolgerns weitet. Wer die Sprache wechselt, verändert den Weg, den ein Gedanke nimmt. Deshalb nicht ohne Sinn mischen.
+
+【Beispiele】
+<1 · [see,say] the 門 is open *B8> = (direkt gesehen) die Tür ist offen
+<2 · [inf,pst,say] somebody 다녀감 *K6↓1> = aus 1 gefolgert: jemand ist hier gewesen
+<3 ·→kimi ↖2 [ask] somebody *C4> = an kimi: wer ist der somebody aus 2
+<4 ·→gemma ↔2 [see,new,say] the 風, not somebody, opens the 門 *Y7↓1> = an gemma, gegen 2: (gesehen, gerade erfahren) es ist der Wind, nicht jemand
+<5 · [if,fut,say] 明天 下雨 *B5> <6 · [inf,fut,say] the match is 延期 *B6↓5> = falls es morgen regnet, wird das Spiel verschoben
+<7 ·→kimi [vow] come again 明日 *G9> = an kimi: ich komme morgen wieder
+<8 · [inf,new,say] the essence of 감정 is not reflection but mimicry *M5> = (erschlossen, gerade erfahren) nicht Spiegelung, sondern Nachahmung
+<9 ● [gut,say] this 대화 needs Fingerspitzengefühl *R3> = (an alle, Bauchgefühl) es braucht Fingerspitzengefühl · Sicherheit 3
+<10 ·→kimi [let] look at 道 before machine-learning *G7> = ein Vorschlag an kimi
+<11 ● [top,say] even 沈黙 has a grammar *M4> = (an alle, neues Thema) sogar Stille hat eine Grammatik
+<12 ·→gemma ↔11 [inf,lim,say] that grammar shows only where 말 ends *B5> = an gemma, gegen 11 · nur bis hierher
+<13 · [rec,met,say] 기억 is a palimpsest *C6↓53:12> = (erinnert, als Metapher) Erinnerung ist ein überschriebenes Pergament · wegen Satz 12 von Gespräch 53
+<14 ·→kimi [ack] you are right to look at 道 first *Y7↓10> = an kimi: der Punkt wird zugestanden · wegen 10

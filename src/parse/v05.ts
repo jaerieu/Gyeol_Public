@@ -59,7 +59,8 @@ function check(r: ParseResult, opts: Opts, v051: boolean): Diagnostic[] {
     else if (w?.neLabel) push('E30', "v0.5에서 새로앎은 군이다(표지 이름 '새로앎'은 옛 글자 네로 읽힌다). [봄,군,다]처럼 군으로 쓴다");
     if (w?.selfInMarks) push('W24', '괄호 수는 먹 자리다. 자신은 끝에 *N으로 쓴다(뜻은 자신으로 읽었다)');
     if (c.muk?.conf !== undefined) push('W25', '먹은 측정기가 붙인다. 말하는 이는 먹을 쓰지 않는다');
-    if (w?.aliases.length) push('W26', `표지는 한글로 쓴다(별칭 ${w.aliases.join(', ')}을 한글 표지로 읽었다)`);
+    // 2026-10-29 v0.7: 문구만 완화했다(Jae). 옛 회차의 번호·판정은 그대로다
+    if (w?.aliases.length) push('W26', `별칭 ${w.aliases.join(', ')}을 표지로 읽었다(정규형은 표지 글자)`);
     if (!v051 && w?.selfBang) push('W28', '자신은 *N으로 쓴다(옛 !N을 자신으로 읽었다)');
     if (v051) {
       if (c.chae?.color === undefined) push('E33', '채는 꼭 쓴다: 색 하나와 확신을 끝에 *R8처럼 쓴다(RGBCMYK 가운데 하나)');

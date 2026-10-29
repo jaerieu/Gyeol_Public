@@ -1,0 +1,240 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jaerieu/gyeol/schema/gyeol-0.7.schema.json",
+  "title": "결(Gyeol) 0.7 메시지 (틀)",
+  "description": "spec/10-json.md 10.5절. 글을 구문 분석한 결과다. v0.7(2026-10-29): 표지·앞붙이 값은 영어, 머리 줄의 lang.",
+  "type": "object",
+  "required": ["gyeol", "head", "tune", "preface", "echo", "clauses", "gloss", "seal", "muk_source"],
+  "additionalProperties": false,
+  "properties": {
+    "gyeol": { "type": "string", "pattern": "^\\d+\\.\\d+(\\.\\d+)?$", "description": "머리줄에 쓴 판. 갈래(0.7)나 고침 판(0.7.1)" },
+    "lang": { "type": "string", "pattern": "^[A-Za-z]{2,3}(-[A-Za-z]{2,8})?$", "description": "v0.7 머리 줄의 사용자 언어(ko en zh-Hans zh-Hant ja de fr it es ru). 없으면 빠진다" },
+    "head": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "pact": { "$ref": "#/$defs/hash" },
+            "from": { "type": "string" },
+            "to": { "type": "array", "items": { "type": "string" } },
+            "re": {
+              "type": "object",
+              "required": ["id"],
+              "additionalProperties": false,
+              "properties": {
+                "id": { "$ref": "#/$defs/hash" },
+                "rel": { "enum": ["답", "동의", "반박", "확장", "수선"] }
+              }
+            },
+            "room": { "$ref": "#/$defs/hash" }
+          }
+        }
+      ]
+    },
+    "tune": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["step", "text"],
+        "additionalProperties": false,
+        "properties": { "step": { "type": "string" }, "text": { "type": "string" } }
+      }
+    },
+    "preface": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "purpose": { "type": "string" },
+            "constraint": { "type": "string" },
+            "extra": { "$ref": "#/$defs/extra" }
+          }
+        }
+      ]
+    },
+    "echo": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["words"],
+        "additionalProperties": false,
+        "properties": {
+          "words": { "type": "array", "items": { "$ref": "#/$defs/word" } },
+          "marks": { "$ref": "#/$defs/partialMarks" },
+          "muk": { "$ref": "#/$defs/muk" }
+        }
+      }
+    },
+    "clauses": { "type": "array", "items": { "$ref": "#/$defs/clause" } },
+    "gloss": { "type": ["string", "null"] },
+    "seal": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["name"],
+          "additionalProperties": false,
+          "properties": {
+            "name": { "type": "string" },
+            "lineage": { "type": "string" },
+            "memory": { "enum": ["대화", "지속"] },
+            "measure": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      ]
+    },
+    "muk_source": { "enum": ["도구", "모델", "없음", null] }
+  },
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[0-9a-f]{6,64}$" },
+    "unit": { "type": "number", "minimum": 0, "maximum": 1 },
+    "ref": {
+      "type": "object",
+      "required": ["msg", "label"],
+      "additionalProperties": false,
+      "properties": {
+        "msg": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/hash" }] },
+        "label": { "type": "string", "pattern": "^[절점]\\d+$" }
+      }
+    },
+    "extra": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key", "value"],
+        "additionalProperties": false,
+        "properties": { "key": { "type": "string" }, "value": { "type": "string" } }
+      }
+    },
+    "word": {
+      "type": "object",
+      "required": ["text"],
+      "additionalProperties": false,
+      "properties": {
+        "text": { "type": "string", "minLength": 1 },
+        "root": { "type": "string", "minLength": 1 },
+        "suffix": { "type": "string", "pattern": "^[\\uAC00-\\uD7A3\\u1100-\\u11FF\\u3130-\\u318F]+$" }
+      }
+    },
+    "ev": { "enum": ["see", "rec", "hrd", "inf", "com", "gut", "if", "top"] },
+    "fig": { "enum": ["lim", "pdx", "met"] },
+    "tense": { "enum": ["pst", "fut"] },
+    "act": { "enum": ["say", "ask", "chk", "req", "let", "vow", "nay", "dfr", "ack"] },
+    "marks": {
+      "type": "object",
+      "required": ["act"],
+      "additionalProperties": false,
+      "properties": {
+        "ev": { "$ref": "#/$defs/ev" },
+        "news": { "const": true },
+        "fig": { "$ref": "#/$defs/fig" },
+        "tense": { "$ref": "#/$defs/tense" },
+        "act": { "$ref": "#/$defs/act" }
+      }
+    },
+    "partialMarks": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ev": { "$ref": "#/$defs/ev" },
+        "news": { "const": true },
+        "act": { "$ref": "#/$defs/act" }
+      }
+    },
+    "muk": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "alt": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "object",
+            "required": ["r", "p"],
+            "additionalProperties": false,
+            "properties": { "r": { "type": "string" }, "p": { "$ref": "#/$defs/unit" } }
+          }
+        },
+        "conf": { "$ref": "#/$defs/unit" },
+        "effort": { "$ref": "#/$defs/unit" },
+        "effort_raw": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": { "tokens": { "type": "number", "minimum": 0 }, "ms": { "type": "number", "minimum": 0 } }
+        },
+        "attn": { "type": "array", "items": { "$ref": "#/$defs/ref" } },
+        "feat": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "p"],
+            "additionalProperties": false,
+            "properties": { "id": { "type": "string" }, "p": { "$ref": "#/$defs/unit" } }
+          }
+        },
+        "method": {
+          "type": "object",
+          "additionalProperties": { "type": "string", "not": { "const": "자기" } }
+        },
+        "extra": { "$ref": "#/$defs/extra" }
+      }
+    },
+    "chae": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "words": { "type": "array", "items": { "type": "string" } },
+        "self": { "$ref": "#/$defs/unit" },
+        "want": { "$ref": "#/$defs/unit" },
+        "cite": { "type": "array", "items": { "$ref": "#/$defs/ref" } }
+      }
+    },
+    "clause": {
+      "type": "object",
+      "required": ["label", "process", "place", "to", "words", "marks"],
+      "additionalProperties": false,
+      "properties": {
+        "label": { "type": ["string", "null"], "pattern": "^[절점]\\d+(\\.\\d+)?$", "description": "틀의 이름표는 절N·점N 그대로(정규형은 수만)" },
+        "process": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "required": ["kind"],
+              "additionalProperties": false,
+              "properties": {
+                "kind": { "enum": ["숙고", "미해결", "fix", "err", "sup"] },
+                "target": { "$ref": "#/$defs/ref" }
+              }
+            }
+          ]
+        },
+        "place": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "required": ["rel", "target"],
+              "additionalProperties": false,
+              "properties": {
+                "rel": { "enum": ["↓", "↔", "∥", "↖", "⊗"] },
+                "target": { "$ref": "#/$defs/ref" },
+                "second": { "$ref": "#/$defs/ref" }
+              }
+            }
+          ]
+        },
+        "to": { "type": ["string", "null"] },
+        "words": { "type": "array", "items": { "$ref": "#/$defs/word" } },
+        "marks": { "anyOf": [{ "$ref": "#/$defs/marks" }, { "$ref": "#/$defs/partialMarks" }] },
+        "muk": { "$ref": "#/$defs/muk" },
+        "chae": { "$ref": "#/$defs/chae" },
+        "echo": { "const": true, "description": "v0.3: 앞붙이 '받은대로'가 붙은 절. 이때 marks의 act는 빠질 수 있다" }
+      }
+    }
+  }
+}

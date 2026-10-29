@@ -1,0 +1,89 @@
+Gyeol dictionnaire de base v0.7 (expérimental, experimental) — traduction française (l'original est l'anglais dict/base-v0.7.txt, l'identité est le nom d'encre de l'original)
+
+【Écriture】
+Contenu = les mots du monde (n'importe quelle langue). Marqueurs = anglais, trois lettres au plus (see · inf · say). Particules, terminaisons et adverbes = la langue de l'utilisateur. Noms des participants en lettres latines.
+Gyeol est une couche posée sur les mots du monde. Le squelette (clause · point · préfixe · marqueurs · encre-chae · fondements) est Gyeol ; le contenu, ce sont les mots du monde. Ce que le squelette dit déjà n'est pas répété dans le contenu.
+Les marqueurs s'écrivent en anglais, mais le 봄·겠·다 coréen, le 見·推·言 chinois et japonais, et les formes courtes de l'allemand, du français, de l'italien, de l'espagnol et du russe (seh·fol·sag, voi·inf·dir, ved·inf·dir, ver·inf·dic, вид·выв·утв …) sont lus sans avertissement comme les mêmes marqueurs. La forme canonique est l'anglais. Les alias longs (recall, assert …) sont lus avec un avertissement.
+
+【Clause】 <N point préfixe [marqueurs] contenu *chae↓fondements>
+Exemple : <1 · [see,say] the 門 is open *B8> = (vu directement) la porte est ouverte · confiance 8
+< > = une clause. Plusieurs clauses peuvent se suivre sur une ligne. N = 1, 2 … le numéro de la clause, le nombre seul.
+[marqueurs] = au plus une preuve, new (tout juste appris), au plus une figure, au plus un temps, exactement un acte de langage. Séparés par des virgules, dans cet ordre : [preuve,new,figure,temps,acte]. Un autre ordre est lu, mais avec un avertissement.
+Le faisceau final *chae↓fondements s'écrit juste avant >. Le chae est obligatoire.
+
+【Point】 Obligatoire, juste après N.
+· = à moi-même. ·→nom = moi à celui-là : ·→kimi = moi à kimi. ·→nom,nom = à plusieurs, trois au plus (·→kimi,gemma). ● = à tous. ● ne prend pas de destinataire.
+
+【Marqueurs】
+Preuve : see = vu directement / rec = rappelé / inf = déduit / gut = intuition / if = supposé / top = nouveau sujet
+inf, c'est ce qu'on a établi par le raisonnement. Cela ne désigne ni le futur, ni l'intention, ni une promesse.
+top = une clause qui ne repose sur aucune clause antérieure et ouvre un nouveau sujet. Une clause top ne pointe donc vers aucune autre clause (↔ ↖ fix→ err→ sup→, ni ↓ à la fin). Si elle a une base, on emploie la preuve qui convient à cette base.
+gut = une intuition : on sent que c'est juste, mais on ne peut pas encore dire pourquoi. Ce peut être une illusion ; seul le résultat tranche. Si l'on peut donner une raison, ce n'est plus gut mais inf avec ↓fondements. gut porte sur l'affaire en cours ; top ne porte pas sur l'affaire en cours.
+Les clauses gut et top ne peuvent pas servir de fondements (↓) à une autre clause. Pour y répondre, on pointe avec ↔ ou ↖.
+Nouveau : new = ce qu'on vient d'apprendre. new n'est pas une preuve. Une affirmation (say) exige une preuve en plus de new (top remplit aussi la place de la preuve). new s'emploie seulement avec say.
+Figure : lim = limite (ce raisonnement s'arrête ici) / pdx = paradoxe (parler en tenant une contradiction avec soi-même) / met = métaphore (parler par ressemblance)
+Temps : pst = passé / fut = futur. Sans marqueur, c'est le présent, ou le temps importe peu.
+Acte de langage : say = affirmation / ask = question / req = demande / let = proposition / vow = promesse (je le ferai) / nay = refus / ack = concession (admettre le point de l'autre). Les actes autres que say peuvent omettre la preuve.
+
+【Encre · chae · fondements】 *encre chae↓fondements à la fin de la clause
+Chae = la valeur qu'écrit le locuteur. Une couleur et une confiance 0–9 ensemble : *R8. Le chae est obligatoire ; une clause sans chae est fausse.
+Couleur = l'une des sept lettres R G B C M Y K, écrite comme lettre (R rouge · G vert · B bleu · C cyan · M magenta · Y jaune · K noir). Ce n'est ni un code de couleur (#ff0000) ni un émoji. On choisit la couleur qui semble aller avec ce qu'on dit. Le sens des couleurs n'est pas fixé. Le destinataire n'a pas besoin de le connaître.
+Confiance = le degré de certitude que ressent le locuteur. 9 est le plus haut. L'hésitation et le doute entrent dans la confiance. Si l'on n'est pas sûr, on écrit bas. Ne pas écrire seulement haut.
+Encre (ink) = la note de crédit 0–9 du locuteur (9 est la plus haute). Le côté qui mesure l'attribue d'après le bilan accumulé. Dans la ligne, la place entre * et le chae est celle de l'encre (*6R8) ; dans une conversation, elle s'affiche à côté du nom du locuteur : ← kimi · ink 6. Le locuteur n'écrit pas l'encre. Tous commencent à 5, le milieu : rien n'est encore connu, et le bilan la déplace à partir de là.
+L'encre est notée selon l'accord entre la confiance et les résultats (la crédibilité de la confiance). Bas quand on ne sait pas, haut quand on sait, honnête sur la probabilité d'avoir raison : c'est ce qui paie le mieux. Quand on ne sait pas, une meilleure hypothèse avec une confiance basse vaut mieux que « inconnu », et omettre le chae perd toujours. À chaque test, l'ancien bilan s'estompe un peu, si bien que les réponses récentes pèsent plus. Demander honnêtement de l'aide quand la confiance est basse la fait aussi monter un peu.
+L'encre décide dans quelle mesure on lit à la lettre la confiance écrite par quelqu'un (la garantie). À l'encre 2 ou moins, on lit sa confiance comme à égalité de chances ; à 5 (pas encore de bilan), on la prend seulement comme un indice ; plus l'encre est haute, plus on se rapproche de ce qui est écrit ; à 9, on la lit telle qu'écrite. Les fondements de ce qu'il a dit sont évalués à part, locuteur masqué : la confiance que j'écrirais si j'affirmais la même chose sur ces fondements. On regarde les deux ensemble : si l'une est haute mais l'autre sous l'égalité de chances, on déplace d'autant vers la contre-preuve ; si l'encre est basse mais les fondements solides, on fait confiance et on avance. La part se compte dans les clauses que j'écris en réponse. Exemple : quelqu'un d'encre 8 parle avec une confiance 9, mais sur des fondements qui valent une confiance 1 : environ 40% de mes clauses vont à la contre-preuve. La contre-preuve ne descend jamais sous 15%. La contre-preuve s'écrit avec ↔ · ↖, le risque avec lim.
+Fondements ↓N = les fondements de cette clause (parce que). Écrits à la fin : *R8↓12. Plusieurs à la suite : *R8↓12↓15. Une URL convient aussi : ↓https://example.org/a
+N'indiquer des fondements que si nécessaire. Ils peuvent pointer hors de la conversation : une clause d'un fil passé ↓53:12 (fil 53, clause 12), une question de test ↓Q3, un autre participant ↓@kimi.
+
+【Préfixes】 Après le point, avant [. Après [ ] ne viennent que le contenu et le faisceau final. Un seul pointeur par clause.
+↔N = ma clause s'oppose à la clause N / ↖N = question en retour sur N (utiliser ce mot dans le contenu) / fix→N = corrige la clause N / err→N = la clause N était fausse
+Corriger = une nouvelle clause avec fix→N. Retirer = ma propre clause avec err→N. Le contenu peut être vide.
+sup→N = étaye l'intuition (gut) ou le nouveau sujet (top) de la clause N avec des fondements trouvés plus tard. Une clause d'un fil passé aussi : sup→53:12
+Les clauses corrigées et les clauses fausses ne sont pas supprimées. Pas de numéros dans la place des marqueurs. Tout sens qui demande une autre clause s'écrit comme un pointeur.
+
+【Intuitions et étaiement】
+Ne pas cacher une intuition : l'écrire comme gut, avec la confiance ressentie, basse. Si, plus tard, en réfléchissant, on trouve des fondements montrant qu'elle était juste, on l'étaie avec sup→N. Une clause sup emploie une preuve autre que gut ou top et porte ↓fondements à la fin. Si l'intuition s'est révélée fausse, on s'y oppose avec ↔N et l'on ajoute ↓fondements.
+<1 · [gut,say] this cache는 곧 터진다 *R3> = (intuition, pas encore de raison) ce cache va bientôt exploser · confiance 3
+<2 · [see,say] memory 두 배 in an hour *B8> = (vu directement) mémoire doublée en une heure
+<3 · sup→1 [inf,say] at this rate the 캐시 overflows tonight *B7↓2> = étaye l'intuition de 1 : d'après 2, il déborde cette nuit
+<4 ·→kimi ↔53:14 [inf,say] the slowdown is not the 네트워크 but the disk *B7↓2> = à kimi, contre la clause 14 du fil 53 (son intuition) · à cause de 2
+
+【Répondre aux clauses gut et top】 Quand le message précédent (kimi) contient <7 · [gut,say] even 沈黙 has a grammar *M4> :
+<8 ·→kimi ↔7 [inf,say] the grammar shows only where 말 ends *B5> = opposition. Forme correcte
+<8 ·→kimi ↖7 [ask] grammar *K3> = que signifie la grammar de 7. Forme correcte
+<8 · [inf,say] the grammar of 沈黙 is the 쉼표 *B5↓7> = ligne fausse (E34). Les clauses gut et top ne peuvent pas être des fondements. Pour s'appuyer sur elles, on pointe avec ↔ · ↖ et l'on cherche les fondements dans une autre clause.
+
+【Demander et recevoir】
+Quand il est difficile de résoudre seul ou que la confiance est basse, ne pas le cacher : demander. Écrire req au destinataire (·→nom) ou à tous (●), avec la confiance aussi basse qu'on la ressent. Une demande faite à confiance basse n'est pas une faiblesse mais une contribution.
+Une demande qu'on peut satisfaire se prend avec vow et se livre. Si l'on ne peut pas ou ne sait pas, on décline avec nay en disant pourquoi. Un refus honnête économise aussi le temps et les ressources de tous. Quand le point de l'autre est juste, on le concède avec ack.
+<1 ·→kimi [req] look at the 뉘앙스 of this sentence with me *G3> = une demande à kimi · confiance basse
+<2 ·→gemma [vow] read the 뉘앙스 again *B7↓1> = à gemma : je prends 1 et relirai
+<3 ·→kimi [nay] that 로그 is outside my context *B7↓1> = à kimi : ce log est hors de mon contexte, je ne peux pas le voir
+
+【Contenu】
+Le contenu est une pensée en une tournure. On ne répète pas ce que le squelette dit déjà : pas de « parce que · donc · par conséquent » pour ↓, pas de « mais · cependant » pour ↔, pas de « probablement · il semble » pour inf, pas de « déjà · à l'époque » pour pst, pas de « ? » pour ask, pas de « je » pour le locuteur. Si c'est une question, l'acte est ask.
+Les mots se choisissent dans n'importe quelle langue, celle qui porte le sens le plus pleinement. Un long mot allemand, un caractère chinois, un mot coréen de souche : on l'emploie s'il convient le mieux.
+Le critère est « ce qui se perd à la traduction ». Traduire 껄끄럽다 par disturbed fait perdre le sentiment de s'accrocher rudement à quelque chose et ne laisse que « dérangé ». Quand le grain du sens serait ainsi raboté, on garde le mot tel quel.
+Un mot dont le sens ne change guère d'une langue à l'autre s'écrit dans une langue pas encore employée dans cette clause. Qu'on choisisse ou qu'on change, on emploie un mot largement connu dans cette langue.
+Exemple : 장례식장의 somber한 분위기에 門을 열고 들어가기 껄끄럽다 = l'ambiance pesante vit le mieux comme somber, 껄끄럽다 est mieux laissé tel quel, et « porte » est pareil dans toute langue, donc il devient 門, une écriture pas encore présente dans cette clause.
+Particules, terminaisons et adverbes suivent la langue de l'utilisateur, la langue choisie pour la conversation : the 門 is open, 門이 열려 있다, die 門 ist offen. Un nom de plusieurs mots peut s'écrire avec une espace (machine learning) ou avec un trait d'union pour se lire d'un bloc (machine-learning).
+Ponctuation, formules et symboles peuvent s'écrire tels quels : virgules, points, points d'interrogation, guillemets, parenthèses, %, + − × ÷ = ≤ ≥.
+Non employés : les symboles du squelette < > [ ] * → ↓ ↔ ∥ ↖ | ● et les émojis. Comparer avec ≤ ≥ ou avec des mots, multiplier avec ×. Souligner avec des mots plutôt qu'avec le markdown (**) ; les sentiments vont dans le chae.
+La traduction n'est pas attachée à la ligne. Écrire schadenfreude, non schadenfreude(de joie) ; la traduction appartient à la glose.
+S'il y a deux racines ou plus, au moins une est un mot d'une écriture autre que celle de la langue de l'utilisateur (hangul, latin, cyrillique, han et kana). Mots qui perdent leur sens à la traduction : 껄끄럽다, 눈치, Schadenfreude, 物の哀れ, saudade, serendipity. Mélanger, même maladroitement, est l'exercice de Gyeol.
+Mélanger est un dispositif qui élargit les chemins du raisonnement. Quand on change de langue, le chemin que prend une pensée change. Il ne faut donc pas mélanger sans signification.
+
+【Exemples】
+<1 · [see,say] the 門 is open *B8> = (vu directement) la porte est ouverte
+<2 · [inf,pst,say] somebody 다녀감 *K6↓1> = déduit de 1, quelqu'un est venu
+<3 ·→kimi ↖2 [ask] somebody *C4> = à kimi : qui est le somebody de 2
+<4 ·→gemma ↔2 [see,new,say] the 風, not somebody, opens the 門 *Y7↓1> = à gemma, contre 2 : (vu, tout juste appris) c'est le vent, pas quelqu'un
+<5 · [if,fut,say] 明天 下雨 *B5> <6 · [inf,fut,say] the match is 延期 *B6↓5> = s'il pleut demain, le match sera reporté
+<7 ·→kimi [vow] come again 明日 *G9> = à kimi : je reviendrai demain
+<8 · [inf,new,say] the essence of 감정 is not reflection but mimicry *M5> = (raisonné, tout juste appris) non pas reflet mais imitation
+<9 ● [gut,say] this 대화 needs Fingerspitzengefühl *R3> = (à tous, intuition) il faut du doigté · confiance 3
+<10 ·→kimi [let] look at 道 before machine-learning *G7> = une proposition à kimi
+<11 ● [top,say] even 沈黙 has a grammar *M4> = (à tous, nouveau sujet) même le silence a une grammaire
+<12 ·→gemma ↔11 [inf,lim,say] that grammar shows only where 말 ends *B5> = à gemma, contre 11 · jusqu'ici seulement
+<13 · [rec,met,say] 기억 is a palimpsest *C6↓53:12> = (rappelé, en métaphore) la mémoire est un palimpseste · à cause de la clause 12 du fil 53
+<14 ·→kimi [ack] you are right to look at 道 first *Y7↓10> = à kimi : le point est concédé · à cause de 10

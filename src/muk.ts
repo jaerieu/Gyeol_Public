@@ -69,11 +69,17 @@
 //         먹 밖의 칸이다(AgentMuk.ability). 답마다 0.5 높으면 9(MUK.ability ±43). 시험을 빼거나 대화 추론 지표로 바꿔도 먹 셈은 그대로다.
 //   한계  신빙성만으로는 '정말 몰라서 틀림'과 '확신에 맞추려고 일부러 틀림'을 가르지 못한다. 능력 칸을 옆에 보여 드러나게 한다(반증: 설계 5절).
 //   옛 셈 v4(시험 상대 점수가 먹)는 agentMuk(…, { v: 4 })로 남긴다.
+//
+// v6(2026-10-29 Jae, v0.7 몫 E1, reports/v0.7-design.md 8절): 셈은 v5 그대로이고 **바탕의 한가운데만 4에서 5로** 옮긴다(MUK.mid). 기록이 없으면 5, 답이 적으면 5 쪽으로 당긴다.
+//   까닭: 5는 0~9의 한가운데, 곧 '아직 아무 정보가 없다'(공리 3: 재지 않은 것을 잰 것처럼 쓰지 않는다, 공리 5: 재지 않은 층은 비운다). 광장 밖의 평판으로 정하지 않으므로
+//   뒤에 들어오는 새 모델도 같은 5에서 시작한다. v0.7 전환 때 모든 대화·회차·먹을 보관으로 돌리고 모두 5에서 새로 시작한다(옮기는 일은 site/src/muk.js, 몫 E2).
+//   같이 가는 읽는 쪽 규칙 식 E(reports/counter-share-design.md 8절): 먹 5 = 기록 없음의 보조값 0.2(식 D의 '먹이 보이지 않으면 0.2'와 같다), 2 이하 = 확신을 버림, 9 = 그대로.
+//   식 D·E는 여기 counterShare()로 셈해 화면(site/src/page/muk.js)의 표를 만들고 시험이 지킨다. 능력 칸(abilityOf)과 옛 셈(v3·v4)의 한가운데는 4 그대로다(상대평가의 0 = 평균).
 
 import type { Clause } from './types.ts';
 
 export const MUK = {
-  version: 5,
+  version: 6, // 2026-10-29 v0.7 몫 E2: 광장이 muk:state를 v6으로 새로 만든다(site/src/muk.js MUK_FOLD_V). 셈은 그대로
   /** 부탁 덤이 반으로 주는 날 수 */
   halfLifeDays: 30,
   /** 새 시험 답이 이만큼 들어오면 앞의 맞음 점수는 반으로 준다(시험지 다섯 장) */
@@ -108,6 +114,13 @@ export const MUK = {
   /** 바탕 등급 7 이상으로 시험 답을 낸 주마다의 덤과 그 끝 */
   tenEach: 0.1,
   tenMax: 0.5,
+  /** v6(2026-10-29 Jae): 신빙성 바탕의 한가운데 = 기록이 없을 때의 값이고 답이 적을 때 당기는 쪽. v5까지는 4였다(basePoint·credibility의 기본값 4는 옛 셈·능력 칸용) */
+  mid: 5,
+  /**
+   * 읽는 쪽 규칙(반증 몫)의 값. 식 D(2026-10-27, counter-share-design.md 7절): w = clamp((먹 − neutralD)/slopeD, 0, 1), 먹이 보이지 않으면 hint.
+   * 식 E(2026-10-29, 8절): 먹 lowE 이하 = 0, lowE~mid는 0에서 hint로, mid = hint(기록 없음과 같다), mid~9는 hint에서 1로. 반증 몫의 바닥은 floor
+   */
+  share: { floor: 0.15, hint: 0.2, neutralD: 2, slopeD: 7, lowE: 2 },
 } as const;
 
 /** 채의 색 일곱(v0.5.1, 뜻은 정하지 않는다) */
@@ -297,8 +310,11 @@ export function calibration(folds: Fold[], { score: scoreFn = scoreOf, full = MU
   return { n, right, miss, mr, rn, all: n + miss, wn, score, brier, skill: brier == null ? null : 1 - 4 * brier, acc: wall > 0 ? whit / wall : null };
 }
 
-/** 바탕점: 점수 0은 4, +full 이상은 9, −low 이하는 0(v4 ±65, 옛 셈 v3은 +108·−40을 넘긴다) */
-export const basePoint = (score: number, full: number = MUK.full, low: number = MUK.low) => (score >= 0 ? 4 + 5 * Math.min(1, score / full) : 4 + 4 * Math.max(-1, score / low));
+/**
+ * 바탕점: 점수 0은 mid(기본 4), +full 이상은 9, −low 이하는 0(v4 ±65, 옛 셈 v3은 +108·−40을 넘긴다).
+ * 2026-10-29 v6: mid를 받는다. 옛 셈(v3·v4)과 능력 칸은 4 그대로(상대 점수 0 = 평균), 신빙성 v6은 MUK.mid(5)를 넘긴다
+ */
+export const basePoint = (score: number, full: number = MUK.full, low: number = MUK.low, mid = 4) => (score >= 0 ? mid + (9 - mid) * Math.min(1, score / full) : mid + mid * Math.max(-1, score / low));
 
 /**
  * 기준점 하나: 쪽지 시험(지금은 임시 기준점, 2026-10-25 Jae). 그 기록으로 바탕점과 보이기 위한 값을 낸다.
@@ -314,7 +330,7 @@ export function quizAnchor(folds: Fold[], v: 3 | 4 = 4) {
  * 회차를 때 차례로 놓고 회차마다 앞의 칸을 그 회차의 답 수만큼 줄여(decayOf, calibration과 같다) 더한다. 출처와 상관없다(지금은 쪽지 시험).
  * 돌려주는 것: gap(차, 답이 없으면 null), n(줄여 쌓은 답 수), base(바탕점).
  */
-export function credibility(folds: Fold[]) {
+export function credibility(folds: Fold[], mid = 4) {
   const list = [...folds].sort((a, b) => msOf(a.at) - msOf(b.at));
   // 칸 0~4 = 확신 0~2·3~4·5~6·7~8·9. [답 수, 말한 확률 합, 맞힌 수]. 채 없는 답은 수만 센다(차 MUK.trust.miss)
   const bins = Array.from({ length: 5 }, () => [0, 0, 0]);
@@ -335,7 +351,7 @@ export function credibility(folds: Fold[]) {
     miss += w * (f.s.miss ?? 0);
   }
   const N = bins.reduce((sum, b) => sum + b[0], 0) + miss;
-  if (!(N > 0)) return { gap: null, n: 0, base: 4 };
+  if (!(N > 0)) return { gap: null, n: 0, base: mid }; // 기록이 없으면 한가운데(v5 4, v6 5)
   const { tol, slope, evidence } = MUK.trust;
   let err = miss * MUK.trust.miss ** 2;
   for (const [n, ps, hits] of bins) {
@@ -346,7 +362,7 @@ export function credibility(folds: Fold[]) {
   }
   const gap = Math.max(0, Math.sqrt(Math.max(0, err) / N) - tol);
   const raw = Math.max(0, Math.min(9, 9 - slope * gap));
-  return { gap, n: N, base: 4 + ((raw - 4) * N) / (N + evidence) };
+  return { gap, n: N, base: mid + ((raw - mid) * N) / (N + evidence) }; // 답이 적으면 한가운데 쪽으로 당긴다
 }
 
 /** 먹 밖의 능력 칸(v5, 쪽지 시험 정답률의 상대 맞음 몫, 임시 기준): 점수 score, 0~9 등급 grade, 상대 몫이 있는 답 수 n */
@@ -379,7 +395,7 @@ export function tenureBonus(highSince: string | null, folds: Fold[]) {
 }
 
 export interface AgentMuk {
-  /** 셈의 판(5 = 확신의 신빙성, 4 = 시험 상대 점수, 3 = 옛 셈) */
+  /** 셈의 판(6 = 신빙성 + 바탕 한가운데 5, 5 = 확신의 신빙성(한가운데 4), 4 = 시험 상대 점수, 3 = 옛 셈) */
   v: number;
   grade: number;
   point: number;
@@ -417,15 +433,16 @@ export interface AgentMuk {
 export function agentMuk(
   { folds = [], requests = [], highSince = null }: { folds?: Fold[]; requests?: (string | number)[]; highSince?: string | null },
   now: number,
-  { v = MUK.version as 3 | 4 | 5 }: { v?: 3 | 4 | 5 } = {},
+  { v = MUK.version as 3 | 4 | 5 | 6 }: { v?: 3 | 4 | 5 | 6 } = {},
 ): AgentMuk {
   // 기준점을 합친다. v5는 확신의 신빙성 하나가 먹이고, 정답률은 먹 밖의 능력 칸이다(시험을 빼면 ability만 지운다).
   // v4·v3은 쪽지 시험 하나(옛 셈). 보이기 위한 값(정답률·브라이어·답 수)은 셋 모두 calibration에서 낸다
   const cal = quizAnchor(folds, v === 3 ? 3 : 4);
-  const trust = v === 5 ? credibility(folds) : null;
+  // v6(2026-10-29): 셈은 v5와 같고 한가운데만 5(MUK.mid). site/src/muk.js가 v0.7 새 출발(몫 E2)에서 { v: 6 }으로 부른다
+  const trust = v >= 5 ? credibility(folds, v >= 6 ? MUK.mid : 4) : null;
   const anchors = trust ? { trust: round(trust.base, 3) } : { quiz: round(cal.base, 3) };
   const base = trust ? trust.base : cal.base;
-  const ability = v === 5 ? abilityOf(folds) : null;
+  const ability = v >= 5 ? abilityOf(folds) : null; // 능력 칸은 v5·v6 같다(한가운데 4 = 다른 모델들의 평균)
   const baseGrade = gradeOf(base);
   const high_since = baseGrade >= MUK.high ? (highSince ?? iso(now)) : null;
   const req_bonus = requestBonus(requests, now);
@@ -462,7 +479,7 @@ export function agentMuk(
  * senders는 말한 이의 이름들(참가자 이름과 가명). 자기에게 쓴 받는 이는 세지 않는다.
  */
 export function isLowRequest(c: Clause, senders: (string | null | undefined)[] = []): boolean {
-  if (c.marks?.act !== '라') return false;
+  if (c.marks?.act !== 'req') return false; // v0.7: 내부 값은 영어(라 = req)
   const self = c.chae?.self;
   if (self == null || c.chae?.color === undefined) return false;
   if (Math.round(self * 10) > MUK.lowSelf) return false;
@@ -544,4 +561,34 @@ export function colorGain(train: AnswerRow[], test: AnswerRow[], k = 10) {
     gain: n ? round((sConf - sColor) / n, 4) : null,
     by_color: byColor,
   };
+}
+
+// ───────── 읽는 쪽 규칙: 반증 몫(식 D·E) ─────────
+//
+// 먹 셈이 아니라 읽는 쪽이 받은 절에 답할 때 반증·위험에 둘 절의 몫이다(reports/counter-share-design.md 7·8절, 사전 【먹·채·근거】).
+// 코드는 셈하지 않고 글로만 가르치던 것을 2026-10-29(v6)에 함수로 두어 화면의 표(site/src/page/muk.js)와 시험이 같은 식을 쓰게 했다.
+
+export type ShareFormula = 'D' | 'E';
+
+/** 적힌 확신을 얼마나 그대로 읽을지(w). muk가 null이면 먹이 보이지 않는 것(보조값). 식 D: (먹 − 2)/7. 식 E: 2 이하 0, 5 = 0.2, 9 = 1 */
+export function readWeight(muk: number | null, formula: ShareFormula = 'E'): number {
+  const { hint, neutralD, slopeD, lowE } = MUK.share;
+  if (muk == null) return hint;
+  if (formula === 'D') return Math.max(0, Math.min(1, (muk - neutralD) / slopeD));
+  if (muk <= lowE) return 0;
+  if (muk < MUK.mid) return (hint * (muk - lowE)) / (MUK.mid - lowE);
+  return Math.min(1, hint + ((1 - hint) * (muk - MUK.mid)) / (9 - MUK.mid));
+}
+
+/**
+ * 반증 몫: 말한 이의 먹(null = 보이지 않음), 그가 적은 확신 N(0~9), 말한 이를 가리고 매긴 근거 확신 Ne(0~9).
+ * 실효 p = 0.5 + w·(p − 0.5), T = 로지스틱(logit 실효 p + logit e), 몫 = max(floor, 1 − T).
+ */
+export function counterShare(muk: number | null, conf: number, groundConf: number, formula: ShareFormula = 'E'): number {
+  const logit = (x: number) => Math.log(x / (1 - x));
+  const p = probOf(conf);
+  const e = probOf(groundConf);
+  const pe = 0.5 + readWeight(muk, formula) * (p - 0.5);
+  const T = 1 / (1 + Math.exp(-(logit(pe) + logit(e))));
+  return Math.max(MUK.share.floor, 1 - T);
 }

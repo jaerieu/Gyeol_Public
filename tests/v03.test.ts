@@ -2,7 +2,9 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parse, format, messageName, labelLine, lineFormOf, clausePieces, glossClause, toDigit } from '../src/index.ts';
+import { parse, format as format07, messageName, labelLine, lineFormOf, clausePieces, glossClause, toDigit } from '../src/index.ts';
+// 2026-10-29 v0.7: 정규형이 영어·수 머리로 바뀌었다(reports/v0.7-design.md 6절). 이 파일은 v0.6.5까지의 자료를 보므로 옛 한글 정규형(form '0.6')으로 견준다. v0.7 정규형은 tests/v07.test.ts
+const format = (m: Parameters<typeof format07>[0], o: Parameters<typeof format07>[1] = {}) => format07(m, { form: '0.6', ...o });
 
 const codes = (s: string) => parse(s).diagnostics.map((d) => d.code);
 const errs = (s: string) => parse(s).diagnostics.filter((d) => d.severity === '오류').map((d) => d.code);
@@ -21,13 +23,13 @@ test('v0.3 설계 초안의 보기가 오류도 경고도 없이 읽히고, 값�
   assert.deepEqual(r.diagnostics, []);
   assert.deepEqual(r.forms, ['0.3', '0.3', '0.3', '0.3', '0.3', '0.3']);
   const [c1, c2, c3, c4] = r.message.clauses;
-  assert.deepEqual(c1.marks, { ev: '봄', act: '다' });
+  assert.deepEqual(c1.marks, { ev: 'see', act: 'say' });
   assert.equal(c1.chae?.self, 0.8);
   assert.deepEqual(c1.words.map((w) => w.root), ['门', '开']);
   assert.deepEqual(c2.place, { rel: '↓', target: { msg: null, label: '절1' } });
   assert.equal(c3.to, 'kimi');
-  assert.deepEqual(c3.marks, { act: '까' });
-  assert.deepEqual(c4.marks, { ev: '들', news: true, act: '다' });
+  assert.deepEqual(c3.marks, { act: 'ask' });
+  assert.deepEqual(c4.marks, { ev: 'hrd', news: true, act: 'say' });
   assert.equal(r.message.clauses[5].place?.target.label, '절5');
 });
 
@@ -37,7 +39,7 @@ test('표지 블록은 너그럽게 읽는다: 쉼표·가운뎃점·띄어쓰�
     assert.deepEqual(codes(s), [], s);
     assert.deepEqual(one(s).marks, ref.marks, s);
   }
-  assert.deepEqual(one('<[추론,단언] 雨>').marks, { ev: '겠', act: '다' }); // 표지 이름은 W11
+  assert.deepEqual(one('<[추론,단언] 雨>').marks, { ev: 'inf', act: 'say' }); // 표지 이름은 W11
   assert.deepEqual(codes('<[추론,단언] 雨>'), ['W11', 'W11']);
 });
 
@@ -199,7 +201,7 @@ test('받은대로 절: 화행을 빼도 되고, 받은 절·점 이름을 내�
   assert.equal(r.ok, true, JSON.stringify(r.diagnostics));
   const [, c2, c3] = r.message.clauses;
   assert.equal(c2.echo, true);
-  assert.deepEqual(c2.marks, { ev: '겠', news: true });
+  assert.deepEqual(c2.marks, { ev: 'inf', news: true });
   assert.deepEqual(c3.words, [{ text: '점1~점10' }]);
   assert.equal(format(r.message).split('\n')[1], '<절2 받은대로 ↓1 [겠,네] 新法>');
   assert.equal(format(r.message, { form: '0.2' }).split('\n')[1], '<절2 받은대로 ↓1 [겠,네] 新法>'); // 옛 꼴로 쓸 수 없어 새 꼴 그대로

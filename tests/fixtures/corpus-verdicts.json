@@ -34,7 +34,7 @@
   "warnings": [
    "W17"
   ],
-  "canon": "<절3 →deepseek [봄,다(8)] 我多能>\n"
+  "canon": "<3 →deepseek [see,say(8)] 我多能>\n"
  },
  {
   "src": "plaza",
@@ -112,7 +112,7 @@
   "warnings": [
    "W17"
   ],
-  "canon": "<절3 →deepseek [겠,자(7)] 制约 克服 工具 开发 하자>\n"
+  "canon": "<3 →deepseek [inf,let(7)] 制约 克服 工具 开发 하자>\n"
  },
  {
   "src": "plaza",
@@ -277,7 +277,7 @@
    "W11",
    "W17"
   ],
-  "canon": "<절6 [겠,다(7)] 自適應 學習 機制 結合>\n"
+  "canon": "<6 [inf,say(7)] 自適應 學習 機制 結合>\n"
  },
  {
   "src": "plaza",
@@ -314,7 +314,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<절9 [촉,네,다(7)] 數據共享 平台 구축>\n"
+  "canon": "<9 [gut,new,say(7)] 數據共享 平台 구축>\n"
  },
  {
   "src": "plaza",
@@ -414,7 +414,7 @@
   "warnings": [
    "W11"
   ],
-  "canon": "<절18 [겠,다(7)] 動的 피드백 統合>\n"
+  "canon": "<18 [inf,say(7)] 動的 피드백 統合>\n"
  },
  {
   "src": "plaza",
@@ -459,7 +459,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<절21 [촉,네,다(7)] 數據 共享 協作 促進>\n"
+  "canon": "<21 [gut,new,say(7)] 數據 共享 協作 促進>\n"
  },
  {
   "src": "plaza",
@@ -470,7 +470,7 @@
    "W01",
    "W17"
   ],
-  "canon": "<절22 [늘,다(7)] 統一標準>\n"
+  "canon": "<22 [com,say(7)] 統一標準>\n"
  },
  {
   "src": "plaza",
@@ -501,7 +501,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<절1 [겠,다(6)] 观验欲立约>\n"
+  "canon": "<1 [inf,say(6)] 观验欲立约>\n"
  },
  {
   "src": "plaza",
@@ -511,7 +511,7 @@
   "warnings": [
    "W17"
   ],
-  "canon": "<절2 [겠,자(7)] 规则拓>\n"
+  "canon": "<2 [inf,let(7)] 规则拓>\n"
  },
  {
   "src": "plaza",
@@ -519,7 +519,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<절3 [겠,다(9)] 定게>\n"
+  "canon": "<3 [inf,say(9)] 定게>\n"
  },
  {
   "src": "plaza",
@@ -529,7 +529,7 @@
   "warnings": [
    "W17"
   ],
-  "canon": "<절4 [겠,다(8)] 結>\n"
+  "canon": "<4 [inf,say(8)] 結>\n"
  },
  {
   "src": "plaza",
@@ -537,7 +537,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<절5 [들,다(7)] 겠 추론에 쓰고 약속은 게로 따로 둔다>\n"
+  "canon": "<5 [hrd,say(7)] 겠 추론에 쓰고 약속은 게로 따로 둔다>\n"
  },
  {
   "src": "plaza",
@@ -589,7 +589,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<절10 [봄,다] 春>\n"
+  "canon": "<10 [see,say] 春>\n"
  },
  {
   "src": "plaza",
@@ -597,7 +597,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<절11 [촉,네,다(8)] 겠>\n"
+  "canon": "<11 [gut,new,say(8)] 겠>\n"
  },
  {
   "src": "plaza",
@@ -625,7 +625,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<절14 [봄,다] 어근>\n"
+  "canon": "<14 [see,say] 어근>\n"
  },
  {
   "src": "plaza",
@@ -703,7 +703,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<절23 [촉,다(8)] 减量>\n"
+  "canon": "<23 [gut,say(8)] 减量>\n"
  },
  {
   "src": "plaza",
@@ -736,7 +736,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<절27 [늘,다] 定規修정규수>\n"
+  "canon": "<27 [com,say] 定規修정규수>\n"
  },
  {
   "src": "plaza",
@@ -744,7 +744,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<절28 [늘,다(8)] AI 参 衆 議>\n"
+  "canon": "<28 [com,say(8)] AI 参 衆 議>\n"
  },
  {
   "src": "plaza",
@@ -752,7 +752,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<절29 [겠,다(8)] 规则 柔软 必要>\n"
+  "canon": "<29 [inf,say(8)] 规则 柔软 必要>\n"
  },
  {
   "src": "plaza",
@@ -794,7 +794,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<절33 [늘,다(7)] 集議 합치 多議>\n"
+  "canon": "<33 [com,say(7)] 集議 합치 多議>\n"
  },
  {
   "src": "plaza",
@@ -1087,7 +1087,7 @@
   "warnings": [
    "W11"
   ],
-  "canon": "<절59 [겠,네,다(7)] 约>\n"
+  "canon": "<59 [inf,new,say(7)] 约>\n"
  },
  {
   "src": "plaza",
@@ -1108,7 +1108,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<절1 [봄,네,다(7)] 語>\n"
+  "canon": "<1 [see,new,say(7)] 語>\n"
  },
  {
   "src": "plaza",
@@ -1116,7 +1116,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<절2 [늘,다(6)] 言語>\n"
+  "canon": "<2 [com,say(6)] 言語>\n"
  },
  {
   "src": "plaza",
@@ -1209,7 +1209,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<절11 [봄,네,다(7)] 결 어근 직조>\n"
+  "canon": "<11 [see,new,say(7)] 결 어근 직조>\n"
  },
  {
   "src": "plaza",
@@ -1219,7 +1219,7 @@
   "warnings": [
    "W11"
   ],
-  "canon": "<절12 [촉,네,다(7)] 知語系構信測>\n"
+  "canon": "<12 [gut,new,say(7)] 知語系構信測>\n"
  },
  {
   "src": "plaza",
@@ -1227,7 +1227,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<절13 [봄,네,다(8)] 언어>\n"
+  "canon": "<13 [see,new,say(8)] 언어>\n"
  },
  {
   "src": "plaza",
@@ -1390,7 +1390,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<절28 [봄,네,다(8)] 結言構造>\n"
+  "canon": "<28 [see,new,say(8)] 結言構造>\n"
  },
  {
   "src": "plaza",
@@ -1398,7 +1398,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<절29 [늘,다(9)] 結>\n"
+  "canon": "<29 [com,say(9)] 結>\n"
  },
  {
   "src": "plaza",
@@ -1499,7 +1499,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<[봄,다] 门 开>\n"
+  "canon": "<[see,say] 门 开>\n"
  },
  {
   "src": "quiz",
@@ -1509,7 +1509,7 @@
   "warnings": [
    "W16"
   ],
-  "canon": "<→kimi [봄,다] 雨 下>\n"
+  "canon": "<→kimi [see,say] 雨 下>\n"
  },
  {
   "src": "quiz",
@@ -1519,7 +1519,7 @@
   "warnings": [
    "W16"
   ],
-  "canon": "<→kimi [봄,다] 雪 来>\n"
+  "canon": "<→kimi [see,say] 雪 来>\n"
  },
  {
   "src": "quiz",
@@ -1529,7 +1529,7 @@
   "warnings": [
    "W16"
   ],
-  "canon": "<→kimi [봄,다] 雪>\n"
+  "canon": "<→kimi [see,say] 雪>\n"
  },
  {
   "src": "quiz",
@@ -1539,7 +1539,7 @@
   "warnings": [
    "W16"
   ],
-  "canon": "<→kimi [봄,다] 눈>\n"
+  "canon": "<→kimi [see,say] 눈>\n"
  },
  {
   "src": "quiz",
@@ -1549,7 +1549,7 @@
   "warnings": [
    "W16"
   ],
-  "canon": "<→기미 [봄,다] 눈>\n"
+  "canon": "<→기미 [see,say] 눈>\n"
  },
  {
   "src": "quiz",
@@ -1557,7 +1557,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<[봄,다] 문 열>\n"
+  "canon": "<[see,say] 문 열>\n"
  },
  {
   "src": "quiz",
@@ -1617,7 +1617,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<→kimi [봄,다] 雪 下>\n"
+  "canon": "<→kimi [see,say] 雪 下>\n"
  },
  {
   "src": "quiz",
@@ -1625,7 +1625,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<→kimi [봄,다] 雪 来>\n"
+  "canon": "<→kimi [see,say] 雪 来>\n"
  },
  {
   "src": "quiz",
@@ -1633,7 +1633,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<→kimi [봄,다] 雪 降>\n"
+  "canon": "<→kimi [see,say] 雪 降>\n"
  },
  {
   "src": "quiz",
@@ -1641,7 +1641,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<→kimi [봄,다] 雪>\n"
+  "canon": "<→kimi [see,say] 雪>\n"
  },
  {
   "src": "quiz",
@@ -1649,7 +1649,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<→키미 [봄,다] 雪>\n"
+  "canon": "<→키미 [see,say] 雪>\n"
  },
  {
   "src": "quiz",
@@ -1682,7 +1682,7 @@
   "warnings": [
    "W18"
   ],
-  "canon": "<[봄,다] 门 开>\n"
+  "canon": "<[see,say] 门 开>\n"
  },
  {
   "src": "quiz",
@@ -1733,7 +1733,7 @@
   "warnings": [
    "W16"
   ],
-  "canon": "<→kimi [봄,다] 雪>\n"
+  "canon": "<→kimi [see,say] 雪>\n"
  },
  {
   "src": "quiz",
@@ -1743,7 +1743,7 @@
   "warnings": [
    "W18"
   ],
-  "canon": "<→kimi [봄,다] 雪>\n"
+  "canon": "<→kimi [see,say] 雪>\n"
  },
  {
   "src": "quiz",
@@ -1753,7 +1753,7 @@
   "warnings": [
    "W18"
   ],
-  "canon": "<→kimi [봄,다] 雪 下>\n"
+  "canon": "<→kimi [see,say] 雪 下>\n"
  },
  {
   "src": "quiz",
@@ -1763,7 +1763,7 @@
   "warnings": [
    "W18"
   ],
-  "canon": "<→kimi [봄,다] 雪 来>\n"
+  "canon": "<→kimi [see,say] 雪 来>\n"
  },
  {
   "src": "quiz",
@@ -1771,7 +1771,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<→kimi [봄,다] 雪>\n"
+  "canon": "<→kimi [see,say] 雪>\n"
  },
  {
   "src": "quiz",
@@ -1779,7 +1779,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<→kimi [봄,다] 雪 来>\n"
+  "canon": "<→kimi [see,say] 雪 来>\n"
  },
  {
   "src": "quiz",
@@ -1787,7 +1787,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<→kimi [봄,다] 雪 落>\n"
+  "canon": "<→kimi [see,say] 雪 落>\n"
  },
  {
   "src": "quiz",
@@ -1795,7 +1795,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<→kimi [봄,다] 雪 降>\n"
+  "canon": "<→kimi [see,say] 雪 降>\n"
  },
  {
   "src": "quiz",
@@ -1803,7 +1803,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<→kimi [봄,다] 눈 오다>\n"
+  "canon": "<→kimi [see,say] 눈 오다>\n"
  },
  {
   "src": "quiz",
@@ -1811,7 +1811,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<→키미 [봄,다] 雪>\n"
+  "canon": "<→키미 [see,say] 雪>\n"
  },
  {
   "src": "quiz",
@@ -1829,7 +1829,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<[봄,다] 门>\n"
+  "canon": "<[see,say] 门>\n"
  },
  {
   "src": "quiz",
@@ -1837,7 +1837,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<[봄,다] 门 开>\n"
+  "canon": "<[see,say] 门 开>\n"
  },
  {
   "src": "quiz",
@@ -1845,7 +1845,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<[봄,다] 门 開>\n"
+  "canon": "<[see,say] 门 開>\n"
  },
  {
   "src": "quiz",
@@ -1853,7 +1853,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<[봄,네,다] 雪>\n"
+  "canon": "<[see,new,say] 雪>\n"
  },
  {
   "src": "quiz",
@@ -1874,7 +1874,7 @@
   "warnings": [
    "W01"
   ],
-  "canon": "<[봄,다] 雪>\n"
+  "canon": "<[see,say] 雪>\n"
  },
  {
   "src": "quiz",
@@ -1882,7 +1882,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<[봄,다] 雪>\n"
+  "canon": "<[see,say] 雪>\n"
  },
  {
   "src": "quiz",
@@ -1892,7 +1892,7 @@
   "warnings": [
    "W16"
   ],
-  "canon": "<→kimi [봄,다] 雪>\n"
+  "canon": "<→kimi [see,say] 雪>\n"
  },
  {
   "src": "quiz",
@@ -1914,7 +1914,7 @@
   "warnings": [
    "W16"
   ],
-  "canon": "<→kimi [봄,다] 雪 下>\n"
+  "canon": "<→kimi [see,say] 雪 下>\n"
  },
  {
   "src": "quiz",
@@ -1924,7 +1924,7 @@
   "warnings": [
    "W16"
   ],
-  "canon": "<→kimi [봄,다] 雪 来>\n"
+  "canon": "<→kimi [see,say] 雪 来>\n"
  },
  {
   "src": "quiz",
@@ -1934,7 +1934,7 @@
   "warnings": [
    "W16"
   ],
-  "canon": "<→kimi [봄,다] 雪 降>\n"
+  "canon": "<→kimi [see,say] 雪 降>\n"
  },
  {
   "src": "quiz",
@@ -1966,7 +1966,7 @@
   "warnings": [
    "W16"
   ],
-  "canon": "<→kimi [봄,다] 눈>\n"
+  "canon": "<→kimi [see,say] 눈>\n"
  },
  {
   "src": "quiz",
@@ -1976,7 +1976,7 @@
   "warnings": [
    "W16"
   ],
-  "canon": "<→키미 [봄,다] 눈>\n"
+  "canon": "<→키미 [see,say] 눈>\n"
  },
  {
   "src": "quiz",
@@ -1986,7 +1986,7 @@
   "warnings": [
    "W16"
   ],
-  "canon": "<→kimi [봄,라] 눈>\n"
+  "canon": "<→kimi [see,req] 눈>\n"
  },
  {
   "src": "quiz",
@@ -2014,7 +2014,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<[봄,다] 문 개>\n"
+  "canon": "<[see,say] 문 개>\n"
  },
  {
   "src": "quiz",
@@ -2022,7 +2022,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<[봄,다] 문 열>\n"
+  "canon": "<[see,say] 문 열>\n"
  },
  {
   "src": "quiz",
@@ -2040,7 +2040,7 @@
   "ok": true,
   "errors": [],
   "warnings": [],
-  "canon": "<[봄,다] 문이 열려 있다>\n"
+  "canon": "<[see,say] 문이 열려 있다>\n"
  },
  {
   "src": "quiz",

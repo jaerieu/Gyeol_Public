@@ -3,7 +3,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { parse, format, glossClause, rules051, rules06 } from '../src/index.ts';
+import { parse, format as format07, glossClause, rules051, rules06 } from '../src/index.ts';
+// 2026-10-29 v0.7: 정규형이 영어·수 머리로 바뀌었다(reports/v0.7-design.md 6절). 이 파일은 v0.6.5까지의 자료를 보므로 옛 한글 정규형(form '0.6')으로 견준다. v0.7 정규형은 tests/v07.test.ts
+const format = (m: Parameters<typeof format07>[0], o: Parameters<typeof format07>[1] = {}) => format07(m, { form: '0.6', ...o });
 
 const root = new URL('../', import.meta.url);
 const PRIOR = '<절12 · [봄,다] door가 열려 있다 *B8>\n<절15 · [촉,다] wind가 바뀐다 *R3>\n<절16 ● [갑,다] 침묵에도 grammar가 있다 *M4>\n';
@@ -21,7 +23,7 @@ test('갑: 근거 자리(E07을 채우고 다른 근거와 함께면 E06), 받�
   assert.deepEqual(codes('<절17 ·→kimi [갑,다] silence에도 grammar가 있다 *M4>'), []);
   assert.deepEqual(codes('<절17 ● 숙고 [갑,다] silence에도 grammar가 있다 *M4>'), []);
   assert.deepEqual(diag('<절1 · [갑,봄,다] 雪이 온다 *M4>'), ['E06']);
-  assert.equal(one('<절1 · [갑,다] 雪이 온다 *M4>').marks.ev, '갑');
+  assert.equal(one('<절1 · [갑,다] 雪이 온다 *M4>').marks.ev, 'top');
 });
 
 test('E35: 갑 절은 어떤 가리킴도 쓰지 않는다(앞붙이, 고침→·오류→, 받은대로, 끝 근거 모두)', () => {
@@ -66,7 +68,7 @@ test('화행 거·유·양: 유는 내용을 비워도 되고 거·양은 비울
   assert.deepEqual(diag('<절1 ·→kimi [양] *B7>'), ['E16']);
   assert.deepEqual(diag('<절1 · [봄,군,거] 雪이 온다 *B7>'), ['E08']);
   assert.deepEqual(diag('<절1 · [유,거] 雪이 온다 *B7>'), ['E04']);
-  assert.equal(one('<절1 ·→kimi [유] *Y4>').marks.act, '유');
+  assert.equal(one('<절1 ·→kimi [유] *Y4>').marks.act, 'dfr');
 });
 
 test('결 표지 한·역·비: 하나까지(E36), 정규 자리는 군 뒤 시제 앞, 단언에는 따로 근거가 있어야 한다', () => {
@@ -74,7 +76,7 @@ test('결 표지 한·역·비: 하나까지(E36), 정규 자리는 군 뒤 시�
   assert.deepEqual(diag('<절1 · [겠,한,비,다] 雪이 온다 *B6>'), ['E36']);
   assert.deepEqual(diag('<절1 · [역,다] 雪이 온다 *B6>'), ['E07']);
   assert.deepEqual(diag('<절1 · [역,까] 雪이 오는가 *B6>'), []);
-  assert.equal(one('<절1 · [겠,한,다] 雪이 온다 *B6>').marks.fig, '한');
+  assert.equal(one('<절1 · [겠,한,다] 雪이 온다 *B6>').marks.fig, 'lim');
   assert.equal(canon('<절1 · [다,었,비,군,겠] 雪이 왔다 *B6>'), '<절1 · [겠,군,비,었,다] 雪이 왔다 *B6>');
   assert.equal(canon('<절1 · [역,까] 雪 *6>'), '<절1 · [역,까] 雪 *6>'); // 결 표지는 v0.5 꼴(끝의 *N)
   assert.equal(canon('<절1 · [역,까(6)] 雪>'), '<절1 · [역,까] 雪 *6>');
@@ -92,7 +94,7 @@ test('W34(rules06): 정규 순서 [근거,군,결,시제,화행]를 벗어난 �
   assert.deepEqual(codes('<절17 · [봄군었다] door가 열렸다 *B8>'), []);
   assert.deepEqual(codes('<절17 · [see,다] door가 열려 있다 *B8>'), ['W26']);
   assert.equal(canon('<절1 · [다,봄] door가 열려 있다 *B8>'), '<절1 · [봄,다] door가 열려 있다 *B8>');
-  assert.ok(rules06(parse('<절1 · [다,봄] door가 열려 있다 *B8>'))[0].message.includes('[봄,다]'));
+  assert.ok(rules06(parse('<절1 · [다,봄] door가 열려 있다 *B8>'))[0].message.includes('[see,say]'));
   assert.deepEqual(rules051(parse('<절1 · [다,봄] door가 열려 있다 *B8>')), []);
 });
 

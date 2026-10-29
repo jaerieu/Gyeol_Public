@@ -40,7 +40,7 @@
 //   - E37: 받침 절의 근거 자리가 촉·갑이거나 ↓근거(끝·옛 앞붙이)가 없다. 직감을 직감으로 받칠 수 없다.
 
 import type { Act, Clause, ClauseWritten, Ev, Fig, Marks, PartialMarks, Ref, Tense, Word, Because } from '../types.ts';
-import { DIGIT_MAX, EVIDENTIALS_06, FIGURES, MARK_ALIASES_06, MARK_CHARS, MARK_RANK, NEWS, NEWS_05, TENSES, markAlias05 } from '../tables.ts';
+import { ACT_07, DIGIT_MAX, EV_07, FIG_07, MARK_ALIASES_06, MARK_CHARS, MARK_KO2EN, MARK_RANK, NEWS, NEWS_05, NEWS_07, TENSE_07, markAlias05, markOf07 } from '../tables.ts';
 import { stripTrailingPunct } from '../text.ts';
 import { Ctx, ECHO_LABEL, markAlias, parseWord, parseWord052, takePrefix, tightenTildes, type PrefixRules } from './shared.ts';
 
@@ -57,17 +57,22 @@ const SQ_OPEN_CODES = codeSet(SQ_OPEN);
 const SQ_CLOSE_CODES = codeSet(SQ_CLOSE);
 // 2026-10-17 Jae: 한 차례의 절은 절N·절N.1·절N.2(차례 번호 N, 그 차례의 몇째 절). 이름표와 가리킴에 '.M'을 받는다(옛 정수 번호도 그대로).
 const NUM = '\\d+(?:\\.\\d+)?';
-const LEAD_LABEL = new RegExp(`^([절점])\\s*(${NUM})\\s*`, 'u');
-const REF_LOOSE = new RegExp(`^(?:#([0-9a-f]{6,64}):)?([절점])?(${NUM})$`, 'u');
-/** v0.3 꼴 이름표(절12, 절12.1). 옛 꼴(v0.2.1)은 shared.ts LABEL_RE 그대로 정수만 */
-const LABEL_N = new RegExp(`^[절점]${NUM}$`, 'u');
+// v0.7(2026-10-29, reports/v0.7-design.md 2절): 절 머리는 수만 쓴다(<1 · …>). 읽기는 절N·점N·cN도 같은 뜻으로 받고 틀의 label은 그대로 '절N'이다(옛 꼴의 절·점 구분을 지키려고)
+const LEAD_LABEL = new RegExp(`^([절점]|[cC])\\s*(${NUM})\\s*`, 'u');
+const REF_LOOSE = new RegExp(`^(?:#([0-9a-f]{6,64}):)?([절점]|[cC])?(${NUM})$`, 'u');
+/** v0.3 꼴 이름표(절12, 절12.1, v0.7 c12). 옛 꼴(v0.2.1)은 shared.ts LABEL_RE 그대로 정수만 */
+const LABEL_N = new RegExp(`^(?:[절점]|[cC])${NUM}$`, 'u');
+/** v0.7 수만 쓴 머리(1, 12.1). 점(·)·●이 바로 뒤따를 때만 이름표로 읽는다(내용을 표지 블록 앞에 쓴 옛 줄과 가르려고) */
+const BARE_NUM = new RegExp(`^${NUM}$`, 'u');
+/** 절N·점N·cN·N → 틀의 이름표 '절N'·'점N' */
+const normLabel = (kind: string | undefined, num: string) => (kind === '점' ? '점' : '절') + num;
 const WS = /\s/u;
 
 /** 가리킴: v0.3은 번호만 써도 된다(↓1 = ↓절1). 절·점과 다른 메시지(#해시:)도 받는다. */
 function parseRefLoose(s: string): Ref | null {
   const m = REF_LOOSE.exec(s);
   if (!m) return null;
-  return { msg: m[1] ?? null, label: (m[2] ?? '절') + m[3] };
+  return { msg: m[1] ?? null, label: normLabel(m[2], m[3]) };
 }
 
 /**
@@ -104,7 +109,7 @@ function normalizeArrows(s: string): string {
 function tightenPrefixes(s: string): string {
   return tightenTildes(
     s
-      .replace(/(고침|오류|받침)\s*→\s*/gu, '$1→') // v0.6 덧붙임(2026-10-25): 받침 → 3도
+      .replace(/(고침|오류|받침|fix|err|sup)\s*→\s*/giu, '$1→') // v0.6 덧붙임(2026-10-25): 받침 → 3도. v0.7: fix·err·sup
       .replace(/([↓↔∥↖→⊗])\s+(?=\S)/gu, '$1')
       .replace(/([↓↔∥↖→⊗])([절점])\s+(\d)/gu, '$1$2$3')
       // v0.6: ⊗12, 15 → ⊗12,15(⊗ 둘레의 띄어쓰기는 ↓ 1처럼 붙여 읽는다)
@@ -144,8 +149,8 @@ function markOnly(inner: string): boolean {
   if (!pieces.length) return false;
   return pieces.every((p) => {
     if (Object.hasOwn(MARK_ALIASES_06, p.replace(/\s+/gu, ''))) return true;
-    // v0.5: 표지 별칭(see, 见 …)도 표지다
-    return p.split(/\s+/u).every((t) => Object.hasOwn(MARK_ALIASES_06, t) || markAlias05(t) || /^[\d０-９.%]+$/u.test(t) || t === '자신' || Array.from(t).every((c) => MARK_CHARS.has(c)));
+    // v0.5: 표지 별칭(see, 见 …)도 표지다. v0.7: 영어 내부 값·열 언어 별칭도
+    return p.split(/\s+/u).every((t) => Object.hasOwn(MARK_ALIASES_06, t) || markAlias05(t) || markOf07(t) !== undefined || /^[\d０-９.%]+$/u.test(t) || t === '자신' || Array.from(t).every((c) => MARK_CHARS.has(c)));
   });
 }
 
@@ -287,7 +292,7 @@ export function lineFormOf(line: string): 'wrapped' | 'bare' | null {
     const close = firstOf(s, CLOSE_CODES, 1);
     const inner = close < 0 ? s.slice(1) : s.slice(1, close);
     // 표지 블록이 있거나, 꺾쇠 바로 안에 이름표가 있으면(옛 꼴의 〈 〉 안에는 이름표가 오지 않는다) 새 꼴이다
-    return firstOf(inner, SQ_OPEN_CODES) >= 0 || /^\s*[절점]\s*\d+(?:\.\d+)?(?:\s|$)/u.test(inner) ? 'wrapped' : null;
+    return firstOf(inner, SQ_OPEN_CODES) >= 0 || /^\s*(?:[절점]|[cC])\s*\d+(?:\.\d+)?(?:\s|$)/u.test(inner) ? 'wrapped' : null;
   }
   if (firstOf(s, OPEN_CODES) >= 0) return null;
   const o = firstOf(s, SQ_OPEN_CODES);
@@ -310,7 +315,7 @@ function splitWrapped(line: string): { lead: string | null; parts: RawClause[]; 
   let lead: string | null = null;
   const lm = LEAD_LABEL.exec(s);
   if (lm && NF_OPEN.includes(s[lm[0].length] ?? '')) {
-    lead = lm[1] + lm[2];
+    lead = normLabel(lm[1], lm[2]);
     s = s.slice(lm[0].length);
   }
   // 꺾쇠 자리만 보고 그 사이를 잘라 낸다(2026-10-14: 한 글자씩 이어 붙이던 것을 자르기로. 꺾쇠는 모두 BMP라 자른 글은 같다).
@@ -365,11 +370,12 @@ export function labelLine(line: string, label: string): string {
   const s = String(line ?? '').trim();
   const form = lineFormOf(s);
   if (form === 'wrapped') {
-    const m = /^(?:[절점]\s*\d+(?:\.\d+)?\s*)?([<〈＜⟨《‹])\s*(?:[절점]\s*\d+(?:\.\d+)?(?=[\s[［【〔·•・ㆍ∙⋅‧●⬤⚫→↓↔∥↖⊗]|$)\s*)?/u.exec(s);
+    // v0.7: 수만 쓴 머리(<1 · …>)와 cN도 갈아 끼운다(점·● 앞의 수만)
+    const m = /^(?:(?:[절점]|[cC])\s*\d+(?:\.\d+)?\s*)?([<〈＜⟨《‹])\s*(?:(?:(?:[절점]|[cC])\s*\d+(?:\.\d+)?(?=[\s[［【〔·•・ㆍ∙⋅‧●⬤⚫→↓↔∥↖⊗]|$)|\d+(?:\.\d+)?(?=\s*[·•・ㆍ∙⋅‧●⬤⚫]))\s*)?/u.exec(s);
     if (m) return `${m[1]}${label} ${s.slice(m[0].length)}`;
   }
   if (form === 'bare') return `${label} ${s.replace(LEAD_LABEL, '')}`;
-  return `${label} ${s.replace(/^절\s*\d+\s*/u, '')}`;
+  return `${label} ${s.replace(/^(?:절|c)\s*\d+\s*/u, '')}`;
 }
 
 // ───────── 앞붙이·자신·먹·표지 블록 ─────────
@@ -394,13 +400,13 @@ function takePrefix03(t: string, clause: Clause, ctx: Ctx, st: { echo: boolean }
     return true;
   }
   // v0.6 덧붙임(2026-10-25): 받침→N(과정 자리 하나, E18), ↔T:N(지난 대화의 절에 맞섬)
-  const b = /^받침→(.+)$/u.exec(t);
+  const b = /^(?:받침|sup)→(.+)$/iu.exec(t); // v0.7: 내부 값 sup(support)
   if (b) {
     const r = refOrThread(b[1]);
     if (!r) ctx.err('E19', `가리킴을 읽을 수 없다: '${t}'`);
     else {
       if (clause.process) ctx.err('E18', `과정 앞붙이가 둘 이상이다: '${t}'`);
-      clause.process = { kind: '받침', target: r };
+      clause.process = { kind: 'sup', target: r };
     }
     return true;
   }
@@ -483,24 +489,24 @@ function parseDigits(raw: string, ctx: Ctx, shown: string): { self?: number; muk
     parts = t.split('/');
     ctx.warn('W20', `자신과 먹은 '|'로 나눈다: ${shown}`);
   }
-  // (먹4) = (|먹4). '먹' 뒤에 무엇이 있어야 한다: 빈 '(먹)'은 전처럼 E10이다.
-  if (parts.length === 1 && /^먹\s*\S/u.test(parts[0])) parts = ['', parts[0]];
+  // (먹4) = (|먹4). '먹' 뒤에 무엇이 있어야 한다: 빈 '(먹)'은 전처럼 E10이다. v0.7(2026-10-29): 이름표 ink도 같다((ink4), 정규형)
+  if (parts.length === 1 && /^(?:먹|ink)\s*\S/iu.test(parts[0])) parts = ['', parts[0]];
   if (parts.length > 2) {
     ctx.err('E10', `괄호 안을 읽을 수 없다: ${shown}`);
     return {};
   }
   // '|' 둘레의 띄어쓰기는 이름표를 떼기 전에 지운다: (7 | 먹4) = (7|먹4) (2026-10-14 반례 검토)
   parts = parts.map((p) => p.trim());
-  if (/^먹/u.test(parts[0]) || /^자신/u.test(parts[1] ?? '')) {
+  if (/^(?:먹|ink)/iu.test(parts[0]) || /^자신/u.test(parts[1] ?? '')) {
     ctx.err('E10', `이름표가 제자리가 아니다: 자신은 '|' 앞, 먹은 '|' 뒤다(먹은 측정기가 붙인다): ${shown}`);
     return {};
   }
   // v0.3.1: 가르치는 말은 '괄호 안의 이름 없는 수는 자신'이다. | 뒤의 이름 없는 수는 v0.3 꼴이라 먹으로 읽되,
   // 그 말과 어긋나 보이므로 W21로 알린다(2026-10-14v2 mc3-2에서 (6|9)의 9를 자신으로 읽은 모델 9).
-  if (parts.length === 2 && parts[1] !== '' && !/^먹/u.test(parts[1])) ctx.warn('W21', `이름표 없는 먹을 읽었다. 정규형은 (자신|먹N): ${shown}`);
+  if (parts.length === 2 && parts[1] !== '' && !/^(?:먹|ink)/iu.test(parts[1])) ctx.warn('W21', `이름표 없는 먹을 읽었다. 정규형은 (자신|inkN): ${shown}`);
   const out: { self?: number; muk?: number } = {};
   const s = parts[0].replace(/^자신\s*/u, '').trim();
-  const m = (parts[1] ?? '').replace(/^먹\s*/u, '').trim();
+  const m = (parts[1] ?? '').replace(/^(?:먹|ink)\s*/iu, '').trim();
   if (s !== '') {
     const d = oneDigit(s, ctx, '자신', shown);
     if (d !== null) out.self = d / 10;
@@ -550,6 +556,7 @@ function parseMarkBlock(text: string, outerParen: string | null, ctx: Ctx, echo:
   const ranks: number[] = []; // v0.6: 읽은 표지의 정규 자리(쓴 차례)
   let news = false;
   let gun = false;
+  let newEn = false; // v0.7: 영어 new(네·군을 가르지 않는다)
   let ne = false;
   let neLabel = false;
   let bare: string | null = null;
@@ -585,30 +592,40 @@ function parseMarkBlock(text: string, outerParen: string | null, ctx: Ctx, echo:
         return;
       }
     }
+    // v0.7(2026-10-29): 한글 글자(붙여 쓴 겠다 포함)는 글자마다, 영어 내부 값·열 언어 별칭(see·inf·say, seh·見·вид …)은 낱말 하나가 표지 하나다. 내부 값은 영어(MARK_KO2EN)
     const chs = Array.from(t);
-    if (!chs.every((c) => MARK_CHARS.has(c))) {
-      ctx.err('E05', `알 수 없는 표지 '${raw}': ${shown}`);
-      return;
+    let pairs: [string, string][]; // [내부 영어, 쓴 글자]
+    if (chs.every((c) => MARK_CHARS.has(c))) pairs = chs.map((c) => [MARK_KO2EN[c], c]);
+    else {
+      const en = markOf07(t);
+      if (en === undefined) {
+        ctx.err('E05', `알 수 없는 표지 '${raw}': ${shown}`);
+        return;
+      }
+      pairs = [[en, t]];
+      named = true;
     }
-    for (const c of chs) {
-      if (c in EVIDENTIALS_06) {
+    for (const [e, c] of pairs) {
+      if (e in EV_07) {
         ranks.push(MARK_RANK.ev);
-        if (!evs.includes(c as Ev)) evs.push(c as Ev);
-      } else if (c === NEWS || c === NEWS_05) {
+        if (!evs.includes(e as Ev)) evs.push(e as Ev);
+      } else if (e === NEWS_07) {
         ranks.push(MARK_RANK.news);
         news = true;
-        if (c === NEWS_05) gun = true;
-        else if (!named) ne = true;
-        else neLabel = true; // 표지 이름 '새로앎'(v0.5 별칭 new·新은 군이라 여기 오지 않는다)
-      } else if (c in FIGURES) {
+        if (c === NEWS) {
+          if (!named) ne = true; // 글자 '네'를 그대로 썼다(E30)
+          else neLabel = true; // 표지 이름 '새로앎'(v0.5 별칭 new·新은 군이라 여기 오지 않는다)
+        } else if (raw.toLowerCase() === 'new' || !MARK_CHARS.has(c)) newEn = true; // v0.7 영어 new(v0.5 별칭이기도 하다)·열 언어 별칭: 네·군을 가르지 않는다. 괄호 자신이 있는 옛 절의 정규형(…(7))을 다시 읽어도 옛 꼴로 남게 아래에서 가른다
+        else gun = true; // 한글 군(v0.5 별칭 新도 군으로 읽혀 여기 온다)
+      } else if (e in FIG_07) {
         ranks.push(MARK_RANK.fig);
-        if (!figs.includes(c as Fig)) figs.push(c as Fig);
-      } else if (c in TENSES) {
+        if (!figs.includes(e as Fig)) figs.push(e as Fig);
+      } else if (e in TENSE_07) {
         ranks.push(MARK_RANK.tense);
-        if (!tenses.includes(c as Tense)) tenses.push(c as Tense);
-      } else {
+        if (!tenses.includes(e as Tense)) tenses.push(e as Tense);
+      } else if (e in ACT_07) {
         ranks.push(MARK_RANK.act);
-        if (!acts.includes(c as Act)) acts.push(c as Act);
+        if (!acts.includes(e as Act)) acts.push(e as Act);
       }
     }
   };
@@ -637,8 +654,8 @@ function parseMarkBlock(text: string, outerParen: string | null, ctx: Ctx, echo:
   const [ev] = evs;
   const [tense] = tenses;
   const [fig] = figs;
-  if (act === '다' && !ev) ctx.err('E07', `단언(다)에는 근거가 있어야 한다: ${shown}`);
-  if (news && act && act !== '다') ctx.err('E08', `새로앎(${gun ? '군' : '네'})은 단언(다)과만 쓴다: ${shown}`);
+  if (act === 'say' && !ev) ctx.err('E07', `단언(say·다)에는 근거가 있어야 한다: ${shown}`);
+  if (news && act && act !== 'say') ctx.err('E08', `새로앎(${gun ? 'new·군' : '네'})은 단언(say·다)과만 쓴다: ${shown}`);
   const marks: PartialMarks = {};
   if (act) marks.act = act;
   if (ev) marks.ev = ev;
@@ -647,18 +664,20 @@ function parseMarkBlock(text: string, outerParen: string | null, ctx: Ctx, echo:
   if (fig) marks.fig = fig;
   // 2026-10-15 검토 1: 정규형에 남는 꼴(군·시제)만 v0.5 꼴로 친다. 근거·화행 별칭만 쓴 절은 정규형이 옛 꼴과 같다
   // v0.6: 결 표지도 정규형에 남고(군 뒤 시제 앞) 옛 꼴로 쓸 수 없어 v0.5 꼴로 친다
-  const v05 = gun || tenses.length > 0 || figs.length > 0;
+  const pd = parens.length ? parseDigits(parens[0], ctx, shown) : {};
+  // v0.7: 영어 new는 괄호 자신((7))이 없을 때만 v0.5 꼴로 친다(옛 절의 정규형 <9 [gut,new,say(7)] …>를 다시 읽으면 같은 정규형이게)
+  const v05 = gun || tenses.length > 0 || figs.length > 0 || (newEn && pd.self === undefined);
   const marksOff = ranks.some((r, k) => k > 0 && r < ranks[k - 1]);
-  return { marks, v05, ne, neLabel: neLabel && !gun, aliases, marksOff, ...(parens.length ? parseDigits(parens[0], ctx, shown) : {}) };
+  return { marks, v05, ne, neLabel: neLabel && !gun && !newEn, aliases, marksOff, ...pd };
 }
 
 // ───────── 절·줄 ─────────
 
 /** 내용 가운데·끝에 둔 화살표 앞붙이 꼴(v0.6 ⊗ 포함) */
-const PREFIX_LIKE = /^(?:→|[↓↔∥↖⊗]|고침→|오류→|받침→)\S/u;
+const PREFIX_LIKE = /^(?:→|[↓↔∥↖⊗]|고침→|오류→|받침→|fix→|err→|sup→)\S/iu;
 
 /** v0.5.2: 표지 블록 바로 뒤 괄호가 옛 자신·먹 자리인가(수와 이름표 자신·먹, |, /, %만). 아니면 0.5.1 꼴 절에서는 내용이다 */
-const PAREN_NUMLIKE = /^(?:\s|자신|먹|[\d０-９.%|｜/])*$/u;
+const PAREN_NUMLIKE = /^(?:\s|자신|먹|ink|[\d０-９.%|｜/])*$/iu; // v0.7: 먹 이름표는 ink
 
 /**
  * v0.5 자신 !N(2026-10-15, reports/v0.5-design.md 1.2): 꺾쇠 안 맨 끝(> 바로 앞)의 한 자리. 전각 느낌표(！)와 전각 숫자는 W01로 읽는다.
@@ -836,8 +855,10 @@ const DOT_RE = new RegExp(`^[${DOT_CHARS}](→.*)?$`, 'u');
 export const ALL_CHARS = '●⬤⚫';
 const ALL_RE = new RegExp(`^([${ALL_CHARS}])\\uFE0F?(→.*)?$`, 'u');
 /** v0.5.2: 점(·, ●)에 붙여 쓴 앞붙이. 받는 이(·→kimi)는 점 자리 그대로라 넣지 않는다 */
-const GLUED_DOT_PREFIX = new RegExp(`^([${DOT_CHARS}]|[${ALL_CHARS}]\\uFE0F?)((?:[↓↔∥↖⊗]|고침→|오류→|받침→|숙고|미해결|받은대로).*)$`, 'u');
-const LABEL_BEFORE_DOT = new RegExp(`([절점]\\s*\\d+(?:\\.\\d+)?)(?=[${DOT_CHARS}${ALL_CHARS}→↓↔∥↖⊗])`, 'u');
+const GLUED_DOT_PREFIX = new RegExp(`^([${DOT_CHARS}]|[${ALL_CHARS}]\\uFE0F?)((?:[↓↔∥↖⊗]|고침→|오류→|받침→|fix→|err→|sup→|숙고|미해결|받은대로).*)$`, 'iu');
+const LABEL_BEFORE_DOT = new RegExp(`((?:[절점]|[cC])\\s*\\d+(?:\\.\\d+)?)(?=[${DOT_CHARS}${ALL_CHARS}→↓↔∥↖⊗])`, 'u');
+/** v0.7: 수만 쓴 머리에 붙여 쓴 점(<1·→kimi …>)도 띄어 읽는다(맨 앞에서만) */
+const BARE_BEFORE_DOT = new RegExp(`^(\\s*\\d+(?:\\.\\d+)?)(?=[${DOT_CHARS}${ALL_CHARS}])`, 'u');
 
 /** v0.3 절 하나(꺾쇠 안). lead는 꺾쇠 밖에 쓴 이름표. */
 function parseClause03(rawInner: string, ctx: Ctx, lead: string | null, odd: { v: boolean }): Clause | null {
@@ -855,7 +876,7 @@ function parseClause03(rawInner: string, ctx: Ctx, lead: string | null, odd: { v
   }
   if (raw[open] !== '[' || raw[close] !== ']') odd.v = true;
   // 이름표에 붙여 쓴 점·앞붙이(<절5·→kimi …>)는 띄어 읽는다(v0.4)
-  const before = raw.slice(0, open).replace(LABEL_BEFORE_DOT, '$1 ');
+  const before = raw.slice(0, open).replace(LABEL_BEFORE_DOT, '$1 ').replace(BARE_BEFORE_DOT, '$1 ');
   let after = raw.slice(close + 1);
   const markText = raw.slice(open + 1, close);
   let outerParen: string | null = null;
@@ -921,7 +942,10 @@ function parseClause03(rawInner: string, ctx: Ctx, lead: string | null, odd: { v
   let moved = outerParen !== null;
   let i = 0;
   if (bt.length && LABEL_N.test(bt[0])) {
-    clause.label = bt[0];
+    clause.label = normLabel(bt[0][0] === '점' ? '점' : '절', bt[0].replace(/^(?:[절점]|[cC])/u, ''));
+    i = 1;
+  } else if (bt.length && BARE_NUM.test(bt[0]) && (bt.length === 1 || DOT_RE.test(bt[1]) || ALL_RE.test(bt[1]) || PREFIX_LIKE.test(bt[1]) || bt[1] === '받은대로' || bt[1] === '숙고' || bt[1] === '미해결')) {
+    clause.label = normLabel('절', bt[0]); // v0.7 수만 쓴 머리(<1 · …>, 옛 절의 정규형 <1 ↓2 [...] …>)
     i = 1;
   }
   if (lead) {
@@ -1005,7 +1029,7 @@ function parseClause03(rawInner: string, ctx: Ctx, lead: string | null, odd: { v
     if (w) words.push(w);
   }
   // v0.6: 유(유보)도 내용을 비워도 된다(미루는 것 자체가 말이다). 거·양은 비울 수 없다(reports/v0.6-design.md 1.2)
-  if (kept.length === 0 && !(mk.marks.act === '까' || mk.marks.act === '유' || clause.process?.kind === '오류' || st.echo)) ctx.err('E16', `내용이 비었다: '${shown}'`);
+  if (kept.length === 0 && !(mk.marks.act === 'ask' || mk.marks.act === 'dfr' || clause.process?.kind === 'err' || st.echo)) ctx.err('E16', `내용이 비었다: '${shown}'`);
   // 자신: 표지 칸(괄호·괄호 없는 수)의 옛 자리, 또는 맨 끝 !N(v0.5). 둘 다 쓰면 E27이고 어느 수도 틀에 두지 않는다(어느 쪽이 뜻인지 모른다)
   let self = mk.self;
   if (selfTok !== null) {
@@ -1057,13 +1081,13 @@ function parseClause03(rawInner: string, ctx: Ctx, lead: string | null, odd: { v
   }
   if (because.length) out.because = because;
   // v0.6: 갑 절은 앞의 어떤 절에도 기대지 않는다. 가리킴(앞붙이 자리·고침→·오류→·받은대로·끝 근거)을 쓰면 E35(reports/v0.6-design.md 1.2)
-  if (mk.marks.ev === '갑' && (out.place || out.process?.target || st.echo || because.length)) {
+  if (mk.marks.ev === 'top' && (out.place || out.process?.target || st.echo || because.length)) {
     ctx.err('E35', `갑(새 화두) 절은 다른 절을 가리키지 않는다(↔ ∥ ↖ ⊗ ↓, 고침→, 오류→, 받침→, 받은대로, 끝 근거). 바탕이 있으면 그에 맞는 근거(봄·들·겠 …)를 쓴다: '${shown}'`);
   }
   // v0.6 덧붙임(2026-10-25 H-261025-8, reports/hunch-design.md 3.2): 받침 절은 직감이 아닌 근거로, ↓근거와 함께 받친다(E37)
-  if (out.process?.kind === '받침') {
+  if (out.process?.kind === 'sup') {
     const ev = mk.marks.ev;
-    if (ev === '촉' || ev === '갑') ctx.err('E37', `받침 절의 근거는 촉·갑이 아니다(직감을 직감으로 받칠 수 없다). 뒤늦게 찾은 근거(봄·들·겠 …)와 ↓근거로 쓴다: '${shown}'`);
+    if (ev === 'gut' || ev === 'top') ctx.err('E37', `받침 절의 근거는 촉·갑이 아니다(직감을 직감으로 받칠 수 없다). 뒤늦게 찾은 근거(봄·들·겠 …)와 ↓근거로 쓴다: '${shown}'`);
     else if (!because.length && out.place?.rel !== '↓') ctx.err('E37', `받침 절에는 끝에 ↓근거가 있어야 한다(무엇으로 받치는지): '${shown}'`);
   }
   // 2026-10-15 검토 1: form은 정규형에 남는 꼴로만 정한다(군·시제, 자신으로 읽힌 끝의 !N). 별칭은 written.aliases로만 남는다(rules05 W26).

@@ -2,27 +2,30 @@
 // 정규형은 v0.3 줄꼴(<절N 앞붙이 [표지(자신|먹)] 내용>, v0.3.1부터 먹 자리는 (7|먹4))이다. 옛 꼴(v0.2)은 form: '0.2'로 쓴다.
 // v0.5(2026-10-15): v0.5 꼴로 쓴 절(form '0.5')만 <절N · 앞붙이 [근거,군,시제,화행(먹N)] 내용 *N>으로 쓴다(isV05).
 // v0.6(2026-10-24, reports/v0.6-design.md 5): 결 표지(군 뒤 시제 앞), 다중 지목 ·→A,B, ⊗N,M, 지난 대화 근거 ↓53:12. 옛 줄에 없던 꼴에만 걸린다.
+// v0.7(2026-10-29 Jae, reports/v0.7-design.md 6절): 정규형은 모든 절을 v0.7 꼴로 쓴다 — 수만 쓴 머리(<1 · …>), 영어 표지([see,say]), 영어 앞붙이(fix→ err→ sup→),
+//   먹 이름표 (ink4). 그래서 모든 메시지의 먹 이름이 바뀌었다(보관 줄 196개의 판정은 그대로, 정규형만 바뀜. 12.5절 2026-10-29). form '0.2'(옛 꼴로 되돌려 쓰기)는 한글 글자로 쓴다.
 // v0.3 줄꼴에는 채의 어조·전함·인용과 먹의 대안·노력·주의·특징·측정법이 없다(먹은 숫자 하나, 나머지는 측정 기록에 남긴다).
 // 그래서 틀 → 글 → 틀을 잃지 않고 하려면 form: '0.2'를 쓴다.
 
-import type { Chae, Clause, Echo, FoldLevel, LineForm, Marks, Message, Muk, PartialMarks, Ref, Word, Because } from './types.ts';
-import { DIGIT_MAX, NEWS_05 } from './tables.ts';
+import type { Chae, Clause, Echo, FoldLevel, Marks, Message, Muk, PartialMarks, Ref, Word, Because, WriteForm } from './types.ts';
+import { DIGIT_MAX, MARK_EN2KO, PROCESS_EN2KO } from './tables.ts';
 import { canonDocument, formatNumber } from './text.ts';
 
 export interface FormatOptions {
-  /** 절을 쓸 줄꼴. 기본 '0.3'(정규형). */
-  form?: LineForm;
+  /** 절을 쓸 줄꼴. 기본 '0.3'(정규형, v0.7). '0.6'은 v0.6.5까지의 한글 정규형(옛 회차 채점·옛 사전 보기 줄 견주기, 먹 이름이 아니다). */
+  form?: WriteForm;
 }
 
 export function refText(r: Ref): string {
   return (r.msg ? `#${r.msg}:` : '') + r.label;
 }
 
+/** 옛 꼴(form '0.2')의 표지: 한글 글자로 되돌려 쓴다(v0.7 내부 값은 영어) */
 function marksText(m: Marks | PartialMarks): string {
   const parts: string[] = [];
-  if (m.ev) parts.push(m.ev);
+  if (m.ev) parts.push(MARK_EN2KO[m.ev] ?? m.ev);
   if (m.news) parts.push('네');
-  if (m.act) parts.push(m.act);
+  if (m.act) parts.push(MARK_EN2KO[m.act] ?? m.act);
   return `〈${parts.join('·')}〉`;
 }
 
@@ -64,6 +67,8 @@ function refNum(r: Ref): string {
   if (r.thread !== undefined) return `${r.thread}:${r.label.replace(/^[절점]/u, '')}`; // v0.6 덧붙임(2026-10-25): 받침→53:12, ↔53:12
   return (r.msg ? `#${r.msg}:` : '') + r.label.replace(/^[절점]/u, '');
 }
+/** v0.7 정규형의 절 머리: 수만(절12 → 12, 점3 → 3) */
+const labelNum = (label: string) => label.replace(/^[절점]/u, '');
 
 /**
  * v0.3 표지 블록: [근거,네,화행(자신|먹N)]. 괄호는 마지막 표지에 붙인다.
@@ -71,24 +76,27 @@ function refNum(r: Ref): string {
  * 까닭: 검증 회차 2026-10-14v2 mc3-2에서 32개 중 9개가 (6|9)의 9를 자신으로 읽었다(v1 mc-2를 맞힌 모델 다섯 포함).
  * 이름표는 측정기가 붙이는 쪽에만 두므로 참가자가 쓰는 줄(자신만)의 정규형과 먹 이름은 바뀌지 않는다(3.13절, 12.5절).
  */
-function marksText03(c: Clause): string {
+function marksText03(c: Clause, ko = false): string {
   const m = c.marks;
   const parts: string[] = [];
   const v05 = isV05(c);
-  if (m.ev) parts.push(m.ev);
-  if (m.news) parts.push(v05 ? NEWS_05 : '네');
-  if (m.fig) parts.push(m.fig); // v0.6 결 표지는 v0.5 꼴 절에만 있다(isV05)
-  if (v05 && m.tense) parts.push(m.tense);
-  if (m.act) parts.push(m.act);
+  // v0.7: 표지는 영어 내부 값 그대로. 새로앎은 네·군 모두 new(E30의 구별은 written.ne가 맡는다). ko(form '0.6')면 옛 한글 정규형
+  const w = (x: string) => (ko ? (MARK_EN2KO[x] ?? x) : x);
+  if (m.ev) parts.push(w(m.ev));
+  if (m.news) parts.push(ko ? (v05 ? '군' : '네') : 'new');
+  if (m.fig) parts.push(w(m.fig)); // v0.6 결 표지는 v0.5 꼴 절에만 있다(isV05)
+  if (v05 && m.tense) parts.push(w(m.tense));
+  if (m.act) parts.push(w(m.act));
+  const ink = ko ? '먹' : 'ink';
   const self = c.chae?.self;
   const muk = c.muk?.conf;
   let num = '';
-  // v0.5.1: 표지 칸은 표지만. 먹은 끝 묶음(*먹채)으로 가되, 색 있는 채가 없으면 옛 (먹N) 그대로 둔다(*6만 쓰면 옛 자신 6과 글자가 같다)
-  if (isV051(c)) num = c.chae?.color === undefined && muk !== undefined ? `(먹${toDigit(muk)})` : '';
-  else if (v05) num = muk !== undefined ? `(먹${toDigit(muk)})` : ''; // v0.5: 괄호는 먹 자리, 자신은 끝의 *N
-  else if (self !== undefined && muk !== undefined) num = `(${toDigit(self)}|먹${toDigit(muk)})`;
+  // v0.5.1: 표지 칸은 표지만. 먹은 끝 묶음(*먹채)으로 가되, 색 있는 채가 없으면 옛 (먹N) 그대로 둔다(*6만 쓰면 옛 자신 6과 글자가 같다). v0.7: 이름표는 ink
+  if (isV051(c)) num = c.chae?.color === undefined && muk !== undefined ? `(${ink}${toDigit(muk)})` : '';
+  else if (v05) num = muk !== undefined ? `(${ink}${toDigit(muk)})` : ''; // v0.5: 괄호는 먹 자리, 자신은 끝의 *N
+  else if (self !== undefined && muk !== undefined) num = `(${toDigit(self)}|${ink}${toDigit(muk)})`;
   else if (self !== undefined) num = `(${toDigit(self)})`;
-  else if (muk !== undefined) num = `(|먹${toDigit(muk)})`;
+  else if (muk !== undefined) num = `(|${ink}${toDigit(muk)})`;
   return `[${parts.join(',')}${num}]`;
 }
 
@@ -131,16 +139,16 @@ function endText051(c: Clause): string {
  * v0.5(2026-10-15): v0.5 꼴 절은 <이름 ·→향함 받은대로 과정 자리 [근거,군,시제,화행(먹N)] 내용 *N>. 별칭은 한글로, 괄호는 먹이 있을 때만,
  * 자신은 맨 끝 *N이다. 옛 꼴(네, (8), (7|먹4))만 쓴 절은 위의 정규형 그대로다.
  */
-export function clauseText03(c: Clause): string {
+export function clauseText03(c: Clause, ko = false): string {
   const parts: string[] = [];
-  if (c.label) parts.push(c.label);
+  if (c.label) parts.push(ko ? c.label : labelNum(c.label)); // v0.7: 수만(form '0.6'은 절N)
   if (c.all) parts.push('●');
   else if (c.me) parts.push(c.to ? `·→${c.toList?.length ? c.toList.join(',') : c.to}` : '·'); // v0.6 다중 지목은 쉼표로
   if (c.echo) parts.push('받은대로');
-  if (c.process) parts.push(c.process.target ? `${c.process.kind}→${refNum(c.process.target)}` : c.process.kind);
+  if (c.process) parts.push(c.process.target ? `${ko ? (PROCESS_EN2KO[c.process.kind] ?? c.process.kind) : c.process.kind}→${refNum(c.process.target)}` : c.process.kind);
   if (c.place) parts.push(`${c.place.rel}${refNum(c.place.target)}${c.place.second ? `,${refNum(c.place.second)}` : ''}`); // v0.6 ⊗N,M
   if (c.to && !c.me) parts.push(`→${c.to}`);
-  parts.push(marksText03(c));
+  parts.push(marksText03(c, ko));
   if (c.words.length) parts.push(wordsText(c.words));
   if (isV051(c)) {
     const e = endText051(c);
@@ -150,15 +158,17 @@ export function clauseText03(c: Clause): string {
 }
 
 /** 절 한 줄. 기본은 v0.3 정규형. 받은대로 절과 v0.5 꼴 절(시제·끝의 자신)은 옛 꼴로 쓸 수 없어 늘 꺾쇠 줄꼴로 쓴다. */
-export function clauseText(c: Clause, form: LineForm = '0.3'): string {
-  if (form === '0.3' || c.echo || isV05(c)) return clauseText03(c);
+export function clauseText(c: Clause, form: WriteForm = '0.3'): string {
+  if (form === '0.3') return clauseText03(c);
+  // '0.6' = v0.6.5까지의 한글 정규형. '0.2'에서 옛 꼴로 쓸 수 없는 절(받은대로, v0.5 꼴)도 한글 꺾쇠 꼴로 쓴다(옛 꼴 쓰기는 모두 한글)
+  if (form === '0.6' || c.echo || isV05(c)) return clauseText03(c, true);
   return clauseText02(c);
 }
 
 function clauseText02(c: Clause): string {
   const parts: string[] = [];
   if (c.label) parts.push(c.label);
-  if (c.process) parts.push(c.process.target ? `${c.process.kind}→${refText(c.process.target)}` : c.process.kind);
+  if (c.process) parts.push(c.process.target ? `${PROCESS_EN2KO[c.process.kind] ?? c.process.kind}→${refText(c.process.target)}` : c.process.kind);
   if (c.place) parts.push(`${c.place.rel}${refText(c.place.target)}`);
   if (c.to) parts.push(`→${c.to}`);
   if (c.words.length) parts.push(wordsText(c.words));
@@ -190,12 +200,15 @@ export function format(msg: Message, opts: FormatOptions = {}): string {
   const form = opts.form ?? '0.3';
   const lines: string[] = [];
   if (msg.head) {
-    const items: string[] = [`결 ${msg.gyeol}`];
+    // v0.7: 머리 줄은 영어 열쇠말(gyeol · lang · pact · room). 읽기는 결·언어·짝·방도 받는다. form '0.6'·'0.2'는 한글 열쇠말
+    const ko = form !== '0.3';
+    const items: string[] = [`${ko ? '결' : 'gyeol'} ${msg.gyeol}`];
     const h = msg.head;
-    if (h.pact) items.push(`짝 #${h.pact}`);
+    if (msg.lang) items.push(`${ko ? '언어' : 'lang'} ${msg.lang}`);
+    if (h.pact) items.push(`${ko ? '짝' : 'pact'} #${h.pact}`);
     if (h.from || (h.to && h.to.length)) items.push(`${h.from ?? ''}→${(h.to ?? []).join(',')}`);
     if (h.re) items.push(`↩#${h.re.id}${h.re.rel ? ' ' + h.re.rel : ''}`);
-    if (h.room) items.push(`방 #${h.room}`);
+    if (h.room) items.push(`${ko ? '방' : 'room'} #${h.room}`);
     lines.push(items.join(' · '));
   }
   for (const t of msg.tune) lines.push(t.text ? `조율 ${t.step} ${t.text}` : `조율 ${t.step}`);

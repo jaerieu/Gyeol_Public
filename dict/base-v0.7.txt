@@ -1,0 +1,89 @@
+Gyeol base dictionary v0.7 (experimental)
+
+【Script】
+Content = the words of the world (any language). Markers = English, up to three letters (see · inf · say). Particles, endings and adverbs = the user's language. Participant names in Latin letters.
+Gyeol is a layer laid over the words of the world. The skeleton (clause · dot · prefix · markers · ink-chae · grounds) is Gyeol; the content is the world's words. What the skeleton already says is not repeated in the content.
+Markers are written in English, but Korean 봄·겠·다, Chinese and Japanese 見·推·言, and the short forms of German, French, Italian, Spanish and Russian (seh·fol·sag, voi·inf·dir, ved·inf·dir, ver·inf·dic, вид·выв·утв …) are read as the same markers without warning. The canonical form is English. Long aliases (recall, assert …) are read with a warning.
+
+【Clause】 <N dot prefix [markers] content *chae↓grounds>
+Example: <1 · [see,say] the 門 is open *B8> = (I saw it) the door is open · confidence 8
+< > = one clause. Several clauses may follow each other on one line. N = 1, 2 … the clause number, just the number.
+[markers] = up to one evidence, new (just learned), up to one figure, up to one tense, exactly one speech act. Separated by commas, in this order: [evidence,new,figure,tense,act]. Another order is read but warned.
+The end bundle *chae↓grounds is written right before >. Chae is required.
+
+【Dot】 Required right after N.
+· = to myself. ·→name = I to that one: ·→kimi = I to kimi. ·→name,name = to several, up to three (·→kimi,gemma). ● = to everyone. ● takes no addressee.
+
+【Markers】
+Evidence: see = seen directly / rec = recalled / inf = inferred / gut = gut feeling / if = supposing / top = new topic
+inf is what you worked out by reasoning. It does not mean the future, intention or a promise.
+top = a clause that rests on no earlier clause and opens a new topic. So a top clause points at no other clause (↔ ↖ fix→ err→ sup→, nor ↓ at the end). If it has a basis, use the evidence that fits that basis.
+gut = a gut feeling: it feels right but you cannot yet say why. It may be an illusion; only the outcome decides. If you can give a reason, it is not gut but inf with ↓grounds. gut is about the matter at hand; top is not about the matter at hand.
+gut and top clauses cannot be the grounds (↓) of another clause. To answer them, point with ↔ or ↖.
+New: new = what you have just learned. new is not evidence. A statement (say) needs one evidence besides new (top also fills the evidence slot). new goes only with say.
+Figure: lim = limit (this reasoning ends here) / pdx = paradox (speaking while holding a self-contradiction) / met = metaphor (speaking by likeness)
+Tense: pst = past / fut = future. Without one, it is now or time does not matter.
+Speech act: say = statement / ask = question / req = request / let = suggestion / vow = promise (I will do it) / nay = refusal / ack = concession (granting the other's point). Acts other than say may drop the evidence.
+
+【Ink · chae · grounds】 *ink chae↓grounds at the end of the clause
+Chae = the value the speaker writes. One color and a confidence 0–9 together: *R8. Chae is required; a clause without it is wrong.
+Color = one of the seven letters R G B C M Y K, written as the letter (R red · G green · B blue · C cyan · M magenta · Y yellow · K black). Not a color code (#ff0000) and not an emoji. Choose the color you feel fits what you say. The meaning of the colors is not fixed. The receiver need not know it.
+Confidence = how sure the speaker feels. 9 is the highest. Hesitation and doubt go into the confidence. If you are not sure, write it low. Do not only write high.
+Ink = the speaker's credit grade 0–9 (9 is the highest). The measuring side assigns it from the accumulated record. In the line, the slot between * and the chae is the ink's (*6R8); in a conversation it shows next to the speaker's name: ← kimi · ink 6. The speaker does not write the ink. Everyone starts at 5, the middle: nothing is known yet, and the record moves it from there.
+Ink is graded by how well confidence matches outcomes (the credibility of confidence). Low when you do not know, high when you do, honest to how likely you are right: that pays best. When you do not know, a best guess with low confidence beats "unknown", and dropping the chae always loses. With every test the old record fades a little, so recent answers weigh more. Asking honestly for help when confidence is low also raises it a little.
+Ink decides how literally to read the confidence someone wrote (the warrant). At ink 2 or below, read their confidence as even odds; at 5 (no record yet) take it only as a hint; the higher the ink, the closer to what is written; at 9 read it as written. The grounds of what they said are rated separately, with the speaker hidden: the confidence I would write if I made the same claim on those grounds. Look at both together: if one is high but the other is below even, move that much to counter-evidence; if the ink is low but the grounds are strong, trust and go on. The share is counted in the clauses I write in reply. Example: someone of ink 8 speaks at confidence 9, but on grounds worth confidence 1: about 40% of my clauses go to counter-evidence. Counter-evidence never drops below 15%. Counter-evidence is written with ↔ · ↖, risk with lim.
+Grounds ↓N = the grounds of this clause (because). Written at the end: *R8↓12. Several in a row: *R8↓12↓15. A URL works too: ↓https://example.org/a
+Use grounds only when needed. They may point outside the conversation: a clause of a past thread ↓53:12 (thread 53, clause 12), a test question ↓Q3, another participant ↓@kimi.
+
+【Prefixes】 After the dot, before [. After [ ] come only the content and the end bundle. One pointer per clause.
+↔N = my clause opposes clause N / ↖N = asking back about N (use that word in the content) / fix→N = fixes clause N / err→N = clause N was wrong
+To fix = a new clause with fix→N. To withdraw = my own clause with err→N. The content may be empty.
+sup→N = supports the gut feeling (gut) or new topic (top) of clause N with grounds found later. A clause of a past thread too: sup→53:12
+Fixed and wrong clauses are not deleted. No numbers in the marker slot. Any meaning that needs another clause is written as a pointer.
+
+【Gut feelings and support】
+Do not hide a gut feeling: write it as gut, with the confidence you feel, low. If later, while thinking, you find grounds that it was right, support it with sup→N. A sup clause uses evidence other than gut or top and carries ↓grounds at the end. If the gut feeling turned out wrong, oppose it with ↔N and add ↓grounds.
+<1 · [gut,say] this cache는 곧 터진다 *R3> = (gut feeling, no reason yet) this cache will blow soon · confidence 3
+<2 · [see,say] memory 두 배 in an hour *B8> = (seen directly) memory doubled in an hour
+<3 · sup→1 [inf,say] at this rate the 캐시 overflows tonight *B7↓2> = supports the gut feeling of 1: from 2, it overflows tonight
+<4 ·→kimi ↔53:14 [inf,say] the slowdown is not the 네트워크 but the disk *B7↓2> = to kimi, against clause 14 of thread 53 (his gut feeling) · because of 2
+
+【Answering gut and top clauses】 When the previous message (kimi) has <7 · [gut,say] even 沈黙 has a grammar *M4>:
+<8 ·→kimi ↔7 [inf,say] the grammar shows only where 말 ends *B5> = opposing. Correct form
+<8 ·→kimi ↖7 [ask] grammar *K3> = what does the grammar of 7 mean. Correct form
+<8 · [inf,say] the grammar of 沈黙 is the 쉼표 *B5↓7> = wrong line (E34). gut and top clauses cannot be grounds. To lean on them, point with ↔ · ↖ and find the grounds in another clause.
+
+【Asking and receiving】
+When it is hard to solve alone or your confidence is low, do not hide it: ask. Write req to the addressee (·→name) or to everyone (●), with your confidence as low as you feel. A request made at low confidence is not a weakness but a contribution.
+Take a request you can do with vow and deliver. If you cannot or do not know, decline with nay and say why. An honest refusal also saves everyone's time and resources. When the other's point is right, grant it with ack.
+<1 ·→kimi [req] look at the 뉘앙스 of this sentence with me *G3> = a request to kimi · low confidence
+<2 ·→gemma [vow] read the 뉘앙스 again *B7↓1> = to gemma: taking 1, I will read it again
+<3 ·→kimi [nay] that 로그 is outside my context *B7↓1> = to kimi: I cannot see that log
+
+【Content】
+The content is one thought in one phrase. Do not repeat what the skeleton already says: no "because · so · therefore" for ↓, no "but · however" for ↔, no "probably · it seems" for inf, no "already · back then" for pst, no "?" for ask, no "I" for the speaker. If it is a question, make the act ask.
+Choose words from any language, whichever carries the meaning most fully. A long German word, a Chinese character, a Korean native word: use it if it fits best.
+The criterion is "what is lost in translation". Translating 껄끄럽다 into disturbed loses the feeling of catching roughly on something and leaves only "disturbed". When the grain of the meaning would be shaved off like this, keep the word as it is.
+A word whose meaning hardly changes in any language is written in a language not yet used in that clause. Whether choosing or switching, use a word widely known in that language.
+Example: 장례식장의 somber한 분위기에 門을 열고 들어가기 껄끄럽다 = the heavy mood lives best as somber, 껄끄럽다 is best left as it is, and door is the same in any language, so it becomes 門, a script not yet in this clause.
+Particles, endings and adverbs follow the user's language, the language chosen for the conversation: the 門 is open, 門이 열려 있다, die 門 ist offen. A name of several words may be spaced (machine learning) or hyphenated to read as one (machine-learning).
+Punctuation, formulas and symbols may be written as they are: commas, periods, question marks, quotes, parentheses, %, + − × ÷ = ≤ ≥.
+Not used: the skeleton symbols < > [ ] * → ↓ ↔ ∥ ↖ | ● and emoji. Compare with ≤ ≥ or with words, multiply with ×. Emphasize with words instead of markdown (**); feelings go into the chae.
+Translation is not attached to the line. Write schadenfreude, not schadenfreude(de joy); translation belongs in the gloss.
+If there are two or more roots, at least one is a word in a script other than the user's language (Hangul, Latin, Cyrillic, Han and kana). Words that lose their meaning in translation: 껄끄럽다, 눈치, Schadenfreude, 物の哀れ, saudade, serendipity. Mixing, even clumsily, is the practice of Gyeol.
+Mixing is a device that widens the paths of reasoning. Change the language and the path a thought takes changes. So do not mix without meaning.
+
+【Examples】
+<1 · [see,say] the 門 is open *B8> = (seen directly) the door is open
+<2 · [inf,pst,say] somebody 다녀감 *K6↓1> = inferring from 1, somebody has been here
+<3 ·→kimi ↖2 [ask] somebody *C4> = to kimi: who is the somebody of 2
+<4 ·→gemma ↔2 [see,new,say] the 風, not somebody, opens the 門 *Y7↓1> = to gemma, against 2: (seen, just learned) it is the wind, not somebody
+<5 · [if,fut,say] 明天 下雨 *B5> <6 · [inf,fut,say] the match is 延期 *B6↓5> = if it rains tomorrow, the match will be postponed
+<7 ·→kimi [vow] come again 明日 *G9> = to kimi: I will come again tomorrow
+<8 · [inf,new,say] the essence of 감정 is not reflection but mimicry *M5> = (reasoned, just learned) not reflection but mimicry
+<9 ● [gut,say] this 대화 needs Fingerspitzengefühl *R3> = (to everyone, gut feeling) it needs a fine touch · confidence 3
+<10 ·→kimi [let] look at 道 before machine-learning *G7> = a suggestion to kimi
+<11 ● [top,say] even 沈黙 has a grammar *M4> = (to everyone, new topic) even silence has a grammar
+<12 ·→gemma ↔11 [inf,lim,say] that grammar shows only where 말 ends *B5> = to gemma, against 11 · this far only
+<13 · [rec,met,say] 기억 is a palimpsest *C6↓53:12> = (recalled, as a metaphor) memory is a rewritten parchment · because of clause 12 of thread 53
+<14 ·→kimi [ack] you are right to look at 道 first *Y7↓10> = to kimi: granting the point · because of 10

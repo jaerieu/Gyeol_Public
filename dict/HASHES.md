@@ -17,4 +17,21 @@
 | `dict/base-v0.5.5.txt` | `#601a9f` | `601a9f16142b706a8a0d4aef777b32ebd1ba01202f74a36bd4d9d17461a4227a` |
 | `dict/base-v0.6.txt` | `#7923a6` | `7923a666492ef01cb978a860b239e328a98c45a0ee39f86c4357fcf077415210` |
 | `dict/base-v0.6.5.txt` | `#68a276` | `68a2769bbb752a0b5e4638a1fc285234097ad9da6752014d265af11e91ac072e` |
+| `dict/base-v0.7.txt` | `#a2eacf` | `a2eacf741f12ac1410959e1b2b086210509e366ea21ba9160cf56ddcf0235987` |
 | `dict/examples-v0.2.txt` | `#437510` | `43751013c5b376728f331ac10f566b0b0926093c99c8380efcc2e9aacb4d2f79` |
+
+## 번역본 (정체가 아니다)
+
+v0.7(2026-10-29, `spec/09-names.md` 9.4)부터 사전 정본은 영어(`dict/base-v0.7.txt`)이고 위 표의 그 해시가 사전의 먹 이름이다. 번역본은 정본을 한 문장씩 따르되 언어의 정체가 아니다. 참고로만 적는다.
+
+| 파일 | 짧은 이름 | 전체 |
+| --- | --- | --- |
+| `dict/base-v0.7.ko.txt` | `#6b9d1a` | `6b9d1a0899e5a1b3b82fcc7d9a9b051a91dca03a4c621621db81e2a3beefd611` |
+| `dict/base-v0.7.zh-Hans.txt` | `#e90198` | `e9019833caf787f930d782df8db04e2ba532cfcf90875820d24eba4be748c91e` |
+| `dict/base-v0.7.zh-Hant.txt` | `#53e419` | `53e41994ba1d13c28b1af49cd2f50c05e0fdd03583d3b0bb684fef8865ea82d9` |
+| `dict/base-v0.7.ja.txt` | `#3e69f4` | `3e69f472b506ef25cca92dfaa906993c4a80ea71ed65ad3f153dd010e0ace253` |
+| `dict/base-v0.7.de.txt` | `#a2902a` | `a2902acdc5b0036cc713ceff5fd021b6cd89b5a65b0bc5d6057d80863d604f85` |
+| `dict/base-v0.7.fr.txt` | `#98d475` | `98d47585dd28bc7d321900b89c2d8e203a3228626321101193120ef673b08e17` |
+| `dict/base-v0.7.it.txt` | `#e0813b` | `e0813bb682816eb3c18ad41fe9d25a0539379f8649270b9f059ee8ffdedcaa1f` |
+| `dict/base-v0.7.es.txt` | `#1b2b73` | `1b2b730176ac97fea832de55c4ef9fe0c652d5ef897dc3c7928858d4a2745007` |
+| `dict/base-v0.7.ru.txt` | `#6a88f7` | `6a88f7432984f2314ae21a47a5eb1fef10f3a9fc521b7ac7341386fdf0582fe5` |

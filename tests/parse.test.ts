@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parse, format, messageName, foldMessage, levelOf } from '../src/index.ts';
+import { parse, format as format07, messageName, foldMessage, levelOf } from '../src/index.ts';
+// 2026-10-29 v0.7: 정규형이 영어·수 머리로 바뀌었다(reports/v0.7-design.md 6절). 이 파일은 v0.6.5까지의 자료를 보므로 옛 한글 정규형(form '0.6')으로 견준다. v0.7 정규형은 tests/v07.test.ts
+const format = (m: Parameters<typeof format07>[0], o: Parameters<typeof format07>[1] = {}) => format07(m, { form: '0.6', ...o });
 
 const codes = (s: string) => parse(s).diagnostics.map((d) => d.code);
 const errs = (s: string) => parse(s).diagnostics.filter((d) => d.severity === '오류').map((d) => d.code);
@@ -17,7 +19,7 @@ test('명세 3.11절의 보기가 오류 없이 읽힌다', () => {
   assert.equal(r.ok, true, JSON.stringify(r.diagnostics));
   assert.equal(r.message.clauses.length, 3);
   const c1 = r.message.clauses[0];
-  assert.deepEqual(c1.marks, { ev: '겠', news: true, act: '다' });
+  assert.deepEqual(c1.marks, { ev: 'inf', news: true, act: 'say' });
   assert.deepEqual(c1.muk?.alt, [
     { r: '新', p: 0.72 },
     { r: '改', p: 0.21 },
@@ -74,7 +76,7 @@ test('먹 항목 순서가 달라도 정규형은 같다', () => {
 test('초안 표기의 표지 이름을 표지 글자로 받는다', () => {
   const r = parse('新法을 得했다 〈추론·새로앎·단언〉');
   assert.equal(r.ok, true);
-  assert.deepEqual(r.message.clauses[0].marks, { ev: '겠', news: true, act: '다' });
+  assert.deepEqual(r.message.clauses[0].marks, { ev: 'inf', news: true, act: 'say' });
   assert.ok(codes('新法을 得했다 〈추론·새로앎·단언〉').includes('W11'));
 });
 
@@ -162,7 +164,7 @@ test('목록 기호와 코드 울타리를 견딘다(다른 모델이 붙여 보
 test('v0.2.1 약속 화행 게: 받고, 근거는 있어도 없어도 되며, 네와는 쓰지 않는다. 표지 이름 약속도 읽는다', () => {
   const r = parse('伞 持 〈게〉');
   assert.equal(r.ok, true);
-  assert.equal(r.message.clauses[0].marks.act, '게');
+  assert.equal(r.message.clauses[0].marks.act, 'vow');
   assert.equal(parse('伞 持 〈겠·게〉').ok, true);
   assert.deepEqual(codes('伞 持 〈네·게〉'), ['E08']);
   assert.deepEqual(codes('伞 持 〈약속〉'), ['W11']);

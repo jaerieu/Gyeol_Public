@@ -4,7 +4,7 @@
 // 2026-10-15(v0.5): 새 꼴 줄의 내용은 어느 언어의 낱말이든 받는다(parseWord의 anyScript). 옛 꼴은 그대로 읽는다.
 
 import type { Clause, ClauseWritten, Diagnostic, PlaceRel, ProcessKind, Ref, Word } from '../types.ts';
-import { MARK_ALIASES } from '../tables.ts';
+import { MARK_ALIASES, PROCESS_KO2EN } from '../tables.ts';
 import { HAN, HANGUL, stripTrailingPunct } from '../text.ts';
 
 export class Ctx {
@@ -205,12 +205,13 @@ export function takePrefix(t: string, clause: Clause, ctx: Ctx, rules: PrefixRul
     clause.process = { kind: t as ProcessKind };
     return true;
   }
-  if ((m = /^(고침|오류)→(.+)$/u.exec(t))) {
+  // v0.7(2026-10-29): 과정 앞붙이의 내부 값은 영어(fix 고침, err 오류). 한글은 첫째 별칭으로 그대로 읽는다. 라틴은 큰·작은 글자를 가리지 않는다
+  if ((m = /^(고침|오류|fix|err)→(.+)$/iu.exec(t))) {
     const r = rules.ref(m[2]);
     if (!r) ctx.err('E19', `가리킴을 읽을 수 없다: '${t}'`);
     else {
       if (clause.process) ctx.err('E18', `과정 앞붙이가 둘 이상이다: '${t}'`);
-      clause.process = { kind: m[1] as ProcessKind, target: r };
+      clause.process = { kind: (PROCESS_KO2EN[m[1]] ?? m[1].toLowerCase()) as ProcessKind, target: r };
     }
     return true;
   }

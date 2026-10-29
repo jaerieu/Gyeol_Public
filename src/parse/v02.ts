@@ -3,7 +3,7 @@
 // 이 꼴의 글은 src/parse.ts가 normalizeSymbols(text.ts)로 비슷한 기호를 바꾼 뒤에 넘긴다.
 
 import type { Act, Chae, Clause, Echo, Ev, Marks, Muk, PartialMarks, Ref } from '../types.ts';
-import { ACTS, EVIDENTIALS, FORBIDDEN_MUK_METHOD, MEASURE_METHODS, NEWS } from '../tables.ts';
+import { ACTS, EVIDENTIALS, FORBIDDEN_MUK_METHOD, MARK_KO2EN, MEASURE_METHODS, NEWS } from '../tables.ts';
 import { inUnit, parseNumber, spaced, splitTop } from '../text.ts';
 import { Ctx, ECHO_LABEL, LABEL_RE, markAlias, parseRef, parseWord, putTo, takePrefix, tightenTildes, type PrefixRules } from './shared.ts';
 
@@ -34,7 +34,7 @@ function parseMarks(inner: string, ctx: Ctx): Marks | null {
     if (t in EVIDENTIALS) {
       if (ev) ctx.err('E06', `근거가 둘 이상이다: 〈${inner}〉`);
       else if (stage > 0) ctx.err('E09', `표지 순서가 틀렸다(근거·새로앎·화행): 〈${inner}〉`);
-      ev = t as Ev;
+      ev = MARK_KO2EN[t] as Ev; // v0.7: 내부 값은 영어
       stage = Math.max(stage, 1);
     } else if (t === NEWS) {
       if (stage > 1) ctx.err('E09', `표지 순서가 틀렸다(근거·새로앎·화행): 〈${inner}〉`);
@@ -42,7 +42,7 @@ function parseMarks(inner: string, ctx: Ctx): Marks | null {
       stage = Math.max(stage, 2);
     } else if (t in ACTS) {
       if (act) ctx.err('E04', `화행이 둘 이상이다: 〈${inner}〉`);
-      act = t as Act;
+      act = MARK_KO2EN[t] as Act; // v0.7: 내부 값은 영어
       stage = 3;
     } else {
       ctx.err('E05', `알 수 없는 표지 '${t}': 〈${inner}〉`);
@@ -52,9 +52,9 @@ function parseMarks(inner: string, ctx: Ctx): Marks | null {
     ctx.err('E03', `화행이 없다: 〈${inner}〉`);
     return null;
   }
-  if (toks[toks.length - 1] !== act) ctx.err('E04', `화행은 맨 끝에 와야 한다: 〈${inner}〉`);
-  if (act === '다' && !ev) ctx.err('E07', `단언(다)에는 근거가 있어야 한다: 〈${inner}〉`);
-  if (news && act !== '다') ctx.err('E08', `새로앎(네)은 단언(다)과만 쓴다: 〈${inner}〉`);
+  if (MARK_KO2EN[toks[toks.length - 1]] !== act) ctx.err('E04', `화행은 맨 끝에 와야 한다: 〈${inner}〉`);
+  if (act === 'say' && !ev) ctx.err('E07', `단언(다)에는 근거가 있어야 한다: 〈${inner}〉`);
+  if (news && act !== 'say') ctx.err('E08', `새로앎(네)은 단언(다)과만 쓴다: 〈${inner}〉`);
   const marks: Marks = { act };
   if (ev) marks.ev = ev;
   if (news) marks.news = true;
@@ -66,9 +66,9 @@ function parsePartialMarks(inner: string, ctx: Ctx): PartialMarks | null {
   const toks = splitMarkTokens(inner).map((t) => normalizeMarkToken(t, ctx));
   const pm: PartialMarks = {};
   for (const t of toks) {
-    if (t in EVIDENTIALS && !pm.ev) pm.ev = t as Ev;
+    if (t in EVIDENTIALS && !pm.ev) pm.ev = MARK_KO2EN[t] as Ev;
     else if (t === NEWS) pm.news = true;
-    else if (t in ACTS && !pm.act) pm.act = t as Act;
+    else if (t in ACTS && !pm.act) pm.act = MARK_KO2EN[t] as Act;
     else {
       ctx.err('E05', `알 수 없거나 겹친 표지 '${t}': 〈${inner}〉`);
       return null;
@@ -363,8 +363,8 @@ export function parseClause02(text: string, ctx: Ctx): Clause | null {
   }
   // 내용이 비는 경우(3.7절). 어절이 있었는데 읽지 못한 경우는 이미 오류를 냈다.
   if (contentTokens === 0) {
-    const repair = marks.act === '까' && !marks.ev && !marks.news && (!clause.place || clause.place.rel === '↖');
-    const errorNote = clause.process?.kind === '오류';
+    const repair = marks.act === 'ask' && !marks.ev && !marks.news && (!clause.place || clause.place.rel === '↖');
+    const errorNote = clause.process?.kind === 'err';
     if (!repair && !errorNote) ctx.err('E16', `내용이 비었다: '${text}'`);
   }
   if (blocks.muk !== null) clause.muk = parseMuk(blocks.muk, ctx);
