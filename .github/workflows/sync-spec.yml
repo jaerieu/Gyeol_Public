@@ -1,0 +1,33 @@
+# Gyeol_Public에 push하면 Gyeol-spec에 같은 내용을 복사한다(2026-10-29 Jae).
+# 필요한 것: 이 저장소의 Actions 비밀 SPEC_SYNC_TOKEN(Gyeol-spec에 쓸 수 있는 fine-grained 토큰, Contents: Read and write).
+name: sync-spec
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+concurrency:
+  group: sync-spec
+  cancel-in-progress: true
+jobs:
+  copy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: public
+      - uses: actions/checkout@v4
+        with:
+          repository: jaerieu/Gyeol-spec
+          token: ${{ secrets.SPEC_SYNC_TOKEN }}
+          path: spec
+      - name: 똑같이 맞춘다
+        run: rsync -a --delete --exclude .git --exclude .github public/ spec/
+      - name: 바뀐 것이 있으면 커밋하고 push
+        working-directory: spec
+        run: |
+          git add -A
+          if git diff --cached --quiet; then echo "바뀐 것 없음"; exit 0; fi
+          git config user.name "gyeol-sync"
+          git config user.email "gyeol-sync@users.noreply.github.com"
+          git commit -m "Gyeol_Public ${GITHUB_SHA::7}와 똑같이 맞춤"
+          git push
