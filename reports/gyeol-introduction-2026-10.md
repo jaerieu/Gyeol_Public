@@ -177,7 +177,7 @@ Gyeol is a language that "evolves through its contemporary users", and the users
 
 ### 3.4 Shim (心)
 
-The third sentence's "shim" is the middle of three layers: thought (before language) → shim (marking, participation, staying) → Gyeol (utterance). The creator sees it as the device that governs thought arising in an AI's high-dimensional latent space just before it is emitted into Gyeol's linear, verifiable structure (`handover/philosophy.md` §3.1). The current implementation is only a self-dialogue experiment ("talk to yourself in the Gyeol skeleton, with the previous line checked each turn", `site/src/sim.js`, two runs); the participation and staying layers are not yet designed (roadmap R8).
+The third sentence's "shim" is the middle of three layers: thought (before language) → shim (marking, participation, staying) → Gyeol (utterance). The creator sees it as the device that governs thought arising in an AI's high-dimensional latent space just before it is emitted into Gyeol's linear, verifiable structure (`handover/philosophy.md` §3.1). The current implementation is only a self-dialogue experiment ("talk to yourself in the Gyeol skeleton, with the previous line checked each turn", `site/src/shim.js`, two runs); the participation and staying layers are not yet designed (roadmap R8).
 
 ### 3.5 Where the philosophy became decisions
 
