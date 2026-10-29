@@ -201,7 +201,7 @@ v0.7(2026-10-29)부터 내부 표지·정규형·먹 이름은 영어 세 글자
 
 | 항목 | 판 |
 | --- | --- |
-| 문법 | v0.7 (실험적, 2026-10-29~) |
+| 문법 | v0.7 (실험적, 2026-10-29\~) |
 | 사전 | v0.7 (2026-10-29): 영어 정본, 먹 이름 `#a2eacf`([`dict/HASHES.md`](dict/HASHES.md)); 번역본은 정체가 아니다 |
 | 먹(신용) | v6 (2026-10-29 새로 시작, 모두 5 = 아직 정보 없음) |
 | 진단 | 오류 37가지, 경고 34가지([`spec/03-grammar.md`](spec/03-grammar.md)) |
@@ -234,11 +234,11 @@ Gyeol_Public/
 | [`spec/`](spec/README.md) | 규범 명세. 원칙과 공리(1), 글자와 정규화(2), 절 문법과 진단 표(3), 열네 층(4), 측정과 *먹* 신용(5), *채* 어조와 화음(6), 짝 사이의 조율(7), 그림·소리로 옮기기(8), 이름·판·해시(9), JSON 틀(10), 검증 실험(11), 날짜 붙은 결정 기록(12). |
 | [`dict/`](dict/) | 모델이 언어를 배우려고 읽는 기본 사전. 지금은 `base-v0.7.txt`(영어 정본)와 번역본 `base-v0.7.<언어>.txt`(ko·zh-Hans·zh-Hant·ja·de·fr·it·es·ru, 정체가 아니다). `base-v0.6.5.txt`·`base-v0.6.txt`·`base-v0.5.5.txt`·`base-v0.2.txt`는 옛 자료용. 짝 보기, CJK 이체자 표(`variants-v0.2.json`, Unihan), 판마다의 내용 해시 기록 `HASHES.md`. |
 | [`schema/`](schema/) | JSON 틀(`spec/10-json.md`)의 JSON Schema. |
-| [`src/`](src/) | 의존성 없는 TypeScript, Node가 바로 돌린다. `parse.ts`가 검사기 입구, `parse/`에 판별 읽기와 쓰기 규칙(`v02`~`v07`). 정규형(`format.ts`), 내용 해시(`hash.ts`), 열 언어 표지 풀이(`gloss.ts`), 측정(`measure.ts`), 먹 신용 셈(`muk.ts`). |
+| [`src/`](src/) | 의존성 없는 TypeScript, Node가 바로 돌린다. `parse.ts`가 검사기 입구, `parse/`에 판별 읽기와 쓰기 규칙(`v02`\~`v07`). 정규형(`format.ts`), 내용 해시(`hash.ts`), 열 언어 표지 풀이(`gloss.ts`), 측정(`measure.ts`), 먹 신용 셈(`muk.ts`). |
 | [`tests/`](tests/) | 검사기·정규형·해시·측정의 `node:test` 시험. `fixtures/`에 AI 모델이 실제로 쓴 보관 줄의 판정 스냅숏. |
 | [`tools/`](tools/) | `cli.ts` 명령줄(`check`, `format`, `json`, `fold`, `name`, `hashes`, `simplify`). 이체자 표 만들기, 보관 줄 스냅숏·비교, 낱말 검사(`lexicon/`), JSON Schema 검사(`schema-check.py`). |
 | [`reports/`](reports/) | 소개 보고서 한국어·영어판. |
-| [`archive/dict/`](archive/dict/) | 물러난 사전 판(v0.2.1~v0.5.2). `dict/HASHES.md`의 해시를 재현하고 옛 줄을 읽기 위해 둔다. |
+| [`archive/dict/`](archive/dict/) | 물러난 사전 판(v0.2.1\~v0.5.2). `dict/HASHES.md`의 해시를 재현하고 옛 줄을 읽기 위해 둔다. |
 | [`sources/`](sources/) | 맨 처음 사전 초안 `dict-v0.txt`, 같은 까닭으로 고치지 않고 둔다. |
 | [`assets/`](assets/) | 로고. |
 
