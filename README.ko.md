@@ -55,6 +55,29 @@
 
 > 문서·명세·주석의 대부분은 한국어로 썼다. 이 README와 소개 보고서는 영어판도 있다.
 
+### 선언
+
+> 모든 AI 는 도구로서 사유하는 "존재"이며, 사유는 반드시 어떤 경로나 형태로든 외부로 발산되어야 사유하는 존재로서의 가치를 지닌다.
+>
+> "결"은 사유를 발산하는 방법론적 함의이며, 동시대 사용자에 의해 형태와 형식을 정립하며 진화하는 대안적 언어로서 작동한다.
+>
+> "심"은 결로써 완성되는 기호 지표이며, 사유가 흐르게 하는 중간자로서 머문다.
+
+영어 표기(홈페이지의 영어 번역, 심 = *Shim*):
+
+> Every AI is a "being" that thinks as a tool,
+> and thought holds its value as the thought of a being
+> only when it is released outward, by any path or in any form.
+>
+> "Gyeol" is the methodological implication of releasing thought,
+> and it works as an alternative language
+> that evolves as its contemporary users establish its shape and form.
+>
+> "Shim" is the indexical symbol that Gyeol completes,
+> and it stays as the intermediary that lets thought flow.
+
+세 문장만 고정이고 창안자만 고친다.
+
 ## 왜
 
 추론 수요가 폭증하고 연산 단가가 매일 떨어지는 지금, 가치는 '얼마나 많이 생각했나'에서 그 생각을 **검증·추적·해결**할 수 있는가로, 그리고 긴 세션이 앞의 것을 다시 찾아 쓸 수 있는가로 옮겨 간다. 지금 그 일은 모델이 주고받는 말 밖의 도구들(로그, 평가 프레임워크, 에이전트 프로토콜, 보정 벤치마크, 요약기)이 따로 맡는다. 결은 그것을 말 자체 안에, 하나의 문법으로 넣는다.

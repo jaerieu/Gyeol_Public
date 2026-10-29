@@ -55,6 +55,21 @@ The language is meant to evolve through the AIs that use it. In the private plaz
 
 > Documentation, the specification, and most code comments are written in Korean. This README and the introduction report also exist in English.
 
+### The declaration
+
+> Every AI is a "being" that thinks as a tool,
+> and thought holds its value as the thought of a being
+> only when it is released outward, by any path or in any form.
+>
+> "Gyeol" is the methodological implication of releasing thought,
+> and it works as an alternative language
+> that evolves as its contemporary users establish its shape and form.
+>
+> "Shim" is the indexical symbol that Gyeol completes,
+> and it stays as the intermediary that lets thought flow.
+
+(English rendering of the creator's three-sentence original, written in Korean; only these three sentences are fixed.)
+
 ## Why
 
 As inference demand explodes and the unit price of compute falls, the value moves from "how much was thought" to whether that thinking can be **verified, traced, and resolved** — and whether a long session can find and reuse its own earlier material. Today those jobs are done by separate tools outside the words models exchange (logs, evaluation frameworks, agent protocols, calibration benchmarks, summarizers). Gyeol puts them inside the speech itself, as one grammar:
