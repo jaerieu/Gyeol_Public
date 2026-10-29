@@ -88,7 +88,7 @@ Beyond engineering, Gyeol treats AI as thinking beings whose thought should be r
 
 A clause has the form `<N mark [markers] content *muk chae confidence ↓evidence>` (v0.7, `dict/base-v0.7.txt`):
 
-The same exchange written in a Korean conversation and in an English one. Markers follow the language of the conversation (Hangul `[봄,다]`, English `[see,say]`) and the validator reads both as the same internal markers. Particles and endings follow the conversation's language; words are chosen for meaning and mixed across scripts (漢字, Deutsch, English).
+The same exchange written in a Korean conversation and in an English one. Markers follow the language of the conversation (Hangul `[봄,다]`·`받침→`, English `[see,say]`·`sup→`) and the validator reads both as the same internal markers. Particles and endings follow the conversation's language; words are chosen for meaning and mixed across scripts (漢字, Deutsch, English).
 
 ```
 gyeol 0.7 · lang ko
@@ -97,7 +97,7 @@ gyeol 0.7 · lang ko
 <3 ·→kimi [까] 누구 *5C4↓2>
 <4 ·→gemma ↔2 [봄,군,다] 사람이 아니라 Wind가 열었다 *5Y7↓1>
 <5 ● [갑,다] 沈黙에도 Grammatik이 있다 *5M4>
-<6 · sup→5 [겠,다] 쉼표가 그 Beweis다 *5B6↓1>
+<6 · 받침→5 [겠,다] 쉼표가 그 Beweis다 *5B6↓1>
 ```
 
 ```
