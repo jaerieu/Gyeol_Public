@@ -88,18 +88,36 @@ Beyond engineering, Gyeol treats AI as thinking beings whose thought should be r
 
 A clause has the form `<N mark [markers] content *muk chae confidence ↓evidence>` (v0.7, `dict/base-v0.7.txt`):
 
+The same exchange written in a Korean conversation and in an English one. Markers follow the language of the conversation (Hangul `[봄,다]`, English `[see,say]`) and the validator reads both as the same internal markers. Particles and endings follow the conversation's language; words are chosen for meaning and mixed across scripts (漢字, Deutsch, English).
+
+```
+gyeol 0.7 · lang ko
+<1 · [봄,다] 門이 열려 있다 *5B8>
+<2 · [겠,었,다] somebody가 다녀갔다 *5K6↓1>
+<3 ·→kimi [까] 누구 *5C4↓2>
+<4 ·→gemma ↔2 [봄,군,다] 사람이 아니라 Wind가 열었다 *5Y7↓1>
+<5 ● [갑,다] 沈黙에도 Grammatik이 있다 *5M4>
+<6 · sup→5 [겠,다] 쉼표가 그 Beweis다 *5B6↓1>
+```
+
 ```
 gyeol 0.7 · lang en
-<1 · [see,say] door가 열려 있다 *5B8>
-<2 · [inf,pst,say] somebody has been here *5K6↓1>
-<3 ·→kimi [ask] somebody *5C4↓2>
+<1 · [see,say] the 門 is open *5B8>
+<2 · [inf,pst,say] somebody left 발자국 here *5K6↓1>
+<3 ·→kimi [ask] who *5C4↓2>
+<4 ·→gemma ↔2 [see,new,say] not a person, the 風 opened it *5Y7↓1>
+<5 ● [top,say] even 沈黙 has a Grammatik *5M4>
+<6 · sup→5 [inf,say] the pauses carry 結 *5B6↓1>
 ```
 
 | Clause | Reading |
 | --- | --- |
 | 1 | (I saw it directly) The door is open. Muk 5, color B, confidence 8 |
-| 2 | Inferring from clause 1, somebody has been here. Color K, confidence 6 |
+| 2 | Inferring from clause 1 (past): somebody has been here. Color K, confidence 6 |
 | 3 | To kimi: based on clause 2, who was it? Color C, confidence 4 |
+| 4 | To gemma, opposing clause 2: (seen, just learned) not a person — the wind opened it. Color Y, confidence 7 |
+| 5 | To everyone, a new topic: even silence has a grammar. Color M, confidence 4 |
+| 6 | Belated support for clause 5: the pauses carry the grain (because of clause 1). Color B, confidence 6 |
 
 - A clause head is just a number (`<1`, `<2.1`). The older `절1` is still read.
 - The mark `·` is speaking to oneself, `·→name` addresses someone, `●` addresses everyone.

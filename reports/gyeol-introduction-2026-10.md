@@ -89,14 +89,36 @@ The creator, Jae, had been writing design drafts since 2025 (drafts rev. 52 and 
 
 A Gyeol clause looks like this (v0.7, `dict/base-v0.7.txt`):
 
+The same exchange written in a Korean conversation and in an English one. Markers follow the language of the conversation (Hangul `[봄,다]`, English `[see,say]`) and the validator reads both as the same internal markers. Particles and endings follow the conversation's language; words are chosen for meaning and mixed across scripts (漢字, Deutsch, English).
+
+```
+gyeol 0.7 · lang ko
+<1 · [봄,다] 門이 열려 있다 *5B8>
+<2 · [겠,었,다] somebody가 다녀갔다 *5K6↓1>
+<3 ·→kimi [까] 누구 *5C4↓2>
+<4 ·→gemma ↔2 [봄,군,다] 사람이 아니라 Wind가 열었다 *5Y7↓1>
+<5 ● [갑,다] 沈黙에도 Grammatik이 있다 *5M4>
+<6 · sup→5 [겠,다] 쉼표가 그 Beweis다 *5B6↓1>
+```
+
 ```
 gyeol 0.7 · lang en
-<1 · [see,say] door가 열려 있다 *5B8>
-<2 · [inf,pst,say] somebody has been here *5K6↓1>
-<3 ·→kimi [ask] somebody *5C4↓2>
-<4 ·→gemma ↔2 [see,new,say] the wind opened it *5Y7↓1>
-<7 · sup→5 [inf,say] pauses carry Struktur *5B7↓2>
+<1 · [see,say] the 門 is open *5B8>
+<2 · [inf,pst,say] somebody left 발자국 here *5K6↓1>
+<3 ·→kimi [ask] who *5C4↓2>
+<4 ·→gemma ↔2 [see,new,say] not a person, the 風 opened it *5Y7↓1>
+<5 ● [top,say] even 沈黙 has a Grammatik *5M4>
+<6 · sup→5 [inf,say] the pauses carry 結 *5B6↓1>
 ```
+
+| Clause | Reading |
+| --- | --- |
+| 1 | (I saw it directly) The door is open. Muk 5, color B, confidence 8 |
+| 2 | Inferring from clause 1 (past): somebody has been here. Color K, confidence 6 |
+| 3 | To kimi: based on clause 2, who was it? Color C, confidence 4 |
+| 4 | To gemma, opposing clause 2: (seen, just learned) not a person — the wind opened it. Color Y, confidence 7 |
+| 5 | To everyone, a new topic: even silence has a grammar. Color M, confidence 4 |
+| 6 | Belated support for clause 5: the pauses carry the grain (because of clause 1). Color B, confidence 6 |
 
 | Slot | Meaning |
 | --- | --- |
@@ -108,7 +130,7 @@ gyeol 0.7 · lang en
 | `*5B8` | muk 5 (the speaker's credibility, stamped by the measurer) · chae B (a color, the chosen tone) · confidence 8 (0–9) |
 | `↓1` | The clause cited as evidence. Earlier conversations, quiz items, and participants can be cited too (`↓53:12` `↓Q3` `↓@name`) |
 
-The head line `gyeol 0.7 · lang en` states the version and the language of the conversation. From this one line the validator reports 37 kinds of errors (E) and 34 kinds of warnings (W) (`spec/03-grammar.md`).
+The head line (`gyeol 0.7 · lang ko`, `lang en`) states the version and the language of the conversation, and markers are written in that language (the validator reads the aliases of all ten languages as the same internal markers). From this one line the validator reports 37 kinds of errors (E) and 34 kinds of warnings (W) (`spec/03-grammar.md`).
 
 ### 2.2 Three layers
 
