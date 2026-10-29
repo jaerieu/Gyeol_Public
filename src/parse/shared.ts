@@ -4,7 +4,7 @@
 // 2026-10-15(v0.5): 새 꼴 줄의 내용은 어느 언어의 낱말이든 받는다(parseWord의 anyScript). 옛 꼴은 그대로 읽는다.
 
 import type { Clause, ClauseWritten, Diagnostic, PlaceRel, ProcessKind, Ref, Word } from '../types.ts';
-import { MARK_ALIASES, PROCESS_KO2EN } from '../tables.ts';
+import { MARK_ALIASES, PROCESS_ALIASES, PROCESS_ALIAS_RE } from '../tables.ts';
 import { HAN, HANGUL, stripTrailingPunct } from '../text.ts';
 
 export class Ctx {
@@ -198,6 +198,15 @@ export function putTo(clause: Clause, name: string, shown: string, ctx: Ctx, ove
  * 앞붙이 하나(숙고·미해결, 고침→N·오류→N, ↓↔∥↖N, →이름)를 읽어 절에 넣는다. 앞붙이 꼴이 아니면 false.
  * 가리킴을 읽을 수 없으면 E19를 내고 앞붙이로 친다(true). v0.3의 '받은대로'는 v03.ts가 따로 본다.
  */
+/** 과정 앞붙이 별칭 → 내부 값(fix·err·sup). 라틴은 큰·작은 글자를 가리지 않는다 */
+export function processKindOf(word: string): ProcessKind {
+  const w = String(word);
+  return (PROCESS_ALIASES[w] ?? PROCESS_ALIASES[w.toLowerCase()] ?? w.toLowerCase()) as ProcessKind;
+}
+const PROCESS_FIX_ERR = new RegExp(`^(${PROCESS_ALIAS_RE})→(.+)$`, 'iu');
+/** 받침(sup) 별칭만: 받침|sup|stu|app|sos|apo|под|撑|撐|支 */
+export const PROCESS_SUP_RE = new RegExp(`^(?:${['sup', ...Object.entries(PROCESS_ALIASES).filter(([, k]) => k === 'sup').map(([a]) => a)].join('|')})→(.+)$`, 'iu');
+
 export function takePrefix(t: string, clause: Clause, ctx: Ctx, rules: PrefixRules): boolean {
   let m: RegExpExecArray | null;
   if (t === '숙고' || t === '미해결') {
@@ -206,12 +215,13 @@ export function takePrefix(t: string, clause: Clause, ctx: Ctx, rules: PrefixRul
     return true;
   }
   // v0.7(2026-10-29): 과정 앞붙이의 내부 값은 영어(fix 고침, err 오류). 한글은 첫째 별칭으로 그대로 읽는다. 라틴은 큰·작은 글자를 가리지 않는다
-  if ((m = /^(고침|오류|fix|err)→(.+)$/iu.exec(t))) {
+  // 2026-10-29: 열 언어 별칭(PROCESS_ALIASES, kor→·cor→·исп→·改→ …)도 같은 내부 값으로 읽는다. sup 별칭은 v03.ts의 받침 갈래가 받는다(지난 대화의 절도 가리킬 수 있어 따로)
+  if ((m = PROCESS_FIX_ERR.exec(t)) && processKindOf(m[1]) !== 'sup') {
     const r = rules.ref(m[2]);
     if (!r) ctx.err('E19', `가리킴을 읽을 수 없다: '${t}'`);
     else {
       if (clause.process) ctx.err('E18', `과정 앞붙이가 둘 이상이다: '${t}'`);
-      clause.process = { kind: (PROCESS_KO2EN[m[1]] ?? m[1].toLowerCase()) as ProcessKind, target: r };
+      clause.process = { kind: processKindOf(m[1]), target: r };
     }
     return true;
   }

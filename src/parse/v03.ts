@@ -40,9 +40,9 @@
 //   - E37: 받침 절의 근거 자리가 촉·갑이거나 ↓근거(끝·옛 앞붙이)가 없다. 직감을 직감으로 받칠 수 없다.
 
 import type { Act, Clause, ClauseWritten, Ev, Fig, Marks, PartialMarks, Ref, Tense, Word, Because } from '../types.ts';
-import { ACT_07, DIGIT_MAX, EV_07, FIG_07, MARK_ALIASES_06, MARK_CHARS, MARK_KO2EN, MARK_RANK, NEWS, NEWS_05, NEWS_07, TENSE_07, markAlias05, markOf07 } from '../tables.ts';
+import { ACT_07, DIGIT_MAX, EV_07, FIG_07, MARK_ALIASES_06, MARK_CHARS, MARK_KO2EN, MARK_RANK, NEWS, NEWS_05, NEWS_07, TENSE_07, markAlias05, markOf07, PROCESS_ALIAS_RE } from '../tables.ts';
 import { stripTrailingPunct } from '../text.ts';
-import { Ctx, ECHO_LABEL, markAlias, parseWord, parseWord052, takePrefix, tightenTildes, type PrefixRules } from './shared.ts';
+import { Ctx, ECHO_LABEL, markAlias, parseWord, parseWord052, takePrefix, tightenTildes, type PrefixRules, PROCESS_SUP_RE } from './shared.ts';
 
 const NF_OPEN = '<〈＜⟨《‹';
 const NF_CLOSE = '>〉＞⟩》›';
@@ -106,10 +106,11 @@ function normalizeArrows(s: string): string {
 }
 
 /** 앞붙이 사이의 띄어쓰기를 붙인다: '↓ 1' → '↓1', '고침 → 절 2' → '고침→절2', '→ kimi' → '→kimi'. */
+const PROCESS_TIGHTEN = new RegExp(`(${PROCESS_ALIAS_RE})\\s*→\\s*`, 'giu');
 function tightenPrefixes(s: string): string {
   return tightenTildes(
     s
-      .replace(/(고침|오류|받침|fix|err|sup)\s*→\s*/giu, '$1→') // v0.6 덧붙임(2026-10-25): 받침 → 3도. v0.7: fix·err·sup
+      .replace(PROCESS_TIGHTEN, '$1→') // v0.6 덧붙임(2026-10-25): 받침 → 3도. v0.7: fix·err·sup
       .replace(/([↓↔∥↖→⊗])\s+(?=\S)/gu, '$1')
       .replace(/([↓↔∥↖→⊗])([절점])\s+(\d)/gu, '$1$2$3')
       // v0.6: ⊗12, 15 → ⊗12,15(⊗ 둘레의 띄어쓰기는 ↓ 1처럼 붙여 읽는다)
@@ -400,7 +401,7 @@ function takePrefix03(t: string, clause: Clause, ctx: Ctx, st: { echo: boolean }
     return true;
   }
   // v0.6 덧붙임(2026-10-25): 받침→N(과정 자리 하나, E18), ↔T:N(지난 대화의 절에 맞섬)
-  const b = /^(?:받침|sup)→(.+)$/iu.exec(t); // v0.7: 내부 값 sup(support)
+  const b = PROCESS_SUP_RE.exec(t); // v0.7: 내부 값 sup(support). 2026-10-29: 열 언어 별칭(stu·app·под·撑 …)도
   if (b) {
     const r = refOrThread(b[1]);
     if (!r) ctx.err('E19', `가리킴을 읽을 수 없다: '${t}'`);
@@ -674,7 +675,7 @@ function parseMarkBlock(text: string, outerParen: string | null, ctx: Ctx, echo:
 // ───────── 절·줄 ─────────
 
 /** 내용 가운데·끝에 둔 화살표 앞붙이 꼴(v0.6 ⊗ 포함) */
-const PREFIX_LIKE = /^(?:→|[↓↔∥↖⊗]|고침→|오류→|받침→|fix→|err→|sup→)\S/iu;
+const PREFIX_LIKE = new RegExp(`^(?:→|[↓↔∥↖⊗]|(?:${PROCESS_ALIAS_RE})→)\\S`, 'iu');
 
 /** v0.5.2: 표지 블록 바로 뒤 괄호가 옛 자신·먹 자리인가(수와 이름표 자신·먹, |, /, %만). 아니면 0.5.1 꼴 절에서는 내용이다 */
 const PAREN_NUMLIKE = /^(?:\s|자신|먹|ink|[\d０-９.%|｜/])*$/iu; // v0.7: 먹 이름표는 ink
@@ -855,7 +856,7 @@ const DOT_RE = new RegExp(`^[${DOT_CHARS}](→.*)?$`, 'u');
 export const ALL_CHARS = '●⬤⚫';
 const ALL_RE = new RegExp(`^([${ALL_CHARS}])\\uFE0F?(→.*)?$`, 'u');
 /** v0.5.2: 점(·, ●)에 붙여 쓴 앞붙이. 받는 이(·→kimi)는 점 자리 그대로라 넣지 않는다 */
-const GLUED_DOT_PREFIX = new RegExp(`^([${DOT_CHARS}]|[${ALL_CHARS}]\\uFE0F?)((?:[↓↔∥↖⊗]|고침→|오류→|받침→|fix→|err→|sup→|숙고|미해결|받은대로).*)$`, 'iu');
+const GLUED_DOT_PREFIX = new RegExp(`^([${DOT_CHARS}]|[${ALL_CHARS}]\\uFE0F?)((?:[↓↔∥↖⊗]|(?:${PROCESS_ALIAS_RE})→|숙고|미해결|받은대로).*)$`, 'iu');
 const LABEL_BEFORE_DOT = new RegExp(`((?:[절점]|[cC])\\s*\\d+(?:\\.\\d+)?)(?=[${DOT_CHARS}${ALL_CHARS}→↓↔∥↖⊗])`, 'u');
 /** v0.7: 수만 쓴 머리에 붙여 쓴 점(<1·→kimi …>)도 띄어 읽는다(맨 앞에서만) */
 const BARE_BEFORE_DOT = new RegExp(`^(\\s*\\d+(?:\\.\\d+)?)(?=[${DOT_CHARS}${ALL_CHARS}])`, 'u');

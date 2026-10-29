@@ -238,6 +238,23 @@ export const MARKS_07 = new Set<string>([...Object.keys(EV_07), NEWS_07, ...Obje
 
 /** 과정 앞붙이: 한글 → 영어(fix 고침, err 오류, sup 받침). 숙고·미해결은 v0.6.5에서 뺀 것이라 한글 그대로 읽기만 한다 */
 export const PROCESS_KO2EN: Record<string, ProcessKind> = { 고침: 'fix', 오류: 'err', 받침: 'sup' };
+/**
+ * 과정 앞붙이의 열 언어 별칭(2026-10-29 Jae: 표지처럼 앞붙이도 그 대화의 언어로 쓴다). 한글이 첫째 별칭, 내부 값은 영어 그대로(정규형·먹 이름 불변).
+ * 세 글자까지(한자는 한 글자). 한 별칭은 한 앞붙이에만 간다. fr·it·es의 cor·err처럼 겹치는 별칭은 같은 뜻이라 함께 둔다. 쓰는 쪽 표는 site/src/marks-i18n.js PREFIX_WORDS(이 표와 시험으로 맞춘다).
+ */
+export const PROCESS_ALIASES: Record<string, ProcessKind> = {
+  ...PROCESS_KO2EN,
+  // de: korrigieren · Fehler · stützen
+  kor: 'fix', feh: 'err', stu: 'sup',
+  // fr·it·es: corriger/correggere/corregir · erreur/errore/error · appuyer / sostenere / apoyar
+  cor: 'fix', app: 'sup', sos: 'sup', apo: 'sup',
+  // ru: исправить · ошибка · поддержать
+  исп: 'fix', оши: 'err', под: 'sup',
+  // zh-Hans · zh-Hant · ja
+  改: 'fix', 误: 'err', 誤: 'err', 撑: 'sup', 撐: 'sup', 支: 'sup',
+};
+/** 앞붙이 별칭을 읽는 정규식 조각: (고침|오류|받침|fix|err|sup|kor|…) */
+export const PROCESS_ALIAS_RE = [...new Set(['fix', 'err', 'sup', ...Object.keys(PROCESS_ALIASES)])].join('|');
 export const PROCESS_EN2KO: Record<string, string> = { fix: '고침', err: '오류', sup: '받침' };
 
 /**
