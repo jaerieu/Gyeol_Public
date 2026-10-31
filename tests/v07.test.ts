@@ -87,9 +87,11 @@ test("form '0.6'은 v0.6.5까지의 한글 정규형, form '0.2'는 한글 옛 �
 });
 
 test('rules07: W29는 사용자 언어의 글자군으로 재고 언어가 없으면 재지 않는다. W26은 긴 별칭에만. 나머지는 rules065 그대로', () => {
-  // ko: 모두 한글이면 W29, 다른 글자군 어근 하나면 없음
+  // ko: 모두 한글이거나 한글이 한 글자도 없으면 W29, 한글 뼈대 + 다른 글자군 어근 하나면 없음
   assert.deepEqual(w07('<1 · [see,say] 문이 열려 있다 *B8>', 'ko'), ['W29']);
+  assert.deepEqual(w07('<1 · [see,say] the 門 is open *B8>', 'ko'), ['W29']);
   assert.deepEqual(w07('<1 · [see,say] door가 열려 있다 *B8>', 'ko'), []);
+  assert.deepEqual(w07('<1 · [see,say] 門이 열려 있다 *B8>', 'ko'), []);
   // en: 모두 라틴이면 W29(독일어를 섞어도 같은 글자군이라 W29), 한글·한자·키릴을 섞으면 없음
   assert.deepEqual(w07('<1 · [see,say] the door is open *B8>', 'en'), ['W29']);
   assert.deepEqual(w07('<1 · [see,say] die Tür is open *B8>', 'en'), ['W29']);

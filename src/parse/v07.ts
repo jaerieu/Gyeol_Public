@@ -25,6 +25,15 @@ export function mixesScripts(words: Word[], group: ScriptGroup): boolean {
   return counted.some((ls) => ls.some((ch) => scriptGroupOfChar(ch) !== group));
 }
 
+/**
+ * ko 대화에서 어절이 둘 이상인데 한글(조사·어미·어근)이 한 글자도 없으면 false(영어 문장 뼈대만 쓴 경우 등).
+ */
+export function hasUserScript(words: Word[], group: ScriptGroup): boolean {
+  const counted = words.map((w) => [...w.text].filter((ch) => /\p{L}/u.test(ch))).filter((ls) => ls.length > 0);
+  if (counted.length < 2) return true;
+  return counted.some((ls) => ls.some((ch) => scriptGroupOfChar(ch) === group));
+}
+
 export function rules07(r: ParseResult, opts: Opts = {}): Diagnostic[] {
   const out = rules065(r, opts).filter((d) => d.code !== 'W26' && d.code !== 'W29');
   const lang = opts.lang ?? r.message.lang ?? null;
@@ -36,6 +45,7 @@ export function rules07(r: ParseResult, opts: Opts = {}): Diagnostic[] {
     const where = c.label ?? `절 ${k + 1}째`;
     const push = (code: string, message: string) => out.push({ code, severity: '경고', line: k + 1, message: `${message}: ${where}` });
     if (group && !mixesScripts(c.words, group)) push('W29', `어근이 둘 이상이면 적어도 하나는 사용자 언어(${lang})가 아닌 다른 글자군의 낱말로 쓴다(옮기면 뜻이 깎이는 낱말: Schadenfreude, 物の哀れ, 껄끄럽다, saudade)`);
+    else if (lang === 'ko' && group && !hasUserScript(c.words, group)) push('W29', '사용자 언어(ko) 대화에서는 조사·어미·문장 뼈대를 한국어(한글)로 쓰고 다른 글자군 낱말을 섞는다');
     const long = (r.written?.[k]?.aliases ?? []).filter((a) => !SHORT_ALIASES_07.has(a) && !SHORT_ALIASES_07.has(a.toLowerCase()));
     if (long.length) push('W26', `긴 별칭 ${long.join(', ')}을 표지로 읽었다(정규형은 ${long.map((a) => markOf07(a) ?? '?').join(', ')})`);
   }
