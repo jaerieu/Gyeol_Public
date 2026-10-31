@@ -306,7 +306,7 @@ export function lineFormOf(line: string): 'wrapped' | 'bare' | null {
 interface RawClause {
   inner: string;
   closed: boolean;
-  /** 원문에서 꺾쇠까지 포함한 조각(광장에서 첫 절만 실을 때 쓴다) */
+  /** 원문에서 꺾쇠까지 포함한 조각(판에서 첫 절만 실을 때 쓴다) */
   text: string;
 }
 
@@ -355,7 +355,7 @@ function splitWrapped(line: string): { lead: string | null; parts: RawClause[]; 
 
 /**
  * v0.3 줄꼴로 쓴 줄의 절 조각들(원문 그대로). v0.3 줄꼴이 아니면 줄 전체 하나.
- * 광장은 한 차례에 절 하나만 싣는다(뒤의 절은 다음 참가자의 번호와 겹친다).
+ * 판은 한 차례에 절 하나만 싣는다(뒤의 절은 다음 참가자의 번호와 겹친다).
  */
 export function clausePieces(line: string): string[] {
   const s = String(line ?? '').trim();
@@ -366,7 +366,7 @@ export function clausePieces(line: string): string[] {
   return out.length ? out : [s];
 }
 
-/** 결 줄 하나에 이름표를 매긴다(광장·쪽지 시험의 채점 쪽이 번호를 붙일 때). 원래 이름표는 갈아 끼운다. */
+/** 결 줄 하나에 이름표를 매긴다(판·쪽지 시험의 채점 쪽이 번호를 붙일 때). 원래 이름표는 갈아 끼운다. */
 export function labelLine(line: string, label: string): string {
   const s = String(line ?? '').trim();
   const form = lineFormOf(s);
@@ -897,7 +897,7 @@ function parseClause03(rawInner: string, ctx: Ctx, lead: string | null, odd: { v
 
   const clause: Clause = { label: null, process: null, place: null, to: null, words: [], marks: {} };
   const st = { echo: false };
-  // v0.5.2(2026-10-17 Jae, 띄어쓰기): 점에 붙여 쓴 앞붙이(·↔6, ·↓1, ●↖2)는 띄어 읽는다(광장 10.16~17에 7번, 전에는 E25·E19).
+  // v0.5.2(2026-10-17 Jae, 띄어쓰기): 점에 붙여 쓴 앞붙이(·↔6, ·↓1, ●↖2)는 띄어 읽는다(판 10.16~17에 7번, 전에는 E25·E19).
   // 내용의 띄어쓰기는 자율이지만 줄꼴(뼈대)을 벗어난 것은 경고를 남긴다(Jae): W33
   const bt = before.trim() ? before.trim().split(/\s+/u).flatMap((t) => {
     const g = GLUED_DOT_PREFIX.exec(t);

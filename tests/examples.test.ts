@@ -80,7 +80,7 @@ test('틀 → 글 → 틀이 같은 틀을 낸다', () => {
   assert.deepEqual(m2, m1);
 });
 
-// v0.3.1 사전(광장 참가자가 받는 것)과 그 앞의 v0.3 사전. 사전의 보기는 자신만 쓰므로 v0.3.1의 먹 이름표와 상관없이 정규형이다.
+// v0.3.1 사전(판 참가자가 받는 것)과 그 앞의 v0.3 사전. 사전의 보기는 자신만 쓰므로 v0.3.1의 먹 이름표와 상관없이 정규형이다.
 // v0.3 사전은 2026-10-14, v0.4 사전은 2026-10-15(v0.5 뒤) archive/dict/로 옮겼다. 옛 사전의 보기가 지금 검사기에서도 그대로 읽히는지(옛 꼴 호환) 계속 본다.
 // v0.5 사전의 보기가 v0.5 쓰기 규칙(rules05)에도 깨끗한지는 tests/v05.test.ts가 본다.
 for (const file of ['archive/dict/base-v0.3.txt', 'archive/dict/base-v0.3.1.txt', 'archive/dict/base-v0.3.2.txt', 'archive/dict/base-v0.4.txt', 'archive/dict/base-v0.5.txt', 'archive/dict/base-v0.5.1.txt', 'archive/dict/base-v0.5.2.txt', 'dict/base-v0.5.5.txt']) {

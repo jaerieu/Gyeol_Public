@@ -204,7 +204,7 @@ const CHAE_KEYS = ['자신', '전함', '인용'];
 
 /**
  * 채 항목 나누기. 정규형은 ' · '(쉼표·쌍반점도 받는다).
- * v0.2.1(광장 상의 1의 4번): '/'로 나눈 것과 띄어쓰기로 이어 쓴 것(「단호 자신 .75」)도 읽되 경고한다(W17).
+ * v0.2.1(판 상의 1의 4번): '/'로 나눈 것과 띄어쓰기로 이어 쓴 것(「단호 자신 .75」)도 읽되 경고한다(W17).
  * 띄어쓰기는 수를 받는 항목 이름(자신·전함·인용) 앞에서만 끊는다. 「담담 .70 .3」처럼 이름이 없으면 그대로 둔다.
  */
 function splitChaeItems(inner: string, ctx: Ctx): string[] {
@@ -317,7 +317,7 @@ function extractBlocks(text: string, ctx: Ctx, requireMarks: boolean): Blocks | 
       }
       rest = rest.slice(end + 1).trim();
     } else if (ch === '→') {
-      // v0.2.1(광장 상의 1의 3번): 받는 이를 줄 끝에 붙인 것. 쉼표로 이어 쓴 것도 하나씩 읽는다.
+      // v0.2.1(판 상의 1의 3번): 받는 이를 줄 끝에 붙인 것. 쉼표로 이어 쓴 것도 하나씩 읽는다.
       const m = /^→\s*([^\s,，、〔「〈]+)\s*[,，、]?\s*/u.exec(rest);
       if (!m) {
         ctx.err('E19', `표지 블록 뒤에 읽을 수 없는 글이 있다: '${rest}'`);
@@ -388,7 +388,7 @@ export function parseEcho(rest: string, ctx: Ctx): Echo[] {
     const blocks = extractBlocks(it, ctx, false);
     if (!blocks) continue;
     const echo: Echo = { words: [] };
-    // v0.2.1(광장 상의 1의 2번): 받은대로 줄에서는 받은 절·점의 이름(점1, 점1~점10, 절1의)을 내용 자리에 써도 된다.
+    // v0.2.1(판 상의 1의 2번): 받은대로 줄에서는 받은 절·점의 이름(점1, 점1~점10, 절1의)을 내용 자리에 써도 된다.
     const before = tightenTildes(blocks.before);
     for (const t of before === '' ? [] : before.split(/\s+/u)) {
       if (ECHO_LABEL.test(t)) {

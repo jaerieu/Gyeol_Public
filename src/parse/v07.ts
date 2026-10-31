@@ -7,7 +7,7 @@
 //   - W26(완화): 열 언어의 짧은 별칭(see·seh·見·вид …)과 한글 표지는 모두 공식 입력이라 경고가 없다. v0.5의 긴 별칭(recall·assert·hunch …)에만
 //          "긴 별칭을 읽었다(정규형은 rec)"로 알린다. 옛 쓰기 규칙(rules05~065)의 W26은 번호 그대로, 문구만 완화했다(src/parse/v05.ts).
 //   - 그 밖(E25·E26·W23·E30·W24·W25·E33·W31·W32·E34·W34·W35·W36·W37)은 rules065 그대로.
-// parse()의 판정·정규형·먹 이름은 바꾸지 않는다. 광장 중계·쪽지 시험 v0.7·명령줄(--rules07)이 부른다.
+// parse()의 판정·정규형·먹 이름은 바꾸지 않는다. 판 중계·쪽지 시험 v0.7·명령줄(--rules07)이 부른다.
 
 import type { Diagnostic, ParseResult, Word } from '../types.ts';
 import { SHORT_ALIASES_07, markOf07, scriptGroupOf, scriptGroupOfChar, type ScriptGroup } from '../tables.ts';

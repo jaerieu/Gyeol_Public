@@ -190,7 +190,7 @@ test('옛 꼴은 v0.2.1과 똑같이 읽는다: 옛 줄의 판정은 그대로�
   assert.equal(lineFormOf('<절1 [봄,다] 雨>'), 'wrapped');
   assert.equal(lineFormOf('절1 [봄,다] 雨'), 'bare');
   assert.equal(lineFormOf('절1 [확신 .3]'), null); // 표지가 아닌 [ ]는 옛 꼴의 먹으로
-  // 한 메시지 안에 두 꼴을 섞어도 된다(광장의 앞 대화는 옛 꼴)
+  // 한 메시지 안에 두 꼴을 섞어도 된다(판의 앞 대화는 옛 꼴)
   const mixed = parse('절1 雨 〈봄·다〉\n<절2 ↔1 [들,다] 雪>\n절3 ↓절2 风 〈겠·다〉');
   assert.equal(mixed.ok, true, JSON.stringify(mixed.diagnostics));
   assert.deepEqual(mixed.forms, ['0.2', '0.3', '0.2']);

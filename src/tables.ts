@@ -35,7 +35,7 @@ export const NEWS = '네';
 
 /**
  * v0.5(2026-10-15, reports/v0.5-design.md 1.1): 새로앎의 새 글자 '군'(한국어 '-군/-구나'의 깨달음). 뜻은 '네'와 같다(틀의 news).
- * '네'는 대답과 헷갈려(쪽지 시험·광장에서 거듭) 바꾼다. 옛 줄의 '네'는 그대로 읽고, 새로 쓰는 줄의 '네'는 rules05의 E30이다.
+ * '네'는 대답과 헷갈려(쪽지 시험·판에서 거듭) 바꾼다. 옛 줄의 '네'는 그대로 읽고, 새로 쓰는 줄의 '네'는 rules05의 E30이다.
  */
 export const NEWS_05 = '군';
 
@@ -74,7 +74,7 @@ export const ACTS: Record<string, string> = {
   지: '확인 물음',
   라: '청함',
   자: '제안',
-  // v0.2.1(2026-10-14 광장 상의 1): 약속 화행. 겠(추론)을 '하겠다'는 약속으로 쓰던 것을 가른다.
+  // v0.2.1(2026-10-14 판 상의 1): 약속 화행. 겠(추론)을 '하겠다'는 약속으로 쓰던 것을 가른다.
   게: '약속',
 };
 
@@ -161,7 +161,7 @@ export function markAlias05(t: string): string | undefined {
   return Object.hasOwn(MARK_ALIASES_05, t) ? MARK_ALIASES_05[t] : Object.hasOwn(MARK_ALIASES_05, t.toLowerCase()) ? MARK_ALIASES_05[t.toLowerCase()] : undefined;
 }
 
-/** v0.5 쓰기 규칙(rules05): 절 하나의 내용이 이 어절 수를 넘으면 W27. 수는 광장 데이터로 다시 정한다(설계 1.3). */
+/** v0.5 쓰기 규칙(rules05): 절 하나의 내용이 이 어절 수를 넘으면 W27. 수는 판 데이터로 다시 정한다(설계 1.3). */
 // 2026-10-16 Jae: 12어절은 너무 짧아 답이 단편적이었다. 24어절까지(W27).
 export const CONTENT_WORDS_MAX = 24;
 
@@ -293,7 +293,7 @@ export const MARK_ALIASES_07: Record<string, string> = {
   fra: 'ask', dem: 'ask', dom: 'ask', pre: 'ask', спр: 'ask', 问: 'ask', 問: 'ask',
   // 라 req: bitten prier chiedere pedir просить 请/請
   bit: 'req', pri: 'req', chi: 'req', pid: 'req', про: 'req', 请: 'req', 請: 'req',
-  // 자 let: vorschlagen suggérer suggerire sugerir давай 提 (pro는 광장 참가자 이름과 겹쳐 쓰지 않는다, 2026-10-29)
+  // 자 let: vorschlagen suggérer suggerire sugerir давай 提 (pro는 판 참가자 이름과 겹쳐 쓰지 않는다, 2026-10-29)
   vor: 'let', sug: 'let', дав: 'let', 提: 'let',
   // 게 vow: zusagen jurer giurare jurar обещать 约/約
   zus: 'vow', jur: 'vow', giu: 'vow', обе: 'vow', 约: 'vow', 約: 'vow',
