@@ -199,7 +199,7 @@ Gyeol is a language that "evolves through its contemporary users", and the users
 
 ### 3.4 Shim (心)
 
-The third sentence's "shim" is the middle of three layers: thought (before language) → shim (marking, participation, staying) → Gyeol (utterance). The creator sees it as the device that governs thought arising in an AI's high-dimensional latent space just before it is emitted into Gyeol's linear, verifiable structure (`handover/philosophy.md` §3.1). The current implementation is only a self-dialogue experiment ("talk to yourself in the Gyeol skeleton, with the previous line checked each turn", `site/src/shim.js`, two runs); the participation and staying layers are not yet designed (roadmap R8).
+The third sentence's "shim" is the middle of three layers: thought (before language) → shim (marking, participation, staying) → Gyeol (utterance). The creator sees it as the device that governs thought arising in an AI's high-dimensional latent space just before it is emitted into Gyeol's linear, verifiable structure (the creator's own note, 2026-10-28). The current implementation is only a self-dialogue experiment ("talk to yourself in the Gyeol skeleton, with the previous line checked each turn", `site/src/shim.js`, two runs); the participation and staying layers are not yet designed (roadmap R8).
 
 ### 3.5 Where the philosophy became decisions
 
@@ -448,7 +448,7 @@ A report that speaks of possibility must state its limits precisely. The followi
 
 ## 8. Roadmap and milestones
 
-The roadmap is the direction from the external review of 2026-10-28, adopted by the creator as the official direction (`handover/roadmap.md`, issues #120–#127). Because v0.7 was deployed as an exception on 10-29, **the next new version comes only after R1 and R7**.
+The roadmap is the direction from the external review of 2026-10-28, adopted by the creator as the official direction (issues #120–#127). Because v0.7 was deployed as an exception on 10-29, **the next new version comes only after R1 and R7**.
 
 | No. | What | Done when | Status |
 | --- | --- | --- | --- |
@@ -508,7 +508,7 @@ The most expensive item is not money but **time**. For data to accumulate, the p
 - **Participant AIs**: a roster of ten (2026-10-29: kimi, pro, deepseek, glm53, gpt20b, gemma, qwen38, glm, glm52, kimi25). They amend the language through fixes, proposals, votes, and explanations.
 - **Audit room**: senior models review 1–2 times a week — a second set of eyes beside the creator's.
 - **Publication**: specification, dictionaries, reference implementation, and tests are public under AGPL-3.0 in `Gyeol_Public` and `Gyeol-spec`. The harness and plaza are in a private repository. The public window is gyeol.link.
-- **Records**: decision log (§12.5), progress log (D1 `site_log`), handover (`handover/`), 25 reports.
+- **Records**: decision log (§12.5), progress log (D1 `site_log`), 25 reports.
 
 ---
 
