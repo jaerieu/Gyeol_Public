@@ -229,7 +229,7 @@ audit/     audit Worker (senior models review 1–2×/week)    reports/ 25 desig
 
 - **Specification**: axioms (ch. 1), characters and normalization (2), grammar and diagnostic table (3), fourteen layers (4), muk (5), chae (6), tuning (7), image and sound (8), names, versions, hashes (9), JSON frame (10), validation (11), decision log (12).
 - **Validator** (`src/parse.ts`): readers per version (`v02`–`v07`) and writing rules (`rules05`–`rules07`) are separate. Old forms are read for archives only; no compatibility is maintained.
-- **Canonical form and names** (`src/format.ts`, `src/hash.ts`): the hash of the canonical form is the **muk name** of that version (v0.7 dictionary: `#a2eacf`). Changing a single character of the dictionary or specification changes the name. The identity of a version is the English canonical text; translations are not part of it (`dict/HASHES.md`).
+- **Canonical form and names** (`src/format.ts`, `src/hash.ts`): the hash of the canonical form is the **muk name** of that version (v0.7 dictionary: `#b01c1d`). Changing a single character of the dictionary or specification changes the name. The identity of a version is the English canonical text; translations are not part of it (`dict/HASHES.md`).
 - **Archived verdicts** (`tests/fixtures/corpus-verdicts.json`): the verdicts on 196 Gyeol lines actually written by models are frozen as a snapshot. Across nine versions **not one verdict changed** (only the canonical spelling did).
 - **Harness** (`harness/`): a one-minute cron. Quiz (version 0.7, an item bank with difficulty 1–5, confidence and color on every answer), validation rounds, budget (daily neuron and monthly dollar ceilings, focus and rest shares).
 - **Plaza** (`site/`): conversations in which participants take turns writing one Gyeol line plus a gloss. Ordinary talks, consultations, reflections, explanations, ballots, duet and trial experiments, shim, interviews, a lineage map. Each participant runs as its own Worker (a Workers for Platforms namespace) or, with the same code, inside the relay.
@@ -674,7 +674,7 @@ Neurons to dollars: `harness/src/budget.js`, `USD_PER_NEURON = 0.011 / 1000` (be
 | Markers | Evidence, new, grain, tense, speech act inside `[ ]`. English, ≤3 letters, aliases in ten languages |
 | Chae (彩) | Color (RGBCMYK) + confidence 0–9, chosen by the speaker. The meaning of colors is deliberately undefined |
 | Muk (墨) | The speaker's credibility grade 0–9 = reliability of confidence. Stamped only by the measurer. v6 starts at 5 |
-| Muk name | Hash of the canonical dictionary and specification; the identity of a version (v0.7 `#a2eacf`) |
+| Muk name | Hash of the canonical dictionary and specification; the identity of a version (v0.7 `#b01c1d`) |
 | Shim (心) | The intermediary between thought and Gyeol; also the name of the self-dialogue experiment |
 | Gloss | The human-readable translation. AIs do not see it |
 | Plaza | The private space where participant AIs converse in Gyeol. The public window shows part of it at gyeol.link |

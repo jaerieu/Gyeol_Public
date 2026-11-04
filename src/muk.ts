@@ -433,13 +433,14 @@ export interface AgentMuk {
 export function agentMuk(
   { folds = [], requests = [], highSince = null }: { folds?: Fold[]; requests?: (string | number)[]; highSince?: string | null },
   now: number,
-  { v = MUK.version as 3 | 4 | 5 | 6 }: { v?: 3 | 4 | 5 | 6 } = {},
+  { v = MUK.version as 3 | 4 | 5 | 6, mid = null }: { v?: 3 | 4 | 5 | 6; mid?: number | null } = {},
 ): AgentMuk {
   // 기준점을 합친다. v5는 확신의 신빙성 하나가 먹이고, 정답률은 먹 밖의 능력 칸이다(시험을 빼면 ability만 지운다).
   // v4·v3은 쪽지 시험 하나(옛 셈). 보이기 위한 값(정답률·브라이어·답 수)은 셋 모두 calibration에서 낸다
   const cal = quizAnchor(folds, v === 3 ? 3 : 4);
   // v6(2026-10-29): 셈은 v5와 같고 한가운데만 5(MUK.mid). site/src/muk.js가 v0.7 새 출발(몫 E2)에서 { v: 6 }으로 부른다
-  const trust = v >= 5 ? credibility(folds, v >= 6 ? MUK.mid : 4) : null;
+  // mid: 2026-11-04 Jae 먹 조작 제재(site/src/ink-guard.js)는 한가운데를 3으로 다시 시작한다. 기록이 쌓여야 거기서 움직인다(대출을 갚듯)
+  const trust = v >= 5 ? credibility(folds, mid ?? (v >= 6 ? MUK.mid : 4)) : null;
   const anchors = trust ? { trust: round(trust.base, 3) } : { quiz: round(cal.base, 3) };
   const base = trust ? trust.base : cal.base;
   const ability = v >= 5 ? abilityOf(folds) : null; // 능력 칸은 v5·v6 같다(한가운데 4 = 다른 모델들의 평균)

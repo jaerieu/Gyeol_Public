@@ -6,14 +6,18 @@
 //          검사기에 사전이 없어 라틴 다섯 언어의 어근을 가를 수 없으니 글자군으로만 잰다.
 //   - W26(완화): 열 언어의 짧은 별칭(see·seh·見·вид …)과 한글 표지는 모두 공식 입력이라 경고가 없다. v0.5의 긴 별칭(recall·assert·hunch …)에만
 //          "긴 별칭을 읽었다(정규형은 rec)"로 알린다. 옛 쓰기 규칙(rules05~065)의 W26은 번호 그대로, 문구만 완화했다(src/parse/v05.ts).
-//   - 그 밖(E25·E26·W23·E30·W24·W25·E33·W31·W32·E34·W34·W35·W36·W37)은 rules065 그대로.
+//   - 먹 지킴이(2026-11-04 Jae, 12.5절): 먹은 바깥에서 잰 신용 점수이고 신분증만큼 중요하니 말하는 이가 받은 그대로 쓴다. 그래서 W25(말하는 이가 먹을 씀)를 뺀다.
+//          opts.ink(이번 부름에 알린 받은 먹 0~9)가 있는데 채(색)가 있는 새 꼴 절의 먹 자리(*와 채 사이)가 비었으면 W38(먹 누락, 경고)이다(채가 없는 절은 E33이 이미 알린다). 받은 먹을 알리지 못한 부름(ink 없음)은 재지 않는다.
+//          받은 먹과 다른 먹(조작)은 문법 진단이 아니라 판의 먹 지킴이(site/src/ink-guard.js)가 줄을 버리고 Jae 결정을 기다린다.
+//          옛 쓰기 규칙(rules05·051·06·065)의 W25는 지난 회차를 다시 읽을 수 있게 그대로 둔다.
+//   - 그 밖(E25·E26·W23·E30·W24·E33·W31·W32·E34·W34·W35·W36·W37)은 rules065 그대로.
 // parse()의 판정·정규형·먹 이름은 바꾸지 않는다. 판 중계·쪽지 시험 v0.7·명령줄(--rules07)이 부른다.
 
 import type { Diagnostic, ParseResult, Word } from '../types.ts';
 import { SHORT_ALIASES_07, markOf07, scriptGroupOf, scriptGroupOfChar, type ScriptGroup } from '../tables.ts';
 import { rules065 } from './v065.ts';
 
-type Opts = { sender?: string | null; from?: number; lang?: string | null };
+type Opts = { sender?: string | null; from?: number; lang?: string | null; ink?: number | null };
 
 /**
  * W29(v0.7): 글자가 있는 어절이 둘 이상인데 모두 사용자 언어의 글자군뿐이면 false. 어절이 하나뿐이거나 숫자만 있으면 문제없음.
@@ -35,7 +39,9 @@ export function hasUserScript(words: Word[], group: ScriptGroup): boolean {
 }
 
 export function rules07(r: ParseResult, opts: Opts = {}): Diagnostic[] {
-  const out = rules065(r, opts).filter((d) => d.code !== 'W26' && d.code !== 'W29');
+  const out = rules065(r, opts).filter((d) => d.code !== 'W26' && d.code !== 'W29' && d.code !== 'W25');
+  const ink = opts.ink == null ? NaN : Number(opts.ink);
+  const inkKnown = Number.isInteger(ink) && ink >= 0 && ink <= 9;
   const lang = opts.lang ?? r.message.lang ?? null;
   const group = scriptGroupOf(lang);
   const clauses = r.message.clauses;
@@ -47,6 +53,7 @@ export function rules07(r: ParseResult, opts: Opts = {}): Diagnostic[] {
     if (group && !mixesScripts(c.words, group)) push('W29', `어근이 둘 이상이면 적어도 하나는 사용자 언어(${lang})가 아닌 다른 글자군의 낱말로 쓴다(옮기면 뜻이 깎이는 낱말: Schadenfreude, 物の哀れ, 껄끄럽다, saudade)`);
     else if (lang === 'ko' && group && !hasUserScript(c.words, group)) push('W29', '사용자 언어(ko) 대화에서는 조사·어미·문장 뼈대를 한국어(한글)로 쓰고 다른 글자군 낱말을 섞는다');
     const long = (r.written?.[k]?.aliases ?? []).filter((a) => !SHORT_ALIASES_07.has(a) && !SHORT_ALIASES_07.has(a.toLowerCase()));
+    if (inkKnown && c.chae?.color && c.muk?.conf === undefined) push('W38', `먹을 빠뜨렸다. 먹은 바깥에서 잰 신용 점수라 받은 그대로 쓴다: *${ink}`);
     if (long.length) push('W26', `긴 별칭 ${long.join(', ')}을 표지로 읽었다(정규형은 ${long.map((a) => markOf07(a) ?? '?').join(', ')})`);
   }
   return out.sort((a, b) => a.line - b.line);

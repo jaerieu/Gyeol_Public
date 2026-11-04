@@ -113,11 +113,21 @@ test('rules07: W29는 사용자 언어의 글자군으로 재고 언어가 없�
   assert.match(long[0].message, /긴 별칭 recall, assert.*정규형은 rec, say/);
   assert.deepEqual(rules065(parse('<1 · [see,다] 문이 열려 있다 *B8>')).map((d) => d.code).sort(), ['W26', 'W29']);
   assert.match(rules065(parse('<1 · [see,다] 雪 *B8>'))[0].message, /별칭 see을 표지로 읽었다\(정규형은 표지 글자\)/);
-  // rules065의 것은 그대로: E34·W34·W37·W25
+  // rules065의 것은 그대로: E34·W34·W37(W25는 2026-11-04 먹 지킴이로 뺐다)
   assert.deepEqual(w07('<1 · [gut,say] 雪 *R3>\n<2 · [inf,say] 雨 *B7↓1>', 'en'), ['E34']);
   assert.deepEqual(w07('<1 · [say,see] 雪 *B8>', 'en'), ['W34']);
   assert.deepEqual(w07('<1 · [hrd,say] 雪 *B8>', 'en'), ['W37']);
-  assert.deepEqual(w07('<1 · [see,say] 雪 *5B8>', 'en'), ['W25']);
+  assert.deepEqual(w07('<1 · [see,say] 雪 *5B8>', 'en'), []);
+  assert.deepEqual(rules065(parse('<1 · [see,say] 雪 *5B8>')).map((d) => d.code).filter((c) => c === 'W25'), ['W25']); // 옛 규칙은 지난 회차를 다시 읽게 그대로
+  // W38: 받은 먹(ink)을 알렸는데 먹 자리가 비면 경고. 알리지 않았거나(ink 없음) 0~9가 아니면 재지 않는다
+  const w38 = (l: string, ink: any) => rules07(parse(l), { lang: 'en', ink }).map((d) => d.code);
+  assert.deepEqual(w38('<1 · [see,say] 雪 *B8>', 6), ['W38']);
+  assert.deepEqual(w38('<1 · [see,say] 雪 *6B8>', 6), []);
+  assert.deepEqual(w38('<1 · [see,say] 雪 *B8>', null), []);
+  assert.deepEqual(w38('<1 · [see,say] 雪 *B8>', 12), []);
+  assert.deepEqual(w38('<1 · [see,say] 雪 *B8>', 0), ['W38']); // 0도 받은 먹
+  assert.deepEqual(w38('<1 · [see,say] 雪 *B8>\n<2 · [inf,say] 雨 *4B7↓1>', 4), ['W38']); // 절마다
+  assert.deepEqual(w38('<1 · [see,say] 雪>', 5).filter((c) => c === 'W38'), []); // 채가 없는 절은 E33만
 });
 
 test('풀이: ko는 절N, en은 clause N. 열쇠는 영어 내부 값', () => {
