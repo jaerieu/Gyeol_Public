@@ -42,7 +42,7 @@
 import type { Act, Clause, ClauseWritten, Ev, Fig, Marks, PartialMarks, Ref, Tense, Word, Because } from '../types.ts';
 import { ACT_07, DIGIT_MAX, EV_07, FIG_07, MARK_ALIASES_06, MARK_CHARS, MARK_KO2EN, MARK_RANK, NEWS, NEWS_05, NEWS_07, TENSE_07, markAlias05, markOf07, PROCESS_ALIAS_RE } from '../tables.ts';
 import { stripTrailingPunct } from '../text.ts';
-import { Ctx, ECHO_LABEL, markAlias, parseWord, parseWord052, takePrefix, tightenTildes, type PrefixRules, PROCESS_SUP_RE } from './shared.ts';
+import { Ctx, ECHO_LABEL, MENTION_MARK, markAlias, maskMentions, parseMentionWord, parseWord, parseWord052, unmaskMentions, takePrefix, tightenTildes, type PrefixRules, PROCESS_SUP_RE } from './shared.ts';
 
 const NF_OPEN = '<〈＜⟨《‹';
 const NF_CLOSE = '>〉＞⟩》›';
@@ -288,7 +288,7 @@ function moveOutsideTo(s: string, line: string, ctx: Ctx): string {
  * 'bare' = 꺾쇠가 하나도 없고, 표지만 든 [ ]가 있는 줄(옛 꼴로는 E01이던 줄이라 맞던 줄을 건드리지 않는다).
  */
 export function lineFormOf(line: string): 'wrapped' | 'bare' | null {
-  const s = stripLeadTo(normalizeArrows(String(line ?? '').trim()).replace(LEAD_LABEL, ''));
+  const s = stripLeadTo(normalizeArrows(maskMentions(String(line ?? '').trim(), [])).replace(LEAD_LABEL, ''));
   if (s && NF_OPEN.includes(s[0])) {
     const close = firstOf(s, CLOSE_CODES, 1);
     const inner = close < 0 ? s.slice(1) : s.slice(1, close);
@@ -360,8 +360,9 @@ function splitWrapped(line: string): { lead: string | null; parts: RawClause[]; 
 export function clausePieces(line: string): string[] {
   const s = String(line ?? '').trim();
   if (lineFormOf(s) !== 'wrapped') return [s];
-  const sp = splitWrapped(normalizeArrows(s));
-  const out = sp.parts.map((p) => p.text);
+  const spans: string[] = [];
+  const sp = splitWrapped(normalizeArrows(maskMentions(s, spans)));
+  const out = sp.parts.map((p) => unmaskMentions(p.text, spans));
   if (sp.lead && out.length) out[0] = `${sp.lead} ${out[0]}`;
   return out.length ? out : [s];
 }
@@ -1026,7 +1027,7 @@ function parseClause03(rawInner: string, ctx: Ctx, lead: string | null, odd: { v
       continue;
     }
     // v0.5(설계 0·4): 새 꼴 줄의 내용은 어느 언어의 낱말이든 읽는다(가나 포함). v0.5.2: 0.5.1 꼴 절은 부호도 쓴 그대로
-    const w = rich ? parseWord052(t, ctx) : parseWord(t, ctx, true);
+    const w = t.includes(MENTION_MARK) ? parseMentionWord(t, ctx) : rich ? parseWord052(t, ctx) : parseWord(t, ctx, true);
     if (w) words.push(w);
   }
   // v0.6: 유(유보)도 내용을 비워도 된다(미루는 것 자체가 말이다). 거·양은 비울 수 없다(reports/v0.6-design.md 1.2)
@@ -1108,10 +1109,12 @@ function parseClause03(rawInner: string, ctx: Ctx, lead: string | null, odd: { v
 export function parseLine03(line: string, ctx: Ctx): Clause[] | null {
   const form = lineFormOf(line);
   if (!form) return null;
-  let s = normalizeArrows(line);
-  const odd = { v: s !== line };
+  // 2026-11-05: 언급(백틱으로 싼 글)은 자리표로 가려 두고 읽는다. 진단 글과 내용 어절에서 되살린다(shared.ts maskMentions)
+  const masked = maskMentions(line, ctx.mentions);
+  let s = normalizeArrows(masked);
+  const odd = { v: s !== masked };
   // < > 밖에 붙인 받는 이(→kimi <…>, <…> →kimi, <…> → kimi, →gemma)는 그 절의 [ 앞으로 옮겨 읽는다(W16)
-  if (form === 'wrapped') s = moveOutsideTo(s, line, ctx);
+  if (form === 'wrapped') s = moveOutsideTo(s, masked, ctx);
   const out: Clause[] = [];
   if (form === 'bare') {
     ctx.warn('W18', `< >로 싸지 않은 절을 읽었다. 정규형은 <절N [표지] 내용>: '${line}'`);

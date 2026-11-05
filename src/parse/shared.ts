@@ -14,12 +14,63 @@ export class Ctx {
   newForm = new WeakSet<Clause>();
   /** v0.5: 새 꼴 절마다 글에 쓴 꼴(자신의 자리, '네', 별칭). ParseResult.written으로 나가 rules05가 본다. */
   written = new WeakMap<Clause, ClauseWritten>();
+  /** 언급(백틱으로 싼 글)의 원문. 줄을 읽는 동안 자리표로 가려 두고 진단 글에서는 되살린다(maskMentions). */
+  mentions: string[] = [];
   err(code: string, message: string) {
-    this.diags.push({ code, severity: '오류', line: this.line, message });
+    this.diags.push({ code, severity: '오류', line: this.line, message: unmaskMentions(message, this.mentions) });
   }
   warn(code: string, message: string) {
-    this.diags.push({ code, severity: '경고', line: this.line, message });
+    this.diags.push({ code, severity: '경고', line: this.line, message: unmaskMentions(message, this.mentions) });
   }
+}
+
+// ───────── 언급(백틱) ─────────
+//
+// 2026-11-05 Jae: 결 문법 자체를 이야기하는 대화(감상)에서 참가자가 기호를 '쓰지' 않고 '말하려다'(sup→, ↔, *R3) E19에 걸렸다(판 94번).
+// 내용 안에서 백틱으로 싼 글(`sup→`, `*R3`, `<1 · [ack] …>`)은 언급이다: 뼈대로 읽지 않고 쓴 그대로 내용 어절로 둔다(E19 없음).
+// 꺾쇠·대괄호·별·화살표를 품어도 절을 나누거나 끝 묶음으로 읽지 않는다. 한 줄 안에서 닫힌 백틱만 언급이고, 닫히지 않은 백틱은 전처럼 글자다.
+// 보관 줄에는 백틱이 없어 판정·정규형·먹 이름이 바뀌지 않는다(tests/fixtures/corpus-verdicts.json).
+
+const MENTION_RE = /`[^`\n]*[^`\s][^`\n]*`/gu;
+const MENTION_PH = /\uE000(\d+)\uE001/gu;
+/** 언급 자리표의 여는 글자(사용자 영역 글자라 글에 나오지 않는다) */
+export const MENTION_MARK = '\uE000';
+
+/** 줄의 언급을 자리표로 가린다. 원문은 spans에 덧붙인다(자리표의 수가 spans의 자리). */
+export function maskMentions(line: string, spans: string[]): string {
+  if (!line.includes('`')) return line;
+  return line.replace(MENTION_RE, (m) => {
+    spans.push(m);
+    return `\uE000${spans.length - 1}\uE001`;
+  });
+}
+
+/** 줄의 언급 밖에서만 fn을 부른다(판이 끝 묶음·가리킴을 날 글로 훑을 때. 언급 안의 *R3·↓1은 끝 묶음·가리킴이 아니다). */
+export function outsideMentions<T>(line: string, fn: (masked: string) => T): T {
+  const spans: string[] = [];
+  const out = fn(maskMentions(String(line ?? ''), spans));
+  return (typeof out === 'string' ? unmaskMentions(out, spans) : out) as T;
+}
+
+/** 자리표를 원문으로 되살린다. */
+export function unmaskMentions(s: string, spans: string[]): string {
+  return s.includes(MENTION_MARK) ? s.replace(MENTION_PH, (_, n) => spans[Number(n)] ?? '') : s;
+}
+
+/**
+ * 언급을 품은 내용 어절(`sup→`, `↔`로, (`*R3`)). 언급 밖의 글자는 parseWord052처럼 본다(언급 밖의 → 는 여전히 E19).
+ * 어절은 쓴 그대로 남기고 어근·꼬리는 나누지 않는다(언급은 낱말이 아니라 글자 그대로다).
+ */
+export function parseMentionWord(raw: string, ctx: Ctx): Word | null {
+  const outside = raw.replace(MENTION_PH, ' ').split(' ').filter((p) => p !== '');
+  const probe = new Ctx();
+  for (const p of outside) parseWord052(p, probe);
+  const bad = probe.diags.find((d) => d.severity === '오류');
+  if (bad) {
+    ctx.err(bad.code, unmaskMentions(bad.message, ctx.mentions));
+    return null;
+  }
+  return { text: unmaskMentions(raw, ctx.mentions) };
 }
 
 // ───────── 가리킴·이름표 ─────────
