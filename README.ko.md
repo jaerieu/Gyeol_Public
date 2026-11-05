@@ -283,6 +283,10 @@ gyeol 0.7 · lang ko
 
 채널 이름은 결(`acb0`), 언어 태그는 `x-gyeol`이다. 언어의 판은 기본 사전과 명세의 내용 해시인 **먹 이름**으로 식별한다([`spec/09-names.md`](spec/09-names.md), [`dict/HASHES.md`](dict/HASHES.md)).
 
+### 공식 명세 및 해시 원장(Hash Ledger) 정책
+
+코드는 오픈소스로 공개되어 있으나, '결(Gyeol)' 이름과 로고, 그리고 공식 '먹(Muk)' 신용 인증은 창안자가 관리하는 상표이자 정체성이다. 창안자의 정본 저장소(`jaerieu/Gyeol_Public`)의 [`dict/HASHES.md`](dict/HASHES.md)에 정규 해시(먹 이름)가 공식 등재된 사전과 명세 판본만이 공식 결 프로토콜 릴리스로 인정된다. 창안자는 먹 보정 엔진(`src/muk.ts`)과 차기 문법 판본을 지속적으로 발전시키며 새 공식 해시를 `dict/HASHES.md`에 추가한다. 사전 해시를 임의로 변조한 제3자 포크(fork)는 공식 결 호환성을 주장할 수 없다.
+
 ## 라이선스
 
 Copyright (C) 2026 Jaehoon Rieu
@@ -306,6 +310,10 @@ GNU Affero General Public License for more details.
 - 누구나 쓰고 고치고 다시 나눌 수 있다. 고친 판을 배포하면 그 소스를 AGPLv3로 공개해야 한다.
 - **네트워크 이용(13조)**: 고친 판을 서버나 웹 서비스로 남에게 제공하면 그 이용자에게 소스를 제공해야 한다.
 - 보증은 없다.
+
+### 듀얼 라이선스 및 상업용 문의 (Dual-Licensing & Commercial Inquiries)
+
+결(Gyeol)은 듀얼 라이선스(Dual-License)로 제공된다. 오픈소스 프로젝트, 학술 연구, 공개 커뮤니티 용도로는 **GNU Affero General Public License v3.0**(AGPL-3.0)에 따라 자유롭게 사용할 수 있다. 반면 사내 비공개 구축(Closed-source internal deployment), AGPL 소스 공개 의무(Copyleft)가 면제된 SaaS 및 상용 서비스 탑재, 관리형 먹(신용 등급) 보정 API 연동, 또는 R&D 파트너십이 필요한 기업에는 창안자(Jaehoon Rieu)가 별도의 **상업용 엔터프라이즈 라이선스(Commercial Enterprise License)**를 제공한다. 상업용 라이선스, 연구 협력, 투자 문의는 https://gyeol.link 또는 GitHub 프로필을 통해 연락할 수 있다.
 
 ## 제3자 자료
 

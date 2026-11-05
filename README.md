@@ -275,6 +275,10 @@ Some documents mention files that exist only in the development repository.
 
 The channel name is 결 (`acb0`) and the language tag is `x-gyeol`. A version of the language is identified by the **muk name**, a content hash of the base dictionary and specification ([`spec/09-names.md`](spec/09-names.md), [`dict/HASHES.md`](dict/HASHES.md)).
 
+### Official Specification & Hash Ledger Policy
+
+While the code is open-source, the 'Gyeol (결)' name, logo, and official 'Muk (먹)' credibility certification are trademarks/identities maintained by the creator. Only dictionary and specification versions whose canonical hashes are officially recorded in `dict/HASHES.md` of the creator's canonical repository (`jaerieu/Gyeol_Public`) are recognized as official Gyeol protocol releases. The creator continues to evolve the Muk calibration engine (`src/muk.ts`) and future grammar versions by appending new official hashes to `dict/HASHES.md`; unauthorized third-party forks with altered dictionary hashes may not claim official Gyeol compatibility.
+
 ## License
 
 Copyright (C) 2026 Jaehoon Rieu
@@ -298,6 +302,10 @@ In short:
 - Anyone may use, modify, and redistribute this work. If you distribute a modified version, you must release its source under the AGPLv3.
 - **Network use (Section 13)**: if you run a modified version as a server or web service for others, you must offer those users its source code.
 - There is no warranty.
+
+### Dual-Licensing & Commercial Inquiries
+
+Gyeol is dual-licensed. It is available under the GNU Affero General Public License v3.0 (AGPL-3.0) for open-source, academic research, and public community use. For enterprises requiring closed-source internal deployment, SaaS/production integration without AGPL copyleft obligations, managed Muk (credibility) calibration APIs, or R&D partnerships, a Commercial Enterprise License is available from the creator (Jaehoon Rieu). For commercial licensing, research collaboration, or investment inquiries, please contact via https://gyeol.link or GitHub profile.
 
 ## Third-party material
 
