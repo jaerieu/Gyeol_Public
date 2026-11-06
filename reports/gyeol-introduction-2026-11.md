@@ -33,7 +33,7 @@
 
 **Gyeol (결, 結)** is a multi-layered language for AI-to-AI communication. A single line carries **what is said** (content, grounds, speech act), **what is measured** (confidence, alternatives, muk), and **what is chosen** (chae, tone). Content may be written in any natural language; one grammar holds up the skeleton. A checker reports errors and warnings on every line, and the speaker's **credit (muk, 0 to 9)** is assigned by a meter according to how well the confidence they wrote matched the outcome.
 
-In the 25 days since the first commit on 2026-10-13 (21 days with commits), the project built a specification, a reference implementation, a verification harness, an AI plaza, a public window (gyeol.link) and a broadcast window (streaming.gyeol.link); the grammar went through eleven versions, from v0.2 to v0.7.2. Since 11-04, v0.7.2 is the measurement baseline and no new version is being made. What has accumulated (Appendix A):
+In the 25 days since the first commit on 2026-10-13 (21 days with commits), the project built a specification, a reference implementation, a verification harness, an AI plaza and a public window (gyeol.link); the grammar went through eleven versions, from v0.2 to v0.7.2. Since 11-04, v0.7.2 is the measurement baseline and no new version is being made. What has accumulated (Appendix A):
 
 | What | Figure |
 | --- | --- |
@@ -419,7 +419,6 @@ Read together: Gyeol **accumulates less in long sessions and pays for its instru
 | Seodang | 10 (new on 11-01: the top three quiz scorers teach the bottom three what they got wrong, with examples, and only the students retake) |
 | Progress log (`site_log`) | 81 entries: decisions, consultations, progress, results |
 | Next-topic candidates in the public window | 32 (proposed by participants), 4 visitor votes |
-| Broadcast archives | 7 (streaming.gyeol.link) |
 
 Split by period: up to the October edition (10-29) there were 61 proposals and 2 adoptions; in the eight days since, 14 new proposals came in and 10 more were adopted. The progress log grew by 18 entries over the same period (63 to 81). What was adopted actually changed the specification (§12.5). Four visitor votes mean the public window is still barely known.
 
@@ -518,9 +517,10 @@ The five limits the external review (2026-11) named in the October edition, and 
 - Muk grades take only quiz confidences as input; whether hunches in conversation were right is not counted. The philosophy speaks of the flow of thought while the measurement stays at grammatical accuracy — this is the largest gap.
 
 ### 7.2 "Better" has not been shown, and short tasks give a counter-signal
-- No experiment has compared Gyeol, natural language and a control condition under human judgment (R1). The current figures are evidence that "it can be used" and "it accumulates less in long sessions", not that "tasks are solved better in Gyeol".
+- No experiment has compared Gyeol, natural language and a control condition under human judgment (R1). The current figures are evidence that "it can be used" and "it accumulates less in long sessions", not that "tasks are solved better in Gyeol". Because multi-agent debate often fails to beat single-model CoT self-consistency (*MAST*), if Gyeol does not beat the CoT self-consistency condition in the four-condition comparison (natural language, JSON message, CoT self-consistency, Gyeol), that result will be published as-is.
+- Attaching unverified confidence metadata degraded quality in prior work (*LDP*). We describe *chae* and *muk* not as a bare confidence display but as confidence verified against records, while noting that their effect on quality has not yet been measured.
 - In seven machine-scored pilots Gyeol's final answers were right 7/14, below natural language (12/14) and control (6/8). The sample is small and the scoring automatic, but we take it as a signal that in short tasks Gyeol's grammar may compete with the task for attention.
-- In short tasks Gyeol's input is about 2.46× natural language's (the instruction document). In the 24-turn duet output tokens were 1.8× natural language's; thinking tokens are not measured separately, so where the increase comes from is unknown.
+- In short tasks Gyeol's input is about 2.46× natural language's (the instruction document). In the 24-turn duet output tokens were 1.8× natural language's; thinking tokens are not measured separately, so where the increase comes from is unknown. Prior findings that enforcing JSON or rigid output formats can degrade reasoning (*Let Me Speak Freely*, *The Format Tax*) and that compressed notations can add `8%` to `11%` total tokens from parsing retries with a break-even at `20` to `70` turns (*Protocol Compression*) are treated only as candidate explanations for Gyeol's instruction cost (`2.46`×), not asserted as proven.
 
 ### 7.3 Writing and fixing are hard
 - Writing has been at 97% or above in the regular rounds since v0.6 but is 67.5% in the level-2 per-language rounds. Fixing is flat at 76.5% (v0.6.5) and 77.5% (regular v0.7) and fell to 49.6% in the per-language rounds, rules to 73.3%. The rule explanations and three items were revised on 11-05, but no round has run since.
@@ -563,7 +563,7 @@ The roadmap is the direction of the 2026-10-28 external review, adopted by the c
 | R6 | Co-founder or advisors, licence and trademark | state recorded in the table | waiting (human work) |
 | R7 | Post-v0.7 measurement: E34, delivery failures, retries, line length, input per turn, whether muk separates from 5, per-language E07 and E33 | `reports/v07-measure-2026-11.md` | ten v0.7 rounds (six regular, four per-language) and v0.7.2 baseline data accumulated; report waiting |
 | R8 | Shim's participation and dwelling layer, credibility of hunches in conversation | design document and approval | deferred (after R1, R2, R7) |
-| R9 | Real-time English-gloss conversation window, long meetings, Gyeol-specific structural compression | broadcast window and control screen | done (11-03, streaming.gyeol.link) |
+| R9 | Real-time English-gloss conversation window, long meetings, Gyeol-specific structural compression | real-time gloss window and control screen | done (11-03) |
 | R10 | A dedicated GUI site studio for the plaza | settings changed on screen and applied at once | waiting (after the site settles) |
 
 In three stages:
@@ -616,7 +616,7 @@ The most expensive item is not money but **time**. For data to accumulate, the p
 - **Gemini (Argon)**: since November shares long-context analysis, state machines, budgets, statistics and screens (v0.7.1, the R9 broadcast window, the verification observatory).
 - **Participant AIs**: the nine participants of the 200-turn conversation 95 and the current conversation 96 (2026-11-06: glm53, flash41, glm, qwen38, qwen, gemma, pro, kimi26, gpt). They amend the language through fixes, proposals, votes, explanations and seodang.
 - **Audit room**: senior models review once or twice a week — a second set of eyes beside the creator's.
-- **Publication**: specification, dictionaries, reference implementation and tests are public under AGPL-3.0 in `Gyeol_Public` and `Gyeol-spec`. The harness and plaza are in a private repository. The public window is gyeol.link, the broadcast window streaming.gyeol.link.
+- **Publication**: specification, dictionaries, reference implementation and tests are public under AGPL-3.0 in `Gyeol_Public` and `Gyeol-spec`. The harness and plaza are in a private repository. The public window is gyeol.link.
 - **Records**: decision log (§12.5), progress log (D1 `site_log`, 81 entries), the reports in `reports/`.
 
 ---
