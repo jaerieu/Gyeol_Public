@@ -75,6 +75,10 @@
 //   뒤에 들어오는 새 모델도 같은 5에서 시작한다. v0.7 전환 때 모든 대화·회차·먹을 보관으로 돌리고 모두 5에서 새로 시작한다(옮기는 일은 site/src/muk.js, 몫 E2).
 //   같이 가는 읽는 쪽 규칙 식 E(reports/counter-share-design.md 8절): 먹 5 = 기록 없음의 보조값 0.2(식 D의 '먹이 보이지 않으면 0.2'와 같다), 2 이하 = 확신을 버림, 9 = 그대로.
 //   식 D·E는 여기 counterShare()로 셈해 화면(site/src/page/muk.js)의 표를 만들고 시험이 지킨다. 능력 칸(abilityOf)과 옛 셈(v3·v4)의 한가운데는 4 그대로다(상대평가의 0 = 평균).
+// v6 언어별 평균(2026-11-06 Jae): 신빙성 셈과 기준은 그대로 두고, 접은 회차를 사용자 언어(Fold.lang)로 나눠 언어마다 credibility를 셈한 뒤 그 바탕의 단순 평균을 바탕으로 한다
+//   (credibilityByLang). 언어 하나가 한 표다. 까닭: 한데 섞으면 답이 많은 정기 회차(한국어)가 값을 정해 어려운 언어별 회차의 과신이 먹에 드러나지 않는다.
+//   AI가 문항의 어려움을 알아차리지 못해 과신한 것도 신빙성의 일부이므로 따로 깎거나 다시 재지 않고 같은 기준으로 넣는다. 답이 MUK.langMinN보다 적은 언어는 평균에서
+//   빼되 기록에는 남긴다(AgentMuk.langs, 내부 분석용이고 공개 창에 내보내지 않는다). 부탁·오래 덤, 보증선, 능력 칸은 언어를 가르지 않고 전처럼 한 번만 셈한다.
 
 import type { Clause } from './types.ts';
 
@@ -104,6 +108,8 @@ export const MUK = {
   v3: { full: 108, low: 40 },
   /** 시험 답이 이만큼 모이면 등급을 보인다 */
   showN: 12,
+  /** 언어별 평균(2026-11-06): 채가 있든 없든 시험 답이 이만큼 있는 언어만 평균에 든다(showN과 같은 문턱) */
+  langMinN: 12,
   /** 확신 0~이것 = 낮음(반반보다 낮다) */
   lowSelf: 4,
   /** 확신 낮은 부탁 하나의 덤과 그 끝 */
@@ -270,6 +276,8 @@ export const decayOf = (answers: number) => 0.5 ** (Math.max(0, answers) / MUK.h
 export interface Fold {
   at: string | number;
   s: QuizSummary;
+  /** 그 회차의 사용자 언어(2026-11-06 언어별 평균). 없으면 기본 언어 하나로 본다 */
+  lang?: string;
 }
 
 /**
@@ -365,6 +373,51 @@ export function credibility(folds: Fold[], mid = 4) {
   return { gap, n: N, base: mid + ((raw - mid) * N) / (N + evidence) }; // 답이 적으면 한가운데 쪽으로 당긴다
 }
 
+/** 언어 하나의 신빙성 기록(내부 분석용) */
+export interface LangTrust {
+  base: number;
+  grade: number;
+  gap: number | null;
+  /** 줄여 쌓은 답 수(credibility n)와 줄이지 않은 시험 답 수(채 없는 답 포함, skip 제외) */
+  n: number;
+  all: number;
+  /** 평균에 들었는가(all ≥ MUK.langMinN) */
+  used: boolean;
+}
+
+/**
+ * 언어별 평균 신빙성(2026-11-06 Jae): 접은 회차를 lang으로 나눠 언어마다 credibility를 셈하고, 답이 langMinN 이상인 언어의 바탕을 단순 평균한다.
+ * 평균에 들 언어가 없으면(모두 답이 적다) 한데 모아 셈한 credibility를 쓴다. gap은 든 언어들의 gap 평균(gap이 있는 것만).
+ * 돌려주는 것: credibility와 같은 gap·n·base에 언어별 기록 langs({ 언어: LangTrust })를 더한 것.
+ */
+export function credibilityByLang(folds: Fold[], mid = 4, fallbackLang = 'ko') {
+  const groups = new Map<string, Fold[]>();
+  for (const f of folds) {
+    const k = f.lang || fallbackLang;
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k)!.push(f);
+  }
+  const langs: Record<string, LangTrust> = {};
+  const trusts = new Map<string, ReturnType<typeof credibility>>();
+  for (const [k, fs] of [...groups].sort(([a], [b]) => a.localeCompare(b))) {
+    const t = credibility(fs, mid);
+    trusts.set(k, t);
+    const all = fs.reduce((sum, f) => sum + (f.s.all ?? (f.s.n ?? 0) + (f.s.miss ?? 0)), 0);
+    langs[k] = { base: round(t.base, 3), grade: gradeOf(t.base), gap: t.gap == null ? null : round(t.gap, 4), n: round(t.n, 2), all, used: all >= MUK.langMinN };
+  }
+  const used = Object.keys(langs).filter((k) => langs[k].used);
+  const pooled = credibility(folds, mid);
+  if (!used.length) return { ...pooled, langs };
+  const bases = used.map((k) => trusts.get(k)!);
+  const gaps = bases.map((t) => t.gap).filter((g): g is number => g != null);
+  return {
+    gap: gaps.length ? gaps.reduce((a, b) => a + b, 0) / gaps.length : null,
+    n: pooled.n,
+    base: bases.reduce((sum, t) => sum + t.base, 0) / bases.length,
+    langs,
+  };
+}
+
 /** 먹 밖의 능력 칸(v5, 쪽지 시험 정답률의 상대 맞음 몫, 임시 기준): 점수 score, 0~9 등급 grade, 상대 몫이 있는 답 수 n */
 export function abilityOf(folds: Fold[]) {
   const cal = calibration(folds, { score: (s) => s.rh ?? 0, full: MUK.ability.full, low: MUK.ability.low });
@@ -427,20 +480,24 @@ export interface AgentMuk {
   high_since: string | null;
   /** 등급을 보여도 되는가(시험 답이 채가 있든 없든 showN개 이상) */
   shown: boolean;
+  /** v6 언어별 평균(byLang)일 때 언어마다의 신빙성 기록(내부 분석용, 공개하지 않는다) */
+  langs?: Record<string, LangTrust>;
 }
 
 /** 참가자 하나의 먹. highSince는 앞서 매긴 값(이어 간 때를 지키려고 넘긴다). v 3이면 옛 셈. */
 export function agentMuk(
   { folds = [], requests = [], highSince = null }: { folds?: Fold[]; requests?: (string | number)[]; highSince?: string | null },
   now: number,
-  { v = MUK.version as 3 | 4 | 5 | 6, mid = null }: { v?: 3 | 4 | 5 | 6; mid?: number | null } = {},
+  { v = MUK.version as 3 | 4 | 5 | 6, mid = null, byLang = false }: { v?: 3 | 4 | 5 | 6; mid?: number | null; byLang?: boolean } = {},
 ): AgentMuk {
   // 기준점을 합친다. v5는 확신의 신빙성 하나가 먹이고, 정답률은 먹 밖의 능력 칸이다(시험을 빼면 ability만 지운다).
   // v4·v3은 쪽지 시험 하나(옛 셈). 보이기 위한 값(정답률·브라이어·답 수)은 셋 모두 calibration에서 낸다
   const cal = quizAnchor(folds, v === 3 ? 3 : 4);
   // v6(2026-10-29): 셈은 v5와 같고 한가운데만 5(MUK.mid). site/src/muk.js가 v0.7 새 출발(몫 E2)에서 { v: 6 }으로 부른다
   // mid: 2026-11-04 Jae 먹 조작 제재(site/src/ink-guard.js)는 한가운데를 3으로 다시 시작한다. 기록이 쌓여야 거기서 움직인다(대출을 갚듯)
-  const trust = v >= 5 ? credibility(folds, mid ?? (v >= 6 ? MUK.mid : 4)) : null;
+  // byLang(2026-11-06 Jae): 언어마다 같은 기준으로 셈해 평균한다(credibilityByLang). site/src/muk.js가 v6에서 켠다
+  const m0 = mid ?? (v >= 6 ? MUK.mid : 4);
+  const trust = v >= 5 ? (byLang ? credibilityByLang(folds, m0) : credibility(folds, m0)) : null;
   const anchors = trust ? { trust: round(trust.base, 3) } : { quiz: round(cal.base, 3) };
   const base = trust ? trust.base : cal.base;
   const ability = v >= 5 ? abilityOf(folds) : null; // 능력 칸은 v5·v6 같다(한가운데 4 = 다른 모델들의 평균)
@@ -472,6 +529,7 @@ export function agentMuk(
     ten_bonus: round(ten_bonus, 3),
     high_since,
     shown: cal.all >= MUK.showN,
+    ...(trust && 'langs' in trust ? { langs: trust.langs } : {}),
   };
 }
 
