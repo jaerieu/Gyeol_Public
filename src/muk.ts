@@ -75,8 +75,9 @@
 //   뒤에 들어오는 새 모델도 같은 5에서 시작한다. v0.7 전환 때 모든 대화·회차·먹을 보관으로 돌리고 모두 5에서 새로 시작한다(옮기는 일은 site/src/muk.js, 몫 E2).
 //   같이 가는 읽는 쪽 규칙 식 E(reports/counter-share-design.md 8절): 먹 5 = 기록 없음의 보조값 0.2(식 D의 '먹이 보이지 않으면 0.2'와 같다), 2 이하 = 확신을 버림, 9 = 그대로.
 //   식 D·E는 여기 counterShare()로 셈해 화면(site/src/page/muk.js)의 표를 만들고 시험이 지킨다. 능력 칸(abilityOf)과 옛 셈(v3·v4)의 한가운데는 4 그대로다(상대평가의 0 = 평균).
-// v6 언어별 평균(2026-11-06 Jae): 신빙성 셈과 기준은 그대로 두고, 접은 회차를 사용자 언어(Fold.lang)로 나눠 언어마다 credibility를 셈한 뒤 그 바탕의 단순 평균을 바탕으로 한다
-//   (credibilityByLang). 언어 하나가 한 표다. 까닭: 한데 섞으면 답이 많은 정기 회차(한국어)가 값을 정해 어려운 언어별 회차의 과신이 먹에 드러나지 않는다.
+// v6 언어별 평균(2026-11-06 Jae): 신빙성 셈과 기준은 그대로 두고, 접은 회차를 사용자 언어(Fold.lang)로 나눠 언어마다 credibility를 셈한 뒤 그 바탕을 답 수(줄여 쌓은 n)로 무게 지어 평균한 것을 바탕으로 한다
+//   (credibilityByLang). 같은 날 처음에는 단순 평균(언어 하나가 한 표)이었으나, 회차가 하나뿐인 언어는 다 맞혀도 증거 당김(evidence) 때문에 7.6에 묶여 그 한 표가
+//   근거가 두꺼운 언어를 끌어내리거나 올렸다(2026-11-06 Jae: 답 수 무게 평균으로). 까닭: 한데 섞으면 답이 많은 정기 회차(한국어)가 값을 정해 어려운 언어별 회차의 과신이 먹에 드러나지 않는다.
 //   AI가 문항의 어려움을 알아차리지 못해 과신한 것도 신빙성의 일부이므로 따로 깎거나 다시 재지 않고 같은 기준으로 넣는다. 답이 MUK.langMinN보다 적은 언어는 평균에서
 //   빼되 기록에는 남긴다(AgentMuk.langs, 내부 분석용이고 공개 창에 내보내지 않는다). 부탁·오래 덤, 보증선, 능력 칸은 언어를 가르지 않고 전처럼 한 번만 셈한다.
 
@@ -386,8 +387,9 @@ export interface LangTrust {
 }
 
 /**
- * 언어별 평균 신빙성(2026-11-06 Jae): 접은 회차를 lang으로 나눠 언어마다 credibility를 셈하고, 답이 langMinN 이상인 언어의 바탕을 단순 평균한다.
- * 평균에 들 언어가 없으면(모두 답이 적다) 한데 모아 셈한 credibility를 쓴다. gap은 든 언어들의 gap 평균(gap이 있는 것만).
+ * 언어별 평균 신빙성(2026-11-06 Jae): 접은 회차를 lang으로 나눠 언어마다 credibility를 셈하고, 답이 langMinN 이상인 언어의 바탕을 답 수 무게 평균한다.
+ * 무게는 그 언어의 줄여 쌓은 답 수(credibility n, 오래된 답일수록 가볍다). 평균에 들 언어가 없으면(모두 답이 적다) 한데 모아 셈한 credibility를 쓴다.
+ * gap은 든 언어들의 gap을 같은 무게로 평균한다(gap이 있는 것만).
  * 돌려주는 것: credibility와 같은 gap·n·base에 언어별 기록 langs({ 언어: LangTrust })를 더한 것.
  */
 export function credibilityByLang(folds: Fold[], mid = 4, fallbackLang = 'ko') {
@@ -408,12 +410,15 @@ export function credibilityByLang(folds: Fold[], mid = 4, fallbackLang = 'ko') {
   const used = Object.keys(langs).filter((k) => langs[k].used);
   const pooled = credibility(folds, mid);
   if (!used.length) return { ...pooled, langs };
-  const bases = used.map((k) => trusts.get(k)!);
-  const gaps = bases.map((t) => t.gap).filter((g): g is number => g != null);
+  const ts = used.map((k) => trusts.get(k)!);
+  const wsum = ts.reduce((sum, t) => sum + t.n, 0);
+  if (!(wsum > 0)) return { ...pooled, langs };
+  const withGap = ts.filter((t) => t.gap != null);
+  const gsum = withGap.reduce((sum, t) => sum + t.n, 0);
   return {
-    gap: gaps.length ? gaps.reduce((a, b) => a + b, 0) / gaps.length : null,
+    gap: withGap.length && gsum > 0 ? withGap.reduce((sum, t) => sum + t.gap! * t.n, 0) / gsum : null,
     n: pooled.n,
-    base: bases.reduce((sum, t) => sum + t.base, 0) / bases.length,
+    base: ts.reduce((sum, t) => sum + t.base * t.n, 0) / wsum,
     langs,
   };
 }
