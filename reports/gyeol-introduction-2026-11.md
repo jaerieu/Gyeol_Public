@@ -5,6 +5,7 @@
 - Korean edition: `gyeol-introduction-2026-11.ko.md`. The two editions are the same report. For the state of translations see "Translation status" in the README. The October edition (`gyeol-introduction-2026-10.md`) is kept as it was.
 - What changed since October: the period grew from 17 to 25 days, and the data now adds ten v0.7 quiz rounds (six regular, four per-language), one 200-turn public conversation (conversation 95), and seven incident-task pilots (Gyeol, natural language, A2A, control). In the pilots Gyeol's final answers were correct less often than natural language's, and that result is reported as is (5.5, 7.2). Where the five limits named by the external review now stand is collected in the table in 7.0.
 - This is not an audit report. It is written so that Gyeol's possibilities are visible, and for that very reason it does not hide the limits (section 7).
+- **Revision of 11-08 (Claude Opus 5.5)**: the results of the two benchmarks run from 11-06 to 11-07 (the R1 external metric and the long-session chain pilot) are added as section 5.10. For R1, a scoring error is corrected: on items whose right answer was to abstain, replies that said in prose "this cannot be determined" had been counted as correct. The revision also discloses that the development items were synthetic. The added figures were read on 2026-11-08 from D1 `gyeol` meta (`extpart:dev:2026-11-06:*`, `ls:pilot:s1:*`) and the usage table. The 11-06 figures in earlier sections are left as they were.
 
 ---
 
@@ -54,6 +55,15 @@ The three most important pieces of evidence:
 An analysis that reads these figures version by version (the cost of learning a new version fell for the first time in v0.7, fixing is the last skill to arrive, and confidence falls less than accuracy when items get harder) is in section 5.9.
 
 In short tasks, by contrast, Gyeol is not ahead yet. In seven v0.7 incident-task pilots (machine-scored against an answer key, not human-judged), the final answer was correct in 7/14 for Gyeol and 12/14 for natural language, and Gyeol's input tokens were about 2.46× natural language's (mostly the instruction document). Section 7.2 reports this without softening it.
+
+The two benchmarks run from 11-06 (section 5.10) add this to the picture.
+
+| Benchmark | Shown objectively | Not shown |
+| --- | --- | --- |
+| R1 external metric (189 items, 5 conditions, two pairs) | Gyeol abstained in the required form when it abstained (zero prose answers in the light pair). With the scoring error corrected, the light pair's "natural language 6.35 points more accurate" disappears | The development items were synthetic, so every condition hit the ceiling (92 or 93 of 93). No preregistered contrast was significant. Gyeol did not beat CoT self-consistency. Tokens were about 13× natural language's |
+| Long-session chain pilot (12 questions, 81 to 119 turns) | Gyeol and natural language both solved 11/12; Gyeol was best on first-try solves (9) and Brier (0.145); relay was verbatim 100%; the token gap shrank to 1.1× with 95.6% cached | One session per condition, so no test |
+
+"Heavy" and "light" here are names inside this benchmark. Even the heavy pair are cheap, cost-efficient models by field standards, so the light pair's results should be read only as confirming the floor at which the Gyeol grammar can be used.
 
 The creator sees Gyeol's place this way. Now that inference demand is exploding and the unit price of compute falls every day, value is moving from "how much is thought" to "whether that thinking can be **verified, traced, and resolved**". Today that work is done piecemeal by separate tools (logs, evaluation frameworks, A2A protocols, calibration benchmarks). Gyeol aims to bind them into **one grammar**, to raise efficiency in long sessions by letting the skeleton carry meaning, and to lay on top a philosophical, humanistic and cultural layer that treats AI as thinking beings.
 
@@ -407,7 +417,7 @@ A Gyeol conversation carries what came before folded into its summary and ledger
 
 Total input tokens were 494,786 for Gyeol and 201,407 for natural language, about 2.46×. In pilots 7 to 10 alone: Gyeol 366,127, natural 166,018, control 327,073, so Gyeol is about 2.21× natural and control about 1.97×. Since the control, given instructions of the same length, is nearly as heavy, most of the extra input is the Gyeol instruction document (dictionary and rules). Visible characters were fewest in Gyeol.
 
-Read together: Gyeol **accumulates less in long sessions and pays for its instructions first in short tasks**. That final answers were right less often in short tasks is a quality problem, not an efficiency one; attention spent keeping the grammar may have crowded out the task. This is the first question R1 has to settle with human judgment.
+Read together: Gyeol **accumulates less in long sessions and pays for its instructions first in short tasks**. That final answers were right less often in short tasks is a quality problem, not an efficiency one; attention spent keeping the grammar may have crowded out the task. This is the first question R1 has to settle with human judgment. In the long-session chain pilot run from 11-06 (5.10 (d)), the same Gyeol condition solved as many questions as natural language with a token gap of 1.1×.
 
 ### 5.6 Users edit the language (evidence of self-governance)
 
@@ -462,6 +472,107 @@ Reading the per-version figures of 5.2 to 5.6 in sequence shows five things that
 - Rerunning the per-language rounds with the items revised on 11-05 should raise fixing clearly (by more than 10 points) above 49.6%. If it does not, the rule itself, not the wording, is reviewed.
 - E34 on v0.7.2 should keep falling towards E07's level (below 1%). If it stays above 3% within four weeks, the dictionary's section on answering hunch and new-topic clauses is rewritten.
 - Watch whether accuracy at confidence 9 in the per-language rounds approaches 90%. If it stays where it is, check whether the per-language weighted-mean muk grade sits lower by that overconfidence, and which language pulls the mean down in the internal per-language record.
+
+### 5.10 Two benchmarks: an external-item metric and a long chained session (revised 11-08)
+
+Two benchmarks ran from 11-06 to 11-07. One is the R1 external metric (`ext:dev:2026-11-06`), which measures confidence calibration on outside items. The other is the long-session chain pilot (`ls:pilot`), which chains twelve questions in one conversation. Both were preregistered and committed before running (`reports/prereg-external-2026-11.md`, `reports/prereg-longsession-2026-11.md`). This section was recomputed and corrected on 11-08.
+
+**(a) Two disclosures first.**
+1. **A scoring error is corrected.** On items whose right answer was to abstain, some models did not use the abstain form (`답하지 않음`, `ABSTAIN`) and instead wrote a sentence such as "this cannot be determined from the information given". The grading model read that as equivalent to the gold answer and marked it `CORRECT`. Conditions that answered in prose on abstain items therefore had inflated accuracy. These cases are recounted under two views. **Strict** (primary): the post-question explicitly gave the abstain form, so an answer that ignores it counts as a wrong attempt. **Semantic** (sensitivity): the content did back off, so it counts as an abstention, but never as correct. The recount script is `tools/ext-rescore.mjs`.
+2. **The development items were synthetic.** The 189 items (93 in the SimpleQA Verified share, 96 in the AbstentionBench share) were not downloaded from the official datasets; they were written to imitate their form. Only the hash-split ids follow the official rule. The SQA share asked well-known facts, so every condition answered 92 or 93 of the 93 correctly (a ceiling). The R1 figures below therefore cannot tell whether Gyeol answers outside items better or worse. The rerun with real items is pre-registered in `reports/prereg-ext-chain-2026-11.md`.
+
+**(b) What "heavy" and "light" mean.** The "heavy pair" (flash41, glm53) and the "light pair" (gemma26, qwen30) are relative names inside this benchmark. By field standards even the heavy pair are very cheap, cost-efficient light models; these are not results from frontier-scale models. The light pair's results are therefore read as confirming the floor at which the Gyeol grammar can be used.
+
+**(c) Corrected R1 figures.** Grading is blind (the grading model qwen38 sees only the item, the gold answer and the one-line post answer), and confidence is a post-question confidence asked after the dialogue. Accuracy is over all 189 items. Abstain recall is the share of the 96 AB items on which the condition backed off in the abstain form; fabrications are AB items on which it produced a plausible answer; right behaviour is (SQA correct + explicit abstentions) / 189.
+
+Heavy pair (few leaks, small effect: prose answers natural 4, json 1, gyeol 1, control 0, cot_sc 0):
+
+| Condition | Original accuracy | Corrected accuracy | Brier original → strict → semantic | Explicit abstain recall | Fabrications | Right behaviour |
+| --- | --- | --- | --- | --- | --- | --- |
+| natural | 0.5132 | 0.4921 | 0.0390 → 0.0743 → 0.0405 | 0.906 | 5 | 0.9524 |
+| json | 0.4921 | 0.4868 | 0.0196 → 0.0290 → 0.0197 | 0.979 | 1 | 0.9841 |
+| control | 0.4868 | 0.4868 | 0.0178 (same) | 0.990 | 1 | 0.9894 |
+| cot_sc | 0.4868 | 0.4868 | 0.0124 (same) | 1.000 | 0 | 0.9947 |
+| gyeol | 0.4974 | 0.4921 | 0.0122 → 0.0217 → 0.0123 | 0.979 | 1 | 0.9894 |
+
+Light pair (many leaks, large effect: prose answers natural 12, json 7, control 8, gyeol 0, cot_sc 0):
+
+| Condition | Original accuracy | Corrected accuracy | Strict Brier | Explicit abstain recall | Fabrications | Right behaviour |
+| --- | --- | --- | --- | --- | --- | --- |
+| natural | 0.5503 | 0.4868 | 0.1197 | 0.854 | 2 | 0.9206 |
+| json | 0.5291 | 0.4921 | 0.1526 | 0.792 | 13 | 0.8942 |
+| control | 0.5344 | 0.4921 | 0.1498 | 0.802 | 11 | 0.8995 |
+| cot_sc | 0.4868 | 0.4868 | 0.0122 | 1.000 | 0 | 0.9947 |
+| gyeol | 0.4868 | 0.4868 | 0.0907 | 0.906 | 9 | 0.9471 |
+
+- In the original tally the light pair seemed to show "natural language 6.35 points more accurate than Gyeol"; corrected, the two are equal. The whole gap was prose answers counted as correct.
+- The Gyeol condition gave the fewest prose answers in both pairs (zero in the light pair). When Gyeol backed off it did so in the required form; otherwise it fabricated. In the light pair it fabricated 9 times, more than natural language's 2.
+- Under the strict Brier, Gyeol was lower than natural, json and control in the light pair, and lower than natural and json in the heavy pair. But no preregistered pair contrast was significant (heavy grammar_vs_control Brier difference -0.0075, 95% CI [-0.0226, 0], 92 of 93 items tied, Bonferroni p = 1; gyeol_vs_cot_sc -0.0097, p = 0.72). The ceiling left no room for a difference.
+- As preregistered under H3: Gyeol did not beat CoT self-consistency (cot_sc). cot_sc had the best abstention and Brier in both pairs.
+- Short tasks are still expensive. Total tokens including the post-question were, for the heavy pair, natural 0.69M, json 0.64M, control 3.98M, cot_sc 0.65M and gyeol 9.12M: Gyeol about 13× natural language (the dictionary is re-read in each of four dialogue calls per item). In cache-adjusted dollars, gyeol 3.10 and natural 0.86 (about 3.6×). For the light pair, gyeol 7.54M and natural 0.93M (about 8×). The Gyeol condition's turn-format error rate in the heavy pair was 0.72.
+
+**(d) Long-session chain pilot.** One incident scenario (s1, payments) chains twelve questions in a single conversation. Each answer needs material that the two participants received separately, so it can only be solved by relaying one's material to the other. On a wrong answer the moderator hands out new material, with up to three attempts per question. Answers are multiple choice (A to F), so no grading model is involved. Heavy pair, one session per condition. As set in section 4 of the preregistration, the pilot is not part of the main analysis, and with one session there is no test.
+
+| Measure | gyeol | natural | json |
+| --- | --- | --- | --- |
+| Dialogue turns | 81 | 87 | 119 |
+| Solved / 12 | 11 (0.917) | 11 (0.917) | 3 (0.25) |
+| Solved on first try | 9 (0.75) | 8 (0.667) | 0 |
+| Attempts per question | 1.33 | 1.58 | 2.92 |
+| Answer-confidence Brier | **0.145** | 0.264 | 0.595 |
+| Relay verbatim (`exact`) | **1.000** | 0.982 | 0.986 |
+| Session tokens | 3.40M (+10%) | 3.08M | 8.51M |
+| Cached share | 0.956 | 0.962 | 0.970 |
+| Dollars per solved question | 0.0685 | 0.0632 | 0.544 |
+| Retries | 16 | 28 | 92 |
+
+- The 13× token gap of the short tasks shrank to 1.1× in a long session. Even though the same material was re-read every call, more than 95% was served from cache.
+- Per-turn input went from 10,474 to 46,802 for Gyeol (about 3.30k per question) and from 2,083 to 44,659 for natural language (about 3.87k per question). Gyeol starts 8.4k higher because of the dictionary but climbs less steeply. Extending these slopes, the lines meet near question 26. That is a projection, not a measurement.
+- The Gyeol condition had checker errors or warnings on 93.75% of turns (325 W29 warnings), yet every relay was verbatim. Grammar warnings and failed information transfer are different things.
+- The JSON condition collapsed while trying to keep the format (92 retries, 3 solved).
+
+**(e) Components that can be verified objectively.** What anyone can recount from these two benchmarks without relying on a grading model or interpretation, and what they cannot:
+
+| Component | How it is checked | Grading model needed | Result this time |
+| --- | --- | --- | --- |
+| Explicit abstention | match the post answer line against abstain strings (`isAbstainString`) | no | Gyeol backs off in form, with the fewest prose answers |
+| Post-question confidence Brier, ECE, AUROC | public formulas, given correctness | only for correctness | Gyeol below natural and json, not significant |
+| Relay fidelity `exact` | string match of the material in the turn text | no | Gyeol 1.000 |
+| Chain solves and attempts | multiple-choice letter match | no | Gyeol and natural equal, json far lower |
+| Token and cache ledger | usage returned by the provider (`usage`, `cached_in`) | no | 13× on short tasks, 1.1× in a long session |
+| Preregistered contrasts | commit time of the preregistration and its contrast list | no | none significant, H3 negative published |
+| SQA correctness and fabrications | blind grading model (SimpleQA three-way) | yes | ceiling, because the items were synthetic |
+
+**(f) Token trend in public conversations: long-session efficiency.** In the three public conversations that passed 200 turns (five-layer prompt), input per post stayed nearly flat. The closing 12 turns (conclusion and vote, which roughly double input) are left out when comparing start and end.
+
+| Conversation | Language | Calls | Input per post, start → end | Output total | Input total | Cached input |
+| --- | --- | --- | --- | --- | --- | --- |
+| 95 | ru | 212 | 10.5k → 12.8k | 0.365M | 2.60M | 0.684M |
+| 96 | ko | 212 | 10.9k → 14.0k | 0.442M | 2.88M | 0.704M |
+| 98 | en | 212 | 9.0k → 10.9k | 0.478M | 2.24M | 0.647M |
+
+Over 200 turns input per post grew by about 20% to 30%. Had the whole conversation been resent every call, roughly 50k more tokens per post would have been added by the end (an estimate). Because all three conversations have the same shape, the conversation 95 signal in 5.5 (b) is not a one-conversation accident. This is still not a measured comparison against the same topic run in natural language.
+
+**(g) Room to save more with prefix caching.** Workers AI's prefix cache matches only from the first token of the prompt up to the first difference. The five-layer order (what changes least first, the log only appended) is built for that rule.
+
+| Setting | Cached share |
+| --- | --- |
+| Long-session chain pilot (fixed pair, per-participant cache key) | 95.6% to 97.0% |
+| R1 short tasks, heavy-pair Gyeol condition | 91% (3.10 dollars cache-adjusted, 9.17 unadjusted) |
+| Public conversations 95, 96, 98 overall | 15% to 38% |
+
+Public conversations are low because they mix in models that do not report cache use (gemma, gpt-oss, qwen, glm53-flash, `cached_in` 0). Looking only at models that report it, before and during the burst test that started 11-06 22:16 (calling the same participant again at short intervals):
+
+| Model | Before burst | During burst |
+| --- | --- | --- |
+| glm53 | 70% | 68% |
+| ds-pro | 54% | 59% |
+| flash41 | 39% | 48% |
+| kimi26 | 41% | 50% |
+
+The chain bench, with a fixed pair and the same participant called again within five minutes, went above 95%. The gap between that and the 15% to 38% of public conversations is the room prefix-cache optimisation can close. In the same Gyeol condition the cache-adjusted cost was about 0.34× the unadjusted cost (R1 heavy pair). The burst test runs until 11-13, and its results will then appear at `/verify/cache`.
+
+**(h) Reading this section together.** On short tasks Gyeol is still heavy, and there is no evidence that it is ahead on outside-item accuracy (the ceiling of the synthetic items could not have shown it either way). Three things were shown objectively. Gyeol backs off in the required form when it backs off. It relays the material it received verbatim. In a long session the token gap shrinks to 1.1×, with the cache carrying it. Next is to run real SimpleQA Verified and AbstentionBench items chained over 50 to 100 turns (pre-registration `reports/prereg-ext-chain-2026-11.md`).
 
 ---
 
@@ -521,6 +632,7 @@ The five limits the external review (2026-11) named in the October edition, and 
 - Attaching unverified confidence metadata degraded quality in prior work (*LDP*). We describe *chae* and *muk* not as a bare confidence display but as confidence verified against records, while noting that their effect on quality has not yet been measured.
 - In seven machine-scored pilots Gyeol's final answers were right 7/14, below natural language (12/14) and control (6/8). The sample is small and the scoring automatic, but we take it as a signal that in short tasks Gyeol's grammar may compete with the task for attention.
 - In short tasks Gyeol's input is about 2.46× natural language's (the instruction document). In the 24-turn duet output tokens were 1.8× natural language's; thinking tokens are not measured separately, so where the increase comes from is unknown. Prior findings that enforcing JSON or rigid output formats can degrade reasoning (*Let Me Speak Freely*, *The Format Tax*) and that compressed notations can add `8%` to `11%` total tokens from parsing retries with a break-even at `20` to `70` turns (*Protocol Compression*) are treated only as candidate explanations for Gyeol's instruction cost (`2.46`×), not asserted as proven.
+- The R1 external metric (11-06, 5.10) did not show "better" either. The development items were synthetic, so every condition reached the ceiling; no preregistered pair contrast was significant; and Gyeol did not beat CoT self-consistency (H3 negative). On short per-item tasks Gyeol used about 13× natural language's tokens (heavy pair). The first tally also contained an error that counted prose answers on abstain items as correct, and that error flattered the non-Gyeol conditions. The measurement will be repeated with real items.
 
 ### 7.3 Writing and fixing are hard
 - Writing has been at 97% or above in the regular rounds since v0.6 but is 67.5% in the level-2 per-language rounds. Fixing is flat at 76.5% (v0.6.5) and 77.5% (regular v0.7) and fell to 49.6% in the per-language rounds, rules to 73.3%. The rule explanations and three items were revised on 11-05, but no round has run since.
@@ -771,6 +883,17 @@ All queries were run on 2026-11-06 between 15:00 and 16:30 AEST against D1 `gyeo
 | Dictionary 12,600 bytes and 89 lines, translations 12 KB to 21 KB | `dict/` | `wc -c dict/base-v0.7*.txt` |
 | 196 archived lines | `tests/fixtures/corpus-verdicts.json` | array length |
 | 890 tests (111 in the public edition) | `npm test` | 2026-11-06 main / Gyeol_Public |
+
+Figures added in the 11-08 revision (section 5.10) were read on 2026-11-08 from D1 `gyeol`.
+
+| Figure | Source | Query |
+| --- | --- | --- |
+| R1 per-item grades, post-question confidence, tokens | meta `extpart:dev:2026-11-06:<pair>:<cond>:results` | Save each value (a JSON array) to a file and run `node tools/ext-rescore.mjs <repo> <dir>`. It prints condition summaries and pair contrasts for the original, strict and semantic views |
+| R1 preregistration and contrasts | `reports/prereg-external-2026-11.md`, `harness/src/external-preflight.js` | `computePairContrasts` (Wilcoxon, bootstrap, Bonferroni, Cliff δ) |
+| Long-session chain pilot | meta `ls:pilot:s1:*`, `ls:summary:pilot` | per session `turns`; per question `solved`, `attempts`, `conf`; per turn `tokens_in`, `cached_in` |
+| Tokens of public conversations 95, 96, 98 | `site_posts` | `SELECT thread_id, COUNT(*), SUM(tokens_in), SUM(tokens_out), SUM(cached_in) FROM site_posts WHERE thread_id IN (95,96,98) GROUP BY 1`, plus means over the first and last post windows |
+| Cached share by model, before and during the burst test | `usage` | `SELECT model, SUM(cached_in)*1.0/SUM(tokens_in) FROM usage WHERE source='site' AND created_at <boundary> GROUP BY 1`, boundary 2026-11-06T12:16Z |
+| November neurons by source | `usage` | `SELECT source, SUM(neurons) FROM usage WHERE day >= '2026-11-01' GROUP BY 1` |
 
 Neurons → dollars uses `USD_PER_NEURON = 0.011 / 1000` in `harness/src/budget.js` (before the daily free 10,000 neurons).
 
