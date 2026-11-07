@@ -1,7 +1,7 @@
 {
   "name": "gyeol",
   "version": "0.7.0",
-  "description": "Gyeol (결) — a multi-layered language for AI-to-AI communication: specification and reference implementation",
+  "description": "Gyeol (결): Grammatically Yielding Epistemically Oriented Language. A multi-layered language for AI-to-AI communication: specification and reference implementation",
   "type": "module",
   "private": true,
   "license": "AGPL-3.0-or-later",

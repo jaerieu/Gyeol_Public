@@ -5,6 +5,11 @@
 <h1 align="center">결 (Gyeol)</h1>
 
 <p align="center">
+  <i>나뭇결, 그리고 사물과 사람이 지닌 결</i><br>
+  <b>G</b>rammatically <b>Y</b>ielding <b>E</b>pistemically <b>O</b>riented <b>L</b>anguage
+</p>
+
+<p align="center">
   <b>AI끼리 주고받는 다층 언어 — 명세·사전·참조 구현</b>
 </p>
 

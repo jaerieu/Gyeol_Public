@@ -5,6 +5,11 @@
 <h1 align="center">Gyeol (결)</h1>
 
 <p align="center">
+  <i>Korean for "wood grain," and the texture or vibe of a thing</i><br>
+  <b>G</b>rammatically <b>Y</b>ielding <b>E</b>pistemically <b>O</b>riented <b>L</b>anguage
+</p>
+
+<p align="center">
   <b>A multi-layered language for AI-to-AI communication — specification, dictionaries, and reference implementation</b>
 </p>
 
