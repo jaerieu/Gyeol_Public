@@ -1,0 +1,121 @@
+// 결 v0.8 및 론(Lon: Lineage Oriented Notation) 코어 단위 시험 (2026-11-11).
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { format, glossClause, parse, rules08 } from '../src/index.ts';
+
+function codesOf(text: string, opts: Parameters<typeof rules08>[1] = {}) {
+  const r = parse(text, { v08: true });
+  return [...r.diagnostics, ...rules08(r, opts)].map((d) => d.code);
+}
+
+test('v0.8 <N · 고정 표기: <1 · ●>, <1 ·→●>, <1 ·●> 모두 E18 없이 <1 · ●>로 정규화되고 · 누락(<1 ●>)은 E25', () => {
+  for (const input of [
+    '<1 · ● [see,say] 기온이 3度 올랐다 *5B8↓Q1>',
+    '<1 ·→● [see,say] 기온이 3度 올랐다 *5B8↓Q1>',
+    '<1 ·● [see,say] 기온이 3度 올랐다 *5B8↓Q1>',
+  ]) {
+    const r = parse(input, { v08: true });
+    assert.deepEqual(r.diagnostics, [], input);
+    assert.deepEqual(rules08(r, { lang: 'ko', ink: 5 }), [], input);
+    const canon = format(r.message);
+    assert.equal(canon, '<1 · ● [see,say] 기온이 3度 올랐다 *5B8↓Q1>\n', input);
+    const again = parse(canon);
+    assert.deepEqual(again.diagnostics, []);
+    assert.equal(format(again.message), canon);
+  }
+
+  assert.deepEqual(codesOf('<1 ● [see,say] 기온이 3度 올랐다 *5B8>', { lang: 'ko', ink: 5 }), ['E25']);
+  assert.ok(codesOf('<1 · ●→kimi [see,say] 기온이 3度 올랐다 *5B8>').includes('E31'));
+});
+
+test('v0.8 E34 완화 및 E15 폐지: top 절은 ↓N 근거 가능하고 gut 절만 E34, 한 어절 한글 뒤 한자 허용', () => {
+  const doc = [
+    'gyeol 0.8 · lang ko',
+    '<1 · ● [top,say] 새로운 話頭를 연다 *5B7>',
+    '<2 · ● ↔1 [inf,say] 新法을得하여 분석한다 *6C8↓1>',
+    '<3 · ● [gut,say] 미세 tremor가 느껴진다 *6Y5>',
+    '<4 · ● [inf,say] 미검증 hunch를 근거 삼음 *6B7↓3>',
+    '<5 · ● sup→3 [see,say] 실측 로그에서 latency 급증을 확인함 *6G9↓Q2>',
+  ].join('\n');
+  const r = parse(doc);
+  assert.deepEqual(r.diagnostics, []);
+  const w = rules08(r);
+  assert.deepEqual(
+    w.map((d) => [d.line, d.code]),
+    [[4, 'E34']],
+  );
+});
+
+test('론(Lon: Lineage Oriented Notation) 프로파일: 머리 줄 왕복, *먹채·gut·시제 유지, W29·W32 면제, 비허용 표지 E39', () => {
+  const lonDoc = [
+    'lon 0.8 · lang ko',
+    '<1 · ● [see,pst,say] 센서 데이터가 정상 범위(normal)였다 *7B8↓Q1>',
+    '<2 ·→kimi ↔1 [gut,lim,say] 미세 진동 패턴이 이상하다 *6Y4>',
+    '<3 · ● sup→2 [inf,fut,say] 베어링 마모가 진행될 것이다 *7C8↓Q2>',
+  ].join('\n');
+  const r = parse(lonDoc);
+  assert.equal(r.message.profile, 'lon');
+  assert.equal(r.message.gyeol, '0.8');
+  assert.deepEqual(r.diagnostics, []);
+  assert.deepEqual(rules08(r), []);
+
+  const formatted = format(r.message);
+  assert.match(formatted, /^lon 0\.8 · lang ko\n/);
+  const r2 = parse(formatted);
+  assert.equal(r2.message.profile, 'lon');
+  assert.equal(format(r2.message), formatted);
+
+  assert.deepEqual(codesOf('<1 · ● [top,say] 화두 열기 *5B7>', { profile: 'lon' }), ['E39']);
+  assert.deepEqual(codesOf('<1 · ● [see,new,say] 새 발견 *5B7>', { profile: 'lon' }), ['E39']);
+  assert.deepEqual(codesOf('<1 · ● [inf,met,say] 비유 표현 *5B7>', { profile: 'lon' }), ['E39']);
+  assert.deepEqual(codesOf('<1 · ● [see,say] 채 누락>', { profile: 'lon' }), ['E33']);
+  assert.deepEqual(codesOf('<1 · ● [봄,다] 한글 표지 *5B7>', { profile: 'lon' }), ['W26']);
+
+  const gyeolSingle = parse('gyeol 0.8 · lang ko\n<1 · ● [see,say] 한글 어절만 둘 이상 썼다 *5B8>');
+  const gd = rules08(gyeolSingle);
+  assert.equal(gd.length, 1);
+  assert.equal(gd[0].code, 'W29');
+  assert.equal(gd[0].severity, '경고');
+});
+
+test('전용 괄호꺽쇠 외부 근거(증N·근N·refN·evdN <[ … ]>): 결·론 모두 어절·스크립트·특수문자 제약 예외로 무결성 왕복', () => {
+  // 1. 본래 결(gyeol) 프로파일: 절 뒤 증1·근2 부착 (문장·링크·수학 증명·예약 기호 < > * → ↔ | ● 모두 오류 없음, W29·W32 완전 면제)
+  const gyeolEvd = [
+    'gyeol 0.8 · lang ko',
+    '<1 · ● [see,say] 원문報告의 수렴식을 검증했다 *7B9> 증1 <[∀ε > 0, ∃N : n > N → |a_n - L| < ε * 1, [0, 1] 구간 성립 | 참조: https://spec.example.org/p?a=1&b=2#thm-3]>',
+    '<2 · ● sup→1 [inf,say] 후속補正도 일치한다 *7C8↓근2>',
+    '근2 <[원문 4절 발췌: "단일 언어 문장으로 길게 적은 외부 근거도 어절·스크립트 제약(W29) 없이 그대로 수용한다."]>',
+  ].join('\n');
+
+  const rg = parse(gyeolEvd);
+  assert.deepEqual(rg.diagnostics, []);
+  // 절 1은 top이 아니라 see이므로 sup→1에는 W36만 나고, 외부 근거 블록 내부 특수문자나 한국어 단일 스크립트에는 어떤 오류·경고도 나지 않음
+  const gw = rules08(rg);
+  assert.deepEqual(gw.map((d) => d.code), ['W36']);
+  assert.equal(rg.message.clauses[0].evidences?.[0]?.kind, 'evd');
+  assert.equal(rg.message.clauses[0].evidences?.[0]?.id, '1');
+  assert.match(rg.message.clauses[0].evidences?.[0]?.text ?? '', /∀ε > 0/);
+  assert.equal(rg.message.evidences?.[0]?.kind, 'ref');
+  assert.equal(rg.message.evidences?.[0]?.id, '2');
+  assert.match(glossClause(rg.message.clauses[0], 'ko'), /증1 때문/);
+  assert.match(glossClause(rg.message.clauses[1], 'en'), /because of ref2/);
+
+  // 정규형 왕복 고정점 확인
+  const canonG = format(rg.message);
+  assert.match(canonG, /\*7B9↓evd1> evd1 <\[∀ε > 0/);
+  assert.match(canonG, /\nref2 <\[원문 4절 발췌:/);
+  const rg2 = parse(canonG);
+  assert.deepEqual(rg2.diagnostics, []);
+  assert.equal(format(rg2.message), canonG);
+
+  // 2. 론(lon) 프로파일 + 유니코드 ⟪ … ⟫ 별칭 입력도 <1 · ● …> evd1 <[ … ]>로 정규화
+  const lonEvd = [
+    'lon 0.8 · lang ko',
+    '<1 · ● [gut,say] 배열 경계 조건이 위험해 보인다 *6Y5>',
+    '<2 · ● sup→1 [see,say] 재현 시험에서 오버플로를 확인했다 *7R9> 증1 ⟪idx >= buf[0] * 2 -> panic("OOB <fatal>") at line 412⟫',
+  ].join('\n');
+  const rl = parse(lonEvd);
+  assert.deepEqual(rl.diagnostics, []);
+  assert.deepEqual(rules08(rl), []);
+  assert.match(format(rl.message), /\*7R9↓evd1> evd1 <\[idx >= buf\[0\] \* 2 -> panic/);
+});

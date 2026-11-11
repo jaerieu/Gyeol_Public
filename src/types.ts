@@ -21,6 +21,17 @@ export type PlaceRel = '↓' | '↔' | '∥' | '↖' | '⊗';
 /** v0.6 덧붙임(2026-10-25 H-261025-8): 받침 = 절N의 직감(촉)·새 화두(갑)를 뒤늦게 찾은 근거로 받친다(받침→N, 과정 자리) */
 export type ProcessKind = '숙고' | '미해결' | 'fix' | 'err' | 'sup';
 export type FoldLevel = '점' | '절' | '펼침';
+/** v0.8(2026-11-11 Jae): 문법 프로파일. 'gyeol' = 본래 결(다언어·사유 정체성), 'lon' = 론(Lineage Oriented Notation, 교차 검증·분석·계보 추적 전용 표준) */
+export type Profile = 'gyeol' | 'lon';
+/** v0.8(2026-11-11 Jae): 외부·보조 근거 종류 — ref(근: 출처·문헌·링크·발췌), evd(증: 실증·수식·증명·로그) */
+export type ExtEvidenceKind = 'ref' | 'evd';
+
+/** v0.8(2026-11-11 Jae): 전용 괄호꺽쇠 `<[ … ]>` 안에 담은 넓은 단위의 원문 근거(문장·링크·수식·표 등 어절·특수문자 제약 예외) */
+export interface ExtEvidence {
+  kind: ExtEvidenceKind;
+  id: string;
+  text: string;
+}
 
 /** 다른 절을 가리킴. msg가 null이면 같은 메시지 안이다. */
 export interface Ref {
@@ -35,7 +46,14 @@ export interface Ref {
  * 근거는 쓰고 싶을 때만 쓴다(문법). 대화 밖을 가리키는 것은 문제 번호와 이름 둘로만 줄였다(초기 개발 자원 때문의 임시방편).
  */
 // v0.6(2026-10-24): 지난 대화의 절 { thread: 53, clause: '절12' }(↓53:12). 메시지 밖이라 E17을 보지 않는다.
-export type Because = Ref | { url: string } | { quiz: number } | { agent: string } | { thread: number; clause: string };
+// v0.8(2026-11-11 Jae): 외부·보조 근거 식별자 { ext: 'ref' | 'evd', id: '1' }(↓ref1·↓evd2·↓근1·↓증2). 결·론 공통.
+export type Because =
+  | Ref
+  | { url: string }
+  | { quiz: number }
+  | { agent: string }
+  | { thread: number; clause: string }
+  | { ext: ExtEvidenceKind; id: string };
 
 export interface Word {
   text: string; // 어절 그대로 (정규화 뒤)
@@ -115,13 +133,15 @@ export interface Clause {
    * 0.5.1 꼴 절에서는 앞에 쓴 ↓N도 여기로 옮긴다(정규형은 끝).
    */
   because?: Because[];
+  /** v0.8(2026-11-11 Jae): 절 뒤에 붙인 전용 괄호꺽쇠 외부 근거(`증1 <[ … ]>`, `ref2 <[ … ]>`). 있을 때만 둔다 */
+  evidences?: ExtEvidence[];
   /**
    * v0.5(2026-10-15): v0.4까지 읽지 못하던 v0.5 꼴 가운데 정규형에 남는 것(새로앎 '군', 시제 '었'·'을', 자신으로 읽힌 끝의 '!N')을 쓴 절에만 '0.5'.
    * 정규형은 이것으로 갈린다: '0.5'면 <… [근거,군,시제,화행(먹N)] 내용 !N>, 없으면 v0.4까지의 정규형 그대로(옛 먹 이름이 바뀌지 않게).
    * 2026-10-15 검토 1: 표지 별칭(see, 见 …)만으로는 정하지 않는다. 별칭은 정규형에서 한글로 바뀌어 사라지므로, 정하면 정규형을 다시 읽은 것이
    * 다른 정규형이 되고 별칭을 썼는지에 따라 먹 이름이 갈린다. 별칭(new→군, past→었 …)으로 쓴 군·시제는 정규형에 남으므로 '0.5'다.
    */
-  form?: '0.5' | '0.5.1';
+  form?: '0.5' | '0.5.1' | '0.8';
 }
 
 /**
@@ -144,6 +164,12 @@ export interface ClauseWritten {
    * 2026-10-15 검토 2: 이 절의 정규형은 옛 글자 '네'가 될 수 있어(다른 v0.5 꼴이 없으면) rules05가 E30을 낸다.
    */
   neLabel?: true;
+  /** 표지 블록 순서가 정규 순서를 벗어났을 때 true(v0.6 W34) */
+  marksOff?: true;
+  /** v0.8: 절 번호 뒤에 명시적으로 점(·)을 썼다(<1 · …>, <1 ·→이름 …>, <1 · ● …>) */
+  hasDot?: true;
+  /** v0.8 론(Lon) 검사: 영어 3글자 정본 표지가 아닌 별칭·한글 표지 목록 */
+  nonEnMarks?: string[];
   /** 표지 칸에서 읽은 v0.5 별칭(see, 见 …), 쓴 그대로 */
   aliases: string[];
 }
@@ -178,11 +204,15 @@ export interface Message {
   gyeol: string; // 명세 판, "0.2"
   /** v0.7: 머리 줄 `gyeol 0.7 · lang en`의 사용자 언어(BCP 47: ko en zh-Hans zh-Hant ja de fr it es ru). 없으면 빠진다(W29를 재지 않는다) */
   lang?: string;
+  /** v0.8(2026-11-11 Jae): 머리 줄 `lon 0.8` 또는 `gyeol 0.8 · profile lon`에서 읽은 프로파일. 적지 않은 옛 메시지는 생략한다 */
+  profile?: Profile;
   head: Head | null;
   tune: TuneLine[];
   preface: { purpose?: string; constraint?: string; extra?: { key: string; value: string }[] } | null;
   echo: Echo[];
   clauses: Clause[];
+  /** v0.8(2026-11-11 Jae): 단독 줄로 적은 외부·보조 근거 블록(`ref1 <[ … ]>`, `증1 <[ … ]>`). 있을 때만 둔다 */
+  evidences?: ExtEvidence[];
   gloss: string | null;
   seal: Seal | null;
   muk_source: '도구' | '모델' | '없음' | null;

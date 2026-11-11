@@ -8,19 +8,20 @@
 //   src/parse/shared.ts 둘이 함께 쓰는 것(진단 모음, 가리킴, 어절, 표지 별칭, 앞붙이, 물결표)
 // 줄 하나는 먼저 v0.3 줄꼴인지 본다(lineFormOf). 아니면 비슷한 기호를 옛 꼴의 기호로 바꾼 뒤(normalizeSymbols) 옛 꼴로 읽는다.
 
-import type { ClauseWritten, Head, LineForm, Message, ParseResult, Rel, Ref, Seal } from './types.ts';
+import type { ClauseWritten, Head, LineForm, Message, ParseResult, Profile, Rel, Ref, Seal } from './types.ts';
 import { FORBIDDEN_MUK_METHOD, MEASURE_METHODS, READ_FAMILIES, RELATIONS, SPEC_VERSION, TUNE_STEPS } from './tables.ts';
 import { normalizeSymbols, spaced, splitTop } from './text.ts';
 import { Ctx } from './parse/shared.ts';
 import { parseClause02, parseEcho } from './parse/v02.ts';
-import { lineFormOf, parseLine03 } from './parse/v03.ts';
+import { extractTrailingEvidences, lineFormOf, parseLine03 } from './parse/v03.ts';
 
 export { clausePieces, labelLine, lineFormOf } from './parse/v03.ts';
 
 // ───────── 머리·낙관·머리말 ─────────
 
 // v0.7(2026-10-29, reports/v0.7-design.md 4절): 머리 줄은 `gyeol 0.7 · lang en`(읽기는 `결 0.7 · 언어 ko`, `pact #`·`room #`도). lang은 틀의 Message.lang
-function parseHead(rest: string, ctx: Ctx): { version: string; head: Head; lang?: string } | null {
+// v0.8(2026-11-11 Jae): `lon 0.8`(`론 0.8`) 또는 `gyeol 0.8 · profile lon`으로 프로파일(`gyeol`·`lon`)을 적을 수 있다.
+function parseHead(rest: string, ctx: Ctx): { version: string; head: Head; lang?: string; profile?: Profile } | null {
   const items = splitTop(rest, spaced('·')).map((s) => s.trim());
   const vm = /^(\d+\.\d+(?:\.\d+)?)$/.exec(items[0] ?? ''); // 0.2.1처럼 셋째 자리도 받는다(v0.2.1)
   if (!vm) {
@@ -29,11 +30,13 @@ function parseHead(rest: string, ctx: Ctx): { version: string; head: Head; lang?
   }
   const head: Head = {};
   let lang: string | undefined;
+  let profile: Profile | undefined;
   for (const it of items.slice(1)) {
     let m: RegExpExecArray | null;
     if ((m = /^(?:짝|pact)\s+#([0-9a-f]{6,64})$/iu.exec(it))) head.pact = m[1];
     else if ((m = /^(?:방|room)\s+#([0-9a-f]{6,64})$/iu.exec(it))) head.room = m[1];
     else if ((m = /^(?:lang|언어)\s+([A-Za-z]{2,3}(?:-[A-Za-z]{2,8})?)$/iu.exec(it))) lang = m[1]; // 값은 쓴 그대로 둔다(글자군은 scriptGroupOf가 소문자로 본다)
+    else if ((m = /^(?:profile|프로파일)\s+(gyeol|결|lon|론)$/iu.exec(it))) profile = /^(?:lon|론)$/iu.test(m[1]) ? 'lon' : 'gyeol';
     else if ((m = /^↩\s*#([0-9a-f]{6,64})(?:\s+(\S+))?$/u.exec(it))) {
       head.re = { id: m[1] };
       if (m[2]) {
@@ -45,7 +48,10 @@ function parseHead(rest: string, ctx: Ctx): { version: string; head: Head; lang?
       head.to = m[2].split(',').map((s) => s.trim()).filter((s) => s !== '');
     } else ctx.err('E20', `머리 항목을 읽을 수 없다: '${it}'`);
   }
-  return lang === undefined ? { version: vm[1], head } : { version: vm[1], head, lang };
+  const out: { version: string; head: Head; lang?: string; profile?: Profile } = { version: vm[1], head };
+  if (lang !== undefined) out.lang = lang;
+  if (profile !== undefined) out.profile = profile;
+  return out;
 }
 
 function parseSeal(rest: string, ctx: Ctx): Seal | null {
@@ -100,9 +106,17 @@ const family = (v: string) => String(v).split('.').slice(0, 2).join('.');
 
 /** 열쇠말 줄. 이 줄들은 v0.3 줄꼴로 읽지 않는다. */
 const KEYWORD_LINES = new Set(['덧글', '조율', '머리말', '받은대로', '낙관']);
+const isHeadKey = (k: string) => k === '결' || k === '론' || /^(?:gyeol|lon)$/iu.test(k);
+const isLonKey = (k: string) => k === '론' || /^lon$/iu.test(k);
 
-export function parse(input: string): ParseResult {
+export interface ParseOptions {
+  /** v0.8 문맥에서 머리 줄 없이 단절을 읽을 때 true(E15 폐지 및 <절N · ● …> 허용) */
+  v08?: boolean;
+}
+
+export function parse(input: string, opts: ParseOptions = {}): ParseResult {
   const ctx = new Ctx();
+  if (opts.v08) ctx.v08 = true;
   const msg = emptyMessage();
   const lines = input.replace(/\r\n?/g, '\n').normalize('NFC').split('\n');
   let sawClause = false;
@@ -123,8 +137,14 @@ export function parse(input: string): ParseResult {
       msg.gloss = msg.gloss ? msg.gloss + ' / ' + rest : rest;
       return;
     }
+    // v0.8(2026-11-11 Jae): 단독 줄로 적은 전용 괄호꺽쇠 외부 근거(`ref1 <[ … ]>`, `증1 <[ … ]>`)
+    const standaloneEv = extractTrailingEvidences(line);
+    if (standaloneEv.evidences.length > 0 && standaloneEv.head === '') {
+      (msg.evidences ??= []).push(...standaloneEv.evidences);
+      return;
+    }
     // v0.3 줄꼴의 절 줄(옛 꼴의 기호 바꾸기보다 먼저 본다: < >와 [ ]의 뜻이 다르다)
-    if (!KEYWORD_LINES.has(key) && !((key === '결' || /^gyeol$/iu.test(key)) && /^\d+\.\d+/.test(rest))) {
+    if (!KEYWORD_LINES.has(key) && !(isHeadKey(key) && /^\d+\.\d+/.test(rest))) {
       const got = parseLine03(line, ctx);
       if (got) {
         msg.clauses.push(...got);
@@ -149,13 +169,16 @@ export function parse(input: string): ParseResult {
     const k = kw2[1];
     const r = (kw2[2] ?? '').trim();
 
-    if ((k === '결' || /^gyeol$/iu.test(k)) && /^\d+\.\d+/.test(r)) {
+    if (isHeadKey(k) && /^\d+\.\d+/.test(r)) {
       if (msg.head || sawClause || msg.tune.length) ctx.err('E20', '머리 줄은 맨 앞에 한 번만 온다');
       const h = parseHead(r, ctx);
       if (h) {
         msg.gyeol = h.version;
         msg.head = h.head;
         if (h.lang) msg.lang = h.lang; // v0.7 사용자 언어
+        const prof = h.profile ?? (isLonKey(k) ? 'lon' : undefined);
+        if (prof) msg.profile = prof;
+        if (Number(family(h.version)) >= 0.8 || prof === 'lon') ctx.v08 = true;
         if (!(READ_FAMILIES as readonly string[]).includes(family(h.version))) ctx.warn('W14', `명세 판이 다르다: ${h.version} (이 구현은 ${SPEC_VERSION})`);
       }
     } else if (k === '조율') {

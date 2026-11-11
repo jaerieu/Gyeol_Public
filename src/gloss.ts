@@ -268,7 +268,17 @@ export const GLOSS: Record<string, GlossTable> = {
 
 /** 끝의 근거 이름: 주소, 시험 문제 Q3, 참가자 kimi(2026-10-16), 절 */
 const becauseName = (b: Because, g: GlossTable) =>
-  'url' in b ? g.url : 'quiz' in b ? `${g.quiz}${b.quiz}` : 'agent' in b ? b.agent : 'thread' in b ? g.past.replace('T', String(b.thread)).replace('N', g.clause + b.clause.replace(/^[절점]/u, '')) : refName(b, g);
+  'url' in b
+    ? g.url
+    : 'quiz' in b
+      ? `${g.quiz}${b.quiz}`
+      : 'agent' in b
+        ? b.agent
+        : 'ext' in b
+          ? `${g.clause === '절' ? (b.ext === 'evd' ? '증' : '근') : b.ext}${b.id}`
+          : 'thread' in b
+            ? g.past.replace('T', String(b.thread)).replace('N', g.clause + b.clause.replace(/^[절점]/u, ''))
+            : refName(b, g);
 // v0.7: 틀의 이름표(절12)는 그대로지만 풀이는 그 언어의 말로 쓴다(ko 절12, en clause 12)
 const refName = (r: Ref, g: GlossTable) => (r.msg ? `#${r.msg.slice(0, 6)}:` : '') + g.clause + r.label.replace(/^[절점]/u, '');
 

@@ -12,8 +12,8 @@
 //   node tools/cli.ts simplify <파일|->          한자를 기준 글꼴(간체)로 바꾼다
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { parse, format, foldMessage, documentName, messageName, short, harmony, altInterval, variantWarnings, toSimplified, rules05, rules051, rules06, rules065, rules07, glossClause } from '../src/index.ts';
-import type { FoldLevel, WriteForm } from '../src/index.ts';
+import { parse, format, foldMessage, documentName, messageName, short, harmony, altInterval, variantWarnings, toSimplified, rules05, rules051, rules06, rules065, rules07, rules08, glossClause } from '../src/index.ts';
+import type { FoldLevel, Profile, WriteForm } from '../src/index.ts';
 
 const root = new URL('..', import.meta.url);
 const [cmd, file, ...rest] = process.argv.slice(2);
@@ -23,7 +23,7 @@ const flagValue = (name: string) => {
   const i = rest.indexOf(name);
   return i >= 0 && rest[i + 1] && !rest[i + 1].startsWith('--') ? rest[i + 1] : undefined;
 };
-const arg = rest.find((a) => !a.startsWith('--') && !['--lang', '--form'].includes(rest[rest.indexOf(a) - 1] ?? ''));
+const arg = rest.find((a) => !a.startsWith('--') && !['--lang', '--form', '--profile'].includes(rest[rest.indexOf(a) - 1] ?? ''));
 
 function read(f: string | undefined): string {
   if (!f || f === '-') return readFileSync(0, 'utf8');
@@ -38,13 +38,28 @@ function toSimplifiedMap(): Record<string, string> | null {
 async function main() {
   switch (cmd) {
     case 'check': {
-      const r = parse(read(file));
+      const use08 = flags.has('--rules08') || flags.has('--lon') || flagValue('--profile') !== undefined;
+      const r = parse(read(file), use08 ? { v08: true } : {});
       const simp = toSimplifiedMap();
       const diags = [...r.diagnostics, ...(simp ? variantWarnings(r.message, simp) : [])];
       for (const d of diags) console.log(`${d.severity} ${d.code}${d.line ? ` (줄 ${d.line})` : ''}: ${d.message}`);
       // 쓰기 규칙의 줄 번호는 절 차례다(rules04와 같다)
       const lang = flagValue('--lang') ?? null;
-      const written = flags.has('--rules05') ? rules05(r) : flags.has('--rules051') ? rules051(r) : flags.has('--rules06') ? rules06(r) : flags.has('--rules065') ? rules065(r) : flags.has('--rules07') ? rules07(r, { lang }) : [];
+      const profRaw = flags.has('--lon') ? 'lon' : flagValue('--profile');
+      const profile: Profile | null = profRaw === 'lon' || profRaw === '론' ? 'lon' : profRaw === 'gyeol' || profRaw === '결' ? 'gyeol' : null;
+      const written = use08
+        ? rules08(r, { lang, profile })
+        : flags.has('--rules05')
+          ? rules05(r)
+          : flags.has('--rules051')
+            ? rules051(r)
+            : flags.has('--rules06')
+              ? rules06(r)
+              : flags.has('--rules065')
+                ? rules065(r)
+                : flags.has('--rules07')
+                  ? rules07(r, { lang })
+                  : [];
       for (const d of written) console.log(`${d.severity} ${d.code} (절 ${d.line}째, 쓰기 규칙): ${d.message}`);
       r.message.clauses.forEach((c, i) => {
         const h = harmony(c);
@@ -124,7 +139,7 @@ async function main() {
       break;
     }
     default:
-      console.log('명령: check [--rules07] [--lang xx] | format [--form 0.6] | json | name [--doc] | gloss [--lang xx] | fold <점|절|펼침> | hashes | simplify');
+      console.log('명령: check [--rules07|--rules08] [--lon|--profile lon|gyeol] [--lang xx] | format [--form 0.6] | json | name [--doc] | gloss [--lang xx] | fold <점|절|펼침> | hashes | simplify');
       process.exitCode = 2;
   }
 }

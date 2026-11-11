@@ -13,7 +13,7 @@ export const SPEC_VERSION = '0.7';
  * 이 구현이 경고 없이 읽는 판의 갈래(앞 두 자리). v0.3은 v0.2·v0.2.1에서 맞던 줄을 모두 그대로 읽는다.
  * 그 밖의 판(0.1 등)을 머리에 적으면 W14로 알린다.
  */
-export const READ_FAMILIES = ['0.2', '0.3', '0.7'] as const;
+export const READ_FAMILIES = ['0.2', '0.3', '0.7', '0.8'] as const;
 
 export const EVIDENTIALS: Record<string, string> = {
   봄: '직접 관찰',
@@ -335,3 +335,14 @@ export function scriptGroupOfChar(ch: string): ScriptGroup | undefined {
   if (/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(ch)) return 'cjk';
   return undefined;
 }
+
+// ───────── v0.8 론(Lon: Lineage Oriented Notation, 2026-11-11 Jae) ─────────
+// 교차 검증·분석·계보 추적 전용 경량 표준 프로파일.
+// *먹채(색 뜻 미정의 원시 신호 보존)·gut(내재 이상 활성화 포착)·시제(pst·fut)·화행 7종·계보 앞붙이는 결(Gyeol)과 100% 공유하고,
+// 광장 화두(top)·감탄(new)·시적 수사(met·pdx)·W29(다중 스크립트 어근)·W32(줄 안 풀이) 제약을 덜어낸다.
+export const LON_EV: ReadonlySet<string> = new Set(['see', 'rec', 'inf', 'gut', 'if']);
+export const LON_FIG: ReadonlySet<string> = new Set(['lim']);
+export const LON_TENSE: ReadonlySet<string> = new Set(['pst', 'fut']);
+export const LON_ACT: ReadonlySet<string> = new Set(['say', 'ask', 'req', 'let', 'vow', 'nay', 'ack']);
+export const LON_MARKS: ReadonlySet<string> = new Set([...LON_EV, ...LON_FIG, ...LON_TENSE, ...LON_ACT]);
+export const LON_PROCESS: ReadonlySet<string> = new Set(['fix', 'err', 'sup']);

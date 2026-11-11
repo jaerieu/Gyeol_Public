@@ -7,7 +7,7 @@
 // v0.3 줄꼴에는 채의 어조·전함·인용과 먹의 대안·노력·주의·특징·측정법이 없다(먹은 숫자 하나, 나머지는 측정 기록에 남긴다).
 // 그래서 틀 → 글 → 틀을 잃지 않고 하려면 form: '0.2'를 쓴다.
 
-import type { Chae, Clause, Echo, FoldLevel, Marks, Message, Muk, PartialMarks, Ref, Word, Because, WriteForm } from './types.ts';
+import type { Chae, Clause, Echo, ExtEvidence, FoldLevel, Marks, Message, Muk, PartialMarks, Ref, Word, Because, WriteForm } from './types.ts';
 import { DIGIT_MAX, MARK_EN2KO, PROCESS_EN2KO } from './tables.ts';
 import { canonDocument, formatNumber } from './text.ts';
 
@@ -113,24 +113,30 @@ export function isV05(c: Clause): boolean {
  * <이름 ● 앞붙이 [근거,군,시제,화행] 내용 *먹채↓근거>: 끝 묶음은 붙여 쓰고, 표지 칸에는 괄호가 없다.
  */
 export function isV051(c: Clause): boolean {
-  return c.form === '0.5.1' || c.all === true || c.chae?.color !== undefined || (c.because?.length ?? 0) > 0;
+  return c.form === '0.5.1' || c.form === '0.8' || c.all === true || c.chae?.color !== undefined || (c.because?.length ?? 0) > 0;
 }
 
-/** 끝의 근거 하나의 글: 절 번호, 주소, 시험 문제 Q3, 참가자 @kimi */
-function becauseText(b: Because): string {
+/** 끝의 근거 하나의 글: 절 번호, 주소, 시험 문제 Q3, 참가자 @kimi, 외부 근거 ref1·evd1 */
+function becauseText(b: Because, ko = false): string {
   if ('url' in b) return b.url;
   if ('quiz' in b) return `Q${b.quiz}`;
   if ('agent' in b) return `@${b.agent}`;
+  if ('ext' in b) return `${ko ? (b.ext === 'evd' ? '증' : '근') : b.ext}${b.id}`;
   if ('thread' in b) return `${b.thread}:${b.clause.replace(/^[절점]/u, '')}`; // v0.6 지난 대화의 절
   return refNum(b);
 }
 
+function extEvidenceText(ev: ExtEvidence, ko = false): string {
+  const tag = `${ko ? (ev.kind === 'evd' ? '증' : '근') : ev.kind}${ev.id}`;
+  return `${tag} <[${ev.text}]>`;
+}
+
 /** v0.5.1 끝 묶음: *먹채↓근거(채가 없으면 *없이 근거만, 색 없는 옛 자신은 *N). 없으면 빈 글. */
-function endText051(c: Clause): string {
+function endText051(c: Clause, ko = false): string {
   let e = '';
   if (c.chae?.color !== undefined) e = `*${c.muk?.conf !== undefined ? toDigit(c.muk.conf) : ''}${c.chae.color}${toDigit(c.chae.self ?? 0)}`;
   else if (c.chae?.self !== undefined) e = `*${toDigit(c.chae.self)}`;
-  return e + (c.because ?? []).map((b) => `↓${becauseText(b)}`).join('');
+  return e + (c.because ?? []).map((b) => `↓${becauseText(b, ko)}`).join('');
 }
 
 /**
@@ -142,7 +148,7 @@ function endText051(c: Clause): string {
 export function clauseText03(c: Clause, ko = false): string {
   const parts: string[] = [];
   if (c.label) parts.push(ko ? c.label : labelNum(c.label)); // v0.7: 수만(form '0.6'은 절N)
-  if (c.all) parts.push('●');
+  if (c.all) parts.push(!ko && c.form === '0.8' ? '· ●' : '●');
   else if (c.me) parts.push(c.to ? `·→${c.toList?.length ? c.toList.join(',') : c.to}` : '·'); // v0.6 다중 지목은 쉼표로
   if (c.echo) parts.push('받은대로');
   if (c.process) parts.push(c.process.target ? `${ko ? (PROCESS_EN2KO[c.process.kind] ?? c.process.kind) : c.process.kind}→${refNum(c.process.target)}` : c.process.kind);
@@ -151,10 +157,11 @@ export function clauseText03(c: Clause, ko = false): string {
   parts.push(marksText03(c, ko));
   if (c.words.length) parts.push(wordsText(c.words));
   if (isV051(c)) {
-    const e = endText051(c);
+    const e = endText051(c, ko);
     if (e) parts.push(e);
   } else if (isV05(c) && c.chae?.self !== undefined) parts.push(`*${toDigit(c.chae.self)}`);
-  return `<${parts.join(' ')}>`;
+  const tail = c.evidences?.length ? ' ' + c.evidences.map((ev) => extEvidenceText(ev, ko)).join(' ') : '';
+  return `<${parts.join(' ')}>${tail}`;
 }
 
 /** 절 한 줄. 기본은 v0.3 정규형. 받은대로 절과 v0.5 꼴 절(시제·끝의 자신)은 옛 꼴로 쓸 수 없어 늘 꺾쇠 줄꼴로 쓴다. */
@@ -201,9 +208,12 @@ export function format(msg: Message, opts: FormatOptions = {}): string {
   const lines: string[] = [];
   if (msg.head) {
     // v0.7: 머리 줄은 영어 열쇠말(gyeol · lang · pact · room). 읽기는 결·언어·짝·방도 받는다. form '0.6'·'0.2'는 한글 열쇠말
+    // v0.8: profile이 'lon'이면 `lon 0.8`(`론 0.8`), 명시적 'gyeol'이면 `profile gyeol`을 남긴다.
     const ko = form !== '0.3';
-    const items: string[] = [`${ko ? '결' : 'gyeol'} ${msg.gyeol}`];
+    const headWord = msg.profile === 'lon' ? (ko ? '론' : 'lon') : ko ? '결' : 'gyeol';
+    const items: string[] = [`${headWord} ${msg.gyeol}`];
     const h = msg.head;
+    if (msg.profile === 'gyeol') items.push(`${ko ? '프로파일 결' : 'profile gyeol'}`);
     if (msg.lang) items.push(`${ko ? '언어' : 'lang'} ${msg.lang}`);
     if (h.pact) items.push(`${ko ? '짝' : 'pact'} #${h.pact}`);
     if (h.from || (h.to && h.to.length)) items.push(`${h.from ?? ''}→${(h.to ?? []).join(',')}`);
@@ -221,6 +231,7 @@ export function format(msg: Message, opts: FormatOptions = {}): string {
   }
   if (msg.echo.length) lines.push(`받은대로 ${msg.echo.map(echoText).join(' · ')}`);
   for (const c of msg.clauses) lines.push(clauseText(c, form));
+  for (const ev of msg.evidences ?? []) lines.push(extEvidenceText(ev, form !== '0.3'));
   if (msg.gloss) lines.push(`덧글 ${msg.gloss}`);
   if (msg.seal) {
     const s = msg.seal;

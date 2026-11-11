@@ -10,6 +10,8 @@ import { HAN, HANGUL, stripTrailingPunct } from '../text.ts';
 export class Ctx {
   diags: Diagnostic[] = [];
   line = 0;
+  /** v0.8(2026-11-11 Jae): 머리 줄이 0.8이거나 parse(..., { v08: true })로 부를 때 true. 옛 E15를 끄고 <절N · ● …>를 허용한다. */
+  v08 = false;
   /** v0.3 줄꼴로 쓴 절. 가리킴 확인(절N·점N)과 W05에서 옛 꼴과 다르게 다룬다. */
   newForm = new WeakSet<Clause>();
   /** v0.5: 새 꼴 절마다 글에 쓴 꼴(자신의 자리, '네', 별칭). ParseResult.written으로 나가 rules05가 본다. */
@@ -64,6 +66,7 @@ export function unmaskMentions(s: string, spans: string[]): string {
 export function parseMentionWord(raw: string, ctx: Ctx): Word | null {
   const outside = raw.replace(MENTION_PH, ' ').split(' ').filter((p) => p !== '');
   const probe = new Ctx();
+  probe.v08 = ctx.v08;
   for (const p of outside) parseWord052(p, probe);
   const bad = probe.diags.find((d) => d.severity === '오류');
   if (bad) {
@@ -137,8 +140,8 @@ export function parseWord(raw: string, ctx: Ctx, anyScript = false): Word | null
   if (HANGUL_WORD.test(t)) return { text: t };
   m = LATIN_WORD.exec(t);
   if (m && m[1]) return m[2] ? { text: t, root: m[1], suffix: m[2] } : { text: t, root: m[1] };
-  // 한글 꼬리 뒤에 한자가 다시 오는 경우. 새 꼴은 글자 그대로 '한글 뒤에 한자'일 때만 본다(AI感情이처럼 한자가 앞에만 있으면 받는다)
-  if (anyScript ? hangulThenHan(t) : HAN.test(t) && HANGUL.test(t)) {
+  // 한글 꼬리 뒤에 한자가 다시 오는 경우. 새 꼴은 글자 그대로 '한글 뒤에 한자'일 때만 본다(AI感情이처럼 한자가 앞에만 있으면 받는다). v0.8에서는 폐지
+  if (!ctx.v08 && (anyScript ? hangulThenHan(t) : HAN.test(t) && HANGUL.test(t))) {
     ctx.err('E15', `한 어절 안에서 한글 꼬리 뒤에 한자가 온다. 띄어 써야 한다: '${raw}'`);
     return null;
   }
@@ -189,11 +192,13 @@ export function parseWord052(raw: string, ctx: Ctx): Word | null {
     return null;
   }
   if (!cs.some((c) => LNM.test(c))) return { text: raw };
-  // E15: 부호로 나뉜 글자 덩이마다 '한글 뒤에 한자'를 본다
-  for (const run of raw.split(/[^\p{L}\p{M}\p{N}]+/u)) {
-    if (run && hangulThenHan(run)) {
-      ctx.err('E15', `한 어절 안에서 한글 꼬리 뒤에 한자가 온다. 띄어 써야 한다: '${raw}'`);
-      return null;
+  // E15: 부호로 나뉜 글자 덩이마다 '한글 뒤에 한자'를 본다(v0.8에서는 폐지, 보관 줄 판정 보존)
+  if (!ctx.v08) {
+    for (const run of raw.split(/[^\p{L}\p{M}\p{N}]+/u)) {
+      if (run && hangulThenHan(run)) {
+        ctx.err('E15', `한 어절 안에서 한글 꼬리 뒤에 한자가 온다. 띄어 써야 한다: '${raw}'`);
+        return null;
+      }
     }
   }
   // 끝의 닫는 부호를 빼고 한글 꼬리를 나눈다. 꼬리 앞(어근)에 한글 아닌 글자·숫자가 있을 때만 꼬리다
