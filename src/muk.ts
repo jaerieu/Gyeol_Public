@@ -341,8 +341,8 @@ export function quizAnchor(folds: Fold[], v: 3 | 4 = 4) {
  */
 export function credibility(folds: Fold[], mid = 4) {
   const list = [...folds].sort((a, b) => msOf(a.at) - msOf(b.at));
-  // 칸 0~4 = 확신 0~2·3~4·5~6·7~8·9. [답 수, 말한 확률 합, 맞힌 수]. 채 없는 답은 수만 센다(차 MUK.trust.miss)
-  const bins = Array.from({ length: 5 }, () => [0, 0, 0]);
+  // 칸 0부터 4 = 확신 0부터 2·3부터 4·5부터 6·7부터 8·9. [줄인 답 수, 말한 확률 합, 맞힌 수, 원래 답 수]. 채 없는 답은 수만 센다(차 MUK.trust.miss)
+  const bins = Array.from({ length: 5 }, () => [0, 0, 0, 0]);
   let miss = 0;
   for (const f of list) {
     const all = f.s.all ?? (f.s.n ?? 0) + (f.s.miss ?? 0);
@@ -356,6 +356,7 @@ export function credibility(folds: Fold[], mid = 4) {
       b[0] += w * n;
       b[1] += w * n * probOf(conf);
       b[2] += w * right;
+      b[3] += n;
     });
     miss += w * (f.s.miss ?? 0);
   }
@@ -363,11 +364,11 @@ export function credibility(folds: Fold[], mid = 4) {
   if (!(N > 0)) return { gap: null, n: 0, base: mid }; // 기록이 없으면 한가운데(v5 4, v6 5)
   const { tol, slope, evidence } = MUK.trust;
   let err = miss * MUK.trust.miss ** 2;
-  for (const [n, ps, hits] of bins) {
-    if (!(n >= 2)) continue; // 답이 하나뿐인 칸은 우연과 가를 수 없다
+  for (const [n, ps, hits, rawCount] of bins) {
+    if (!(rawCount >= 2 && n > 0)) continue; // 답이 하나뿐인 칸은 우연과 가를 수 없다
     const p = ps / n;
     const rate = hits / n;
-    err += n * ((p - rate) ** 2 - (rate * (1 - rate)) / (n - 1));
+    err += n * ((p - rate) ** 2 - (rate * (1 - rate)) / Math.max(1, n - 1));
   }
   const gap = Math.max(0, Math.sqrt(Math.max(0, err) / N) - tol);
   const raw = Math.max(0, Math.min(9, 9 - slope * gap));
@@ -430,8 +431,17 @@ export function abilityOf(folds: Fold[]) {
   return { score: round(cal.score, 4), grade: gradeOf(basePoint(cal.score, MUK.ability.full, MUK.ability.low)), n };
 }
 
-/** 점 → 등급 0~9 */
-export const gradeOf = (point: number) => Math.max(0, Math.min(9, Math.round(point)));
+const finiteNum = (v: unknown): number | null => {
+  if (v == null || typeof v === 'boolean' || (typeof v === 'string' && v.trim() === '')) return null;
+  const x = Number(v);
+  return Number.isFinite(x) ? x : null;
+};
+
+/** 점 → 등급 0부터 9(유한한 수가 아니면 한가운데 MUK.mid) */
+export const gradeOf = (point: number) => {
+  const x = finiteNum(point);
+  return x == null ? MUK.mid : Math.max(0, Math.min(9, Math.round(x)));
+};
 
 /** 확신 낮은 부탁의 덤: 때(대화마다 하나)마다 무게를 주어 더하고 끝에서 자른다. */
 export const requestBonus = (ats: (string | number)[], now: number) =>
@@ -634,25 +644,53 @@ export function colorGain(train: AnswerRow[], test: AnswerRow[], k = 10) {
 
 export type ShareFormula = 'D' | 'E';
 
+export interface ReadWeightOptions {
+  conf?: number;
+  highBinCount?: number;
+}
+
+export interface CounterShareOptions {
+  highBinCount?: number;
+  selfGround?: boolean;
+}
+
 /** 적힌 확신을 얼마나 그대로 읽을지(w). muk가 null이면 먹이 보이지 않는 것(보조값). 식 D: (먹 − 2)/7. 식 E: 2 이하 0, 5 = 0.2, 9 = 1 */
-export function readWeight(muk: number | null, formula: ShareFormula = 'E'): number {
+export function readWeight(muk: number | null, formula: ShareFormula = 'E', opts?: ReadWeightOptions): number {
   const { hint, neutralD, slopeD, lowE } = MUK.share;
   if (muk == null) return hint;
-  if (formula === 'D') return Math.max(0, Math.min(1, (muk - neutralD) / slopeD));
-  if (muk <= lowE) return 0;
-  if (muk < MUK.mid) return (hint * (muk - lowE)) / (MUK.mid - lowE);
-  return Math.min(1, hint + ((1 - hint) * (muk - MUK.mid)) / (9 - MUK.mid));
+  const m = finiteNum(muk);
+  if (m == null) return 0;
+  let w: number;
+  if (formula === 'D') w = Math.max(0, Math.min(1, (m - neutralD) / slopeD));
+  else if (m <= lowE) w = 0;
+  else if (m < MUK.mid) w = (hint * (m - lowE)) / (MUK.mid - lowE);
+  else w = Math.min(1, hint + ((1 - hint) * (m - MUK.mid)) / (9 - MUK.mid));
+  w = Math.max(0, Math.min(1, w));
+  const cf = opts?.conf != null ? finiteNum(opts.conf) : null;
+  const hbc = opts?.highBinCount != null ? finiteNum(opts.highBinCount) : null;
+  if (cf != null && cf >= 7 && hbc != null && hbc < 2) w = Math.min(w, hint);
+  return w;
 }
 
 /**
- * 반증 몫: 말한 이의 먹(null = 보이지 않음), 그가 적은 확신 N(0~9), 말한 이를 가리고 매긴 근거 확신 Ne(0~9).
+ * 반증 몫: 말한 이의 먹(null = 보이지 않음), 그가 적은 확신 N(0부터 9), 말한 이를 가리고 매긴 근거 확신 Ne(0부터 9).
  * 실효 p = 0.5 + w·(p − 0.5), T = 로지스틱(logit 실효 p + logit e), 몫 = max(floor, 1 − T).
  */
-export function counterShare(muk: number | null, conf: number, groundConf: number, formula: ShareFormula = 'E'): number {
+export function counterShare(
+  muk: number | null,
+  conf: number,
+  groundConf: number,
+  formula: ShareFormula = 'E',
+  opts?: CounterShareOptions,
+): number {
   const logit = (x: number) => Math.log(x / (1 - x));
-  const p = probOf(conf);
-  const e = probOf(groundConf);
-  const pe = 0.5 + readWeight(muk, formula) * (p - 0.5);
+  const cfRaw = finiteNum(conf);
+  const c = cfRaw != null ? Math.max(0, Math.min(9, cfRaw)) : 5;
+  const gcRaw = finiteNum(groundConf);
+  const e = opts?.selfGround === true || gcRaw == null ? 0.5 : probOf(Math.max(0, Math.min(9, gcRaw)));
+  const p = probOf(c);
+  const pe = 0.5 + readWeight(muk, formula, { conf: c, highBinCount: opts?.highBinCount }) * (p - 0.5);
   const T = 1 / (1 + Math.exp(-(logit(pe) + logit(e))));
-  return Math.max(MUK.share.floor, 1 - T);
+  const out = Math.max(MUK.share.floor, Math.min(1, 1 - T));
+  return Number.isFinite(out) ? out : 0.5;
 }

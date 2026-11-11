@@ -1,7 +1,7 @@
 // 결 v0.8 및 론(Lon: Lineage Oriented Notation) 코어 단위 시험 (2026-11-11).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { format, glossClause, parse, rules08 } from '../src/index.ts';
+import { extractTrailingEvidences, format, glossClause, parse, rules08 } from '../src/index.ts';
 
 function codesOf(text: string, opts: Parameters<typeof rules08>[1] = {}) {
   const r = parse(text, { v08: true });
@@ -118,4 +118,61 @@ test('전용 괄호꺽쇠 외부 근거(증N·근N·refN·evdN <[ … ]>): 결·
   assert.deepEqual(rl.diagnostics, []);
   assert.deepEqual(rules08(rl), []);
   assert.match(format(rl.message), /\*7R9↓evd1> evd1 <\[idx >= buf\[0\] \* 2 -> panic/);
+});
+
+test('extractTrailingEvidences: 다중 외부 근거 분리, 내부 꺽쇠 보존, 미완성 열림 O(n) 방어', () => {
+  const two = extractTrailingEvidences('<1 · ● [see,say] 검증 *7B9↓증1↓증2> 증1 <[ A ]> 증2 <[ B ]>');
+  assert.equal(two.head, '<1 · ● [see,say] 검증 *7B9↓증1↓증2>');
+  assert.deepEqual(two.evidences, [
+    { kind: 'evd', id: '1', text: 'A' },
+    { kind: 'evd', id: '2', text: 'B' },
+  ]);
+
+  const inner = extractTrailingEvidences('<1 · ● [see,say] 코드 *7B9↓증1> 증1 <[ if (a[i]>0) return 1; ]>');
+  assert.equal(inner.evidences.length, 1);
+  assert.equal(inner.evidences[0].text, 'if (a[i]>0) return 1;');
+
+  const nestedVerbatim = extractTrailingEvidences('<1 · ● [see,say] 시험 *7B9> 증1 <[ outer 증2 <[ inner ]>');
+  assert.deepEqual(nestedVerbatim.evidences, [{ kind: 'evd', id: '1', text: 'outer 증2 <[ inner' }]);
+
+  const midLine = parse('<1 ·→B [see,say] Q101 전달 *G8↓증101↓Q101> 증101 <[ 원문 그대로 ]> <1.1 ·→B [inf,say] 추론 *Y6↓1>', { v08: true });
+  assert.deepEqual(midLine.diagnostics, []);
+  assert.equal(midLine.message.clauses.length, 2);
+  assert.deepEqual(rules08(midLine, { knownExtra: new Set(['Q101']) }), []);
+
+  const unclosedSecond = parse('<1 · ● [see,say] 시험 *7B9> 증1 <[ outer ]> 증2 <[ inner', { v08: true });
+  assert.ok(unclosedSecond.diagnostics.some((d) => d.code === 'E19'));
+
+  const huge = '<1 · ● [see,say] x *5B8> 증1 <[ ' + 'a '.repeat(50_000);
+  const t0 = performance.now();
+  const he = extractTrailingEvidences(huge);
+  const dtExtract = performance.now() - t0;
+  assert.equal(he.evidences.length, 0);
+  assert.ok(dtExtract < 20, `100KB 미완성 외부 근거 추출 지연: ${dtExtract.toFixed(2)}ms`);
+  const hr = parse(huge, { v08: true });
+  assert.ok(hr.diagnostics.some((d) => d.code === 'E19'));
+});
+
+test('다중 줄 외부 근거 정규화와 §3.21 E22·E17', () => {
+  const multi = [
+    '<1 · ● [see,say] 다중줄 *7B9↓증1> 증1 <[',
+    '<2 · ● [see,say] 가짜절 *9R9>',
+    'x > 0 && y < 1',
+    ']>',
+    '<3 · ● [inf,say] 다음절 *7C8> 꼬리',
+  ].join('\n');
+  const mr = parse(multi, { v08: true });
+  assert.deepEqual(mr.message.clauses.map((c) => c.label), ['절1', '절3']);
+  assert.equal(mr.diagnostics.length, 1);
+  assert.equal(mr.diagnostics[0].code, 'E19');
+  assert.equal(mr.diagnostics[0].line, 5);
+
+  const unclosedMulti = parse('<1 · ● [see,say] 미완 *7B8> 증1 <[\n둘째 줄', { v08: true });
+  assert.ok(unclosedMulti.diagnostics.some((d) => d.code === 'E19' && d.line === 1));
+
+  const dup = parse('<1 · ● [see,say] 중복 *7B8↓증1> 증1 <[ A ]> 증1 <[ B ]>', { v08: true });
+  assert.ok(dup.diagnostics.some((d) => d.code === 'E22'));
+
+  const missExt = parse('<1 · ● [see,say] 누락 *7B8↓증99>', { v08: true });
+  assert.ok(missExt.diagnostics.some((d) => d.code === 'E17'));
 });

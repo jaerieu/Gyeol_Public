@@ -1,6 +1,6 @@
 // 결 v0.5 참조 구현의 입구(읽기는 v0.3 꼴에 v0.5 꼴을 더했고, 새로 쓰는 줄의 쓰기 규칙은 rules05 = rules04 + v0.5 규칙).
 export type * from './types.ts';
-export { parse, emptyMessage, labelLine, lineFormOf, clausePieces } from './parse.ts';
+export { parse, emptyMessage, labelLine, lineFormOf, clausePieces, extractTrailingEvidences, parseExtTag } from './parse.ts';
 export type { ParseOptions } from './parse.ts';
 export { outsideMentions } from './parse/shared.ts'; // 2026-11-05: 언급(백틱) 밖에서만 날 글을 훑는다
 export { rules04 } from './parse/v04.ts';

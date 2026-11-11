@@ -13,9 +13,9 @@ import { FORBIDDEN_MUK_METHOD, MEASURE_METHODS, READ_FAMILIES, RELATIONS, SPEC_V
 import { normalizeSymbols, spaced, splitTop } from './text.ts';
 import { Ctx } from './parse/shared.ts';
 import { parseClause02, parseEcho } from './parse/v02.ts';
-import { extractTrailingEvidences, lineFormOf, parseLine03 } from './parse/v03.ts';
+import { EXT_CLOSER_OF, EXT_OPENER_RE, extractTrailingEvidences, lineFormOf, parseExtTag, parseLine03 } from './parse/v03.ts';
 
-export { clausePieces, labelLine, lineFormOf } from './parse/v03.ts';
+export { clausePieces, extractTrailingEvidences, labelLine, lineFormOf, parseExtTag } from './parse/v03.ts';
 
 // ───────── 머리·낙관·머리말 ─────────
 
@@ -109,6 +109,39 @@ const KEYWORD_LINES = new Set(['덧글', '조율', '머리말', '받은대로', 
 const isHeadKey = (k: string) => k === '결' || k === '론' || /^(?:gyeol|lon)$/iu.test(k);
 const isLonKey = (k: string) => k === '론' || /^lon$/iu.test(k);
 
+/** 줄 끝에 닫히지 않은 외부 근거 여는 기호가 있으면 짝이 되는 닫는 기호를 돌려준다(없으면 null). */
+function unclosedExtCloser(rawLine: string): string | null {
+  const s = rawLine.trimEnd();
+  if (!s || /^\s*```/u.test(s) || /^덧글(?:\s|$)/u.test(s)) return null;
+  const masked = s.replace(/`[^`\n]*`/gu, (m) => ' '.repeat(m.length));
+  const ms = [...masked.matchAll(EXT_OPENER_RE)];
+  if (!ms.length) return null;
+  let pos = 0;
+  for (let k = 0; k < ms.length; k++) {
+    const m = ms[k];
+    const idx = m.index!;
+    if (idx < pos) continue;
+    const closer = EXT_CLOSER_OF[m[2]];
+    if (!closer) continue;
+    const afterOpen = idx + m[0].length;
+    let closedAt = -1;
+    for (let nxt = k + 1; nxt < ms.length; nxt++) {
+      const beforeNext = s.slice(0, ms[nxt].index!).trimEnd();
+      if (afterOpen <= beforeNext.length - closer.length && beforeNext.endsWith(closer)) {
+        closedAt = beforeNext.length;
+        break;
+      }
+    }
+    if (closedAt >= 0) {
+      pos = closedAt;
+      continue;
+    }
+    if (afterOpen <= s.length - closer.length && s.endsWith(closer)) return null;
+    return closer;
+  }
+  return null;
+}
+
 export interface ParseOptions {
   /** v0.8 문맥에서 머리 줄 없이 단절을 읽을 때 true(E15 폐지 및 <절N · ● …> 허용) */
   v08?: boolean;
@@ -118,7 +151,28 @@ export function parse(input: string, opts: ParseOptions = {}): ParseResult {
   const ctx = new Ctx();
   if (opts.v08) ctx.v08 = true;
   const msg = emptyMessage();
-  const lines = input.replace(/\r\n?/g, '\n').normalize('NFC').split('\n');
+  const rawLines = input.replace(/\r\n?/g, '\n').normalize('NFC').split('\n');
+  const lines = [...rawLines];
+  for (let i = 0; i < lines.length; i++) {
+    let searchFrom = i + 1;
+    while (true) {
+      const closer = unclosedExtCloser(lines[i]);
+      if (!closer) break;
+      let closeIdx = -1;
+      for (let j = searchFrom; j < lines.length; j++) {
+        if (lines[j].trimEnd().endsWith(closer)) {
+          closeIdx = j;
+          break;
+        }
+      }
+      if (closeIdx < 0) break;
+      const merged = [lines[i].trim(), ...lines.slice(searchFrom, closeIdx + 1).map((s) => s.trim())].filter(Boolean).join(' ');
+      lines[i] = merged;
+      for (let j = searchFrom; j <= closeIdx; j++) lines[j] = '';
+      searchFrom = closeIdx + 1;
+    }
+    if (searchFrom > i + 1) i = searchFrom - 1;
+  }
   let sawClause = false;
 
   lines.forEach((rawLine, idx) => {
@@ -228,6 +282,15 @@ function checkMessage(msg: Message, ctx: Ctx) {
     labels.add(l);
     if (!c.label) labels.add(`점${i + 1}`);
   });
+  const extLabels = new Set<string>();
+  const recordExt = (ev: { kind: string; id: string }) => {
+    const key = `${ev.kind}:${ev.id}`;
+    if (extLabels.has(key)) ctx.err('E22', `외부 근거 이름표가 겹친다: ${ev.kind}${ev.id}`);
+    extLabels.add(key);
+  };
+  for (const c of msg.clauses) for (const ev of c.evidences ?? []) recordExt(ev);
+  for (const ev of msg.evidences ?? []) recordExt(ev);
+
   // v0.3 줄꼴의 가리킴은 번호만 써도 되므로(↓1) 절N과 점N을 같게 본다. 옛 꼴은 v0.2.1 그대로다.
   // v0.6 덧붙임(2026-10-25): 지난 대화의 절을 가리킨 받침→53:12·↔53:12(Ref.thread)는 메시지 밖이라 보지 않는다.
   const other = (l: string) => (l.startsWith('절') ? '점' : '절') + l.slice(1);
@@ -239,8 +302,11 @@ function checkMessage(msg: Message, ctx: Ctx) {
     checkRef(c.place?.target, loose);
     checkRef(c.place?.second, loose); // v0.6 ⊗N,M의 둘째 절
     checkRef(c.process?.target, loose);
-    // v0.5.1: 끝 묶음 뒤의 근거(주소는 보지 않는다)
-    for (const b of c.because ?? []) if ('label' in b) checkRef(b, loose); // 주소·시험 문제·참가자·지난 대화의 절(v0.6)은 메시지 밖이라 보지 않는다
+    // v0.5.1: 끝 묶음 뒤의 근거(주소는 보지 않는다). v0.8: 선언되지 않은 외부 근거 인용은 E17로 잡는다.
+    for (const b of c.because ?? []) {
+      if ('label' in b) checkRef(b, loose); // 주소·시험 문제·참가자·지난 대화의 절(v0.6)은 메시지 밖이라 보지 않는다
+      else if ('ext' in b && !extLabels.has(`${b.ext}:${b.id}`)) ctx.err('E17', `가리킨 외부 근거가 이 메시지에 없다: ${b.ext}${b.id}`);
+    }
   }
   // 측정법(W05)은 옛 꼴의 먹에만 묻는다. v0.3 줄의 먹 한 자리는 측정 기록(D1)에 측정법이 남는다.
   const oldClauses = msg.clauses.filter((c) => !ctx.newForm.has(c));

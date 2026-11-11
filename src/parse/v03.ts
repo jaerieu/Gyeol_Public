@@ -286,7 +286,8 @@ function moveOutsideTo(s: string, line: string, ctx: Ctx): string {
 // 절 뒤(`… *7B8> 증1 <[원문·링크·수식]>`)나 단독 줄(`ref2 <[…]>`)에 넓은 단위의 근거를 붙인다.
 // 전용 괄호꺽쇠 `<[ … ]>`(유니코드 `⟪ … ⟫`·역순 `[< … >]`도 수용) 안은 어절·스크립트·특수문자 검사에서 완전히 면제한다.
 const EXT_TAG_RE = /^(증|근|evd|ref)([0-9０-９]+(?:\.[0-9０-９]+)?)$/iu;
-const EXT_BLOCK_ONE = /(?:^|\s+)(증|근|evd|ref)([0-9０-９]+(?:\.[0-9０-９]+)?)\s*[:：]?\s*(?:<\[([\s\S]*?)\]>|⟪([\s\S]*?)⟫|\[<([\s\S]*?)>\])\s*$/iu;
+export const EXT_OPENER_RE = /(?:^|\s+)((?:증|근|evd|ref)[0-9０-９]+(?:\.[0-9０-９]+)?)\s*[:：]?\s*(<\[|⟪|\[<)/giu;
+export const EXT_CLOSER_OF: Record<string, string> = { '<[': ']>', '⟪': '⟫', '[<': '>]' };
 
 export function parseExtTag(raw: string): { ext: ExtEvidenceKind; id: string } | null {
   const m = EXT_TAG_RE.exec(raw);
@@ -296,19 +297,77 @@ export function parseExtTag(raw: string): { ext: ExtEvidenceKind; id: string } |
   return { ext: k === '증' || k === 'evd' ? 'evd' : 'ref', id };
 }
 
-/** 줄 끝(또는 줄 전체)에 붙은 전용 괄호꺽쇠 근거 블록들을 떼어 낸다. 앞부분(절 원문)과 추출한 근거 목록을 돌려준다. */
+const NEXT_CLAUSE_RE = /\s+[<〈＜⟨《‹]\s*(?:(?:[절점]|[cC])?\s*[0-9０-９]+(?:\.[0-9０-９]+)?\s+)?(?:[·•・●→]|\[)/gu;
+
+/** 줄 안(절 닫는 > 뒤 또는 줄 끝·단독 줄)에 붙은 전용 괄호꺽쇠 근거 블록들을 O(n)으로 떼어 낸다. 앞부분(절 원문)과 추출한 근거 목록을 돌려준다. */
 export function extractTrailingEvidences(line: string): { head: string; evidences: ExtEvidence[] } {
-  let cur = line.trimEnd();
-  const out: ExtEvidence[] = [];
-  while (cur.length > 0) {
-    const m = EXT_BLOCK_ONE.exec(cur);
-    if (!m) break;
-    const tag = parseExtTag(m[1] + m[2])!;
-    const body = (m[3] ?? m[4] ?? m[5] ?? '').trim();
-    out.unshift({ kind: tag.ext, id: tag.id, text: body });
-    cur = cur.slice(0, m.index).trimEnd();
+  const s = line.trimEnd();
+  if (!s.includes(']>') && !s.includes('⟫') && !s.includes('>]')) return { head: s, evidences: [] };
+  const masked = s.replace(/`[^`\n]*`/gu, (m) => ' '.repeat(m.length));
+  const ms = [...masked.matchAll(EXT_OPENER_RE)];
+  if (!ms.length) return { head: s, evidences: [] };
+  const clauseStarts = [...masked.matchAll(NEXT_CLAUSE_RE)].map((m) => m.index!);
+
+  const trimEndAt = new Int32Array(s.length + 1);
+  let lastNonWs = 0;
+  for (let i = 0; i < s.length; i++) {
+    trimEndAt[i] = lastNonWs;
+    if (!/\s/u.test(s[i])) lastNonWs = i + 1;
   }
-  return { head: cur, evidences: out };
+  trimEndAt[s.length] = lastNonWs;
+
+  const rawBounds = [...ms.map((m) => m.index!), ...clauseStarts, s.length].sort((a, b) => a - b);
+  const byCloser: Record<string, Array<{ b: number; te: number }>> = { ']>': [], '⟫': [], '>]': [] };
+  let prevB = -1;
+  for (const b of rawBounds) {
+    if (b === prevB) continue;
+    prevB = b;
+    const te = trimEndAt[b];
+    for (const closer of [']>', '⟫', '>]']) {
+      if (te >= closer.length && s.startsWith(closer, te - closer.length)) {
+        byCloser[closer].push({ b, te });
+      }
+    }
+  }
+  const ptr: Record<string, number> = { ']>': 0, '⟫': 0, '>]': 0 };
+
+  const out: ExtEvidence[] = [];
+  const headParts: string[] = [];
+  let pos = 0;
+  let headHasText = false;
+  for (let k = 0; k < ms.length; k++) {
+    const m = ms[k];
+    const idx = m.index!;
+    if (idx < pos) continue;
+    const segBefore = s.slice(pos, idx);
+    const prevTe = trimEndAt[idx];
+    const validStart =
+      (!headHasText && segBefore.trim() === '') ||
+      (prevTe > 0 && /[>〉＞⟩》›⟫]/u.test(s[prevTe - 1])) ||
+      (prevTe >= 2 && s[prevTe - 2] === '>' && s[prevTe - 1] === ']');
+    if (!validStart) continue;
+    const closer = EXT_CLOSER_OF[m[2]];
+    const list = closer ? byCloser[closer] : null;
+    if (!list) continue;
+    const afterOpen = idx + m[0].length;
+    let p = ptr[closer];
+    while (p < list.length && list[p].te < afterOpen + closer.length) p++;
+    ptr[closer] = p;
+    if (p >= list.length) continue;
+    const hit = list[p];
+    const tag = parseExtTag(m[1]);
+    if (!tag) continue;
+    if (segBefore) {
+      headParts.push(segBefore);
+      if (segBefore.trim()) headHasText = true;
+    }
+    const body = s.slice(afterOpen, hit.te - closer.length).trim();
+    out.push({ kind: tag.ext, id: tag.id, text: body });
+    pos = hit.te;
+  }
+  if (!out.length) return { head: s, evidences: [] };
+  if (pos < s.length) headParts.push(s.slice(pos));
+  return { head: headParts.join('').trim(), evidences: out };
 }
 
 /**

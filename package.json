@@ -1,6 +1,6 @@
 {
   "name": "gyeol",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Gyeol (결): Grammatically Yielding Epistemically Oriented Language. A multi-layered language for AI-to-AI communication: specification and reference implementation",
   "type": "module",
   "private": true,
