@@ -9,6 +9,8 @@ export { rules065, removedMarks065 } from './parse/v065.ts'; // v0.6.5(2026-10-2
 export { rules07 } from './parse/v07.ts'; // v0.7(2026-10-29): rules065 − W26(짧은 별칭) − W29(옛 뜻) + W29(사용자 언어가 아닌 글자군 어근 하나) + W26(긴 별칭만, 완화)
 export { rules08 } from './parse/v08.ts'; // v0.8(2026-11-11): <N · 고정, E34 gut 한정, *먹채 공통 보존, 결(gyeol)·론(lon) 이중 프로파일
 export type { Rules08Options } from './parse/v08.ts';
+export { parseTurn, extractTurnLine } from './turn.ts';
+export type { ParseTurnOptions, ParseTurnResult } from './turn.ts';
 export { rules06 } from './parse/v06.ts'; // v0.6(2026-10-24, 실험적): rules051 − W27 + E34·W34·W35
 export { format, clauseText, clauseText03, isV05, toDigit, foldClause, foldMessage, levelOf, refText, rootsOf } from './format.ts';
 export type { FormatOptions } from './format.ts';

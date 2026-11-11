@@ -137,12 +137,23 @@ const DAY = 86_400_000;
 const msOf = (at: string | number) => (typeof at === 'number' ? at : Date.parse(at));
 const iso = (ms: number) => new Date(ms).toISOString();
 const round = (x: number, d: number) => Math.round(x * 10 ** d) / 10 ** d;
+const finiteNum = (v: unknown): number | null => {
+  if (v == null || typeof v === 'boolean' || (typeof v === 'string' && v.trim() === '')) return null;
+  const x = Number(v);
+  return Number.isFinite(x) ? x : null;
+};
 
-/** 확신(0~9 한 자리) → 확률. 0은 .05, 9는 .95다(끝값을 피해 한 번의 틀림이 끝없이 벌받지 않게). */
-export const probOf = (conf: number) => (conf + 0.5) / 10;
+/** 확신(0~9 한 자리) → 확률. 0은 .05, 9는 .95다(끝값을 피해 한 번의 틀림이 끝없이 벌받지 않게). 비유한 값은 0.5, 범위 밖은 0~9로 자른다. */
+export const probOf = (conf: number) => {
+  const x = finiteNum(conf);
+  return x == null ? 0.5 : (Math.max(0, Math.min(9, x)) + 0.5) / 10;
+};
 
 /** 답 하나의 브라이어 점수(낮을수록 좋다). 확신 9로 맞히면 .0025, 확신 9로 틀리면 .9025, 확신 0으로 틀리면 .0025다. */
-export const brierOf = (conf: number, ok: boolean | number) => (probOf(conf) - (ok ? 1 : 0)) ** 2;
+export const brierOf = (conf: number, ok: boolean | number) => {
+  const y = typeof ok === 'boolean' ? (ok ? 1 : 0) : (finiteNum(ok) ? 1 : 0);
+  return (probOf(conf) - y) ** 2;
+};
 
 /**
  * 답 하나의 맞음 점수 u = 맞음 + 0.25 − 브라이어(채가 없으면 conf null → 맞음 + 0.25 − 0.3025).
@@ -431,12 +442,6 @@ export function abilityOf(folds: Fold[]) {
   return { score: round(cal.score, 4), grade: gradeOf(basePoint(cal.score, MUK.ability.full, MUK.ability.low)), n };
 }
 
-const finiteNum = (v: unknown): number | null => {
-  if (v == null || typeof v === 'boolean' || (typeof v === 'string' && v.trim() === '')) return null;
-  const x = Number(v);
-  return Number.isFinite(x) ? x : null;
-};
-
 /** 점 → 등급 0부터 9(유한한 수가 아니면 한가운데 MUK.mid) */
 export const gradeOf = (point: number) => {
   const x = finiteNum(point);
@@ -573,7 +578,11 @@ export function calibrationTable(summaries: QuizSummary[]) {
 }
 
 /** 확신 칸 다섯: 0~2 · 3~4 · 5~6 · 7~8 · 9 (칸마다 셈이 너무 적지 않게) */
-export const confBucket = (conf: number) => [0, 0, 0, 1, 1, 2, 2, 3, 3, 4][conf];
+export const confBucket = (conf: number) => {
+  const x = finiteNum(conf);
+  const idx = x == null ? 5 : Math.max(0, Math.min(9, Math.round(x)));
+  return [0, 0, 0, 1, 1, 2, 2, 3, 3, 4][idx];
+};
 
 /**
  * 색이 확신 밖의 것을 알려 주는가(설계 7절 반증 3). 앞 회차들(train)로 '확신 칸마다의 정답률'과 '확신 칸 × 색마다의 정답률'을 셈하고,
@@ -652,6 +661,8 @@ export interface ReadWeightOptions {
 export interface CounterShareOptions {
   highBinCount?: number;
   selfGround?: boolean;
+  groundMuk?: number | null;
+  groundHighBinCount?: number;
 }
 
 /** 적힌 확신을 얼마나 그대로 읽을지(w). muk가 null이면 먹이 보이지 않는 것(보조값). 식 D: (먹 − 2)/7. 식 E: 2 이하 0, 5 = 0.2, 9 = 1 */
@@ -687,7 +698,15 @@ export function counterShare(
   const cfRaw = finiteNum(conf);
   const c = cfRaw != null ? Math.max(0, Math.min(9, cfRaw)) : 5;
   const gcRaw = finiteNum(groundConf);
-  const e = opts?.selfGround === true || gcRaw == null ? 0.5 : probOf(Math.max(0, Math.min(9, gcRaw)));
+  const gc = gcRaw != null ? Math.max(0, Math.min(9, gcRaw)) : null;
+  let e = 0.5;
+  if (opts?.selfGround !== true && gc != null) {
+    const peG = probOf(gc);
+    e =
+      opts?.groundMuk !== undefined
+        ? 0.5 + readWeight(opts.groundMuk, formula, { conf: gc, highBinCount: opts?.groundHighBinCount }) * (peG - 0.5)
+        : peG;
+  }
   const p = probOf(c);
   const pe = 0.5 + readWeight(muk, formula, { conf: c, highBinCount: opts?.highBinCount }) * (p - 0.5);
   const T = 1 / (1 + Math.exp(-(logit(pe) + logit(e))));

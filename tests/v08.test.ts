@@ -1,7 +1,7 @@
 // 결 v0.8 및 론(Lon: Lineage Oriented Notation) 코어 단위 시험 (2026-11-11).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { extractTrailingEvidences, format, glossClause, parse, rules08 } from '../src/index.ts';
+import { extractTrailingEvidences, format, glossClause, parse, parseTurn, rules08 } from '../src/index.ts';
 
 function codesOf(text: string, opts: Parameters<typeof rules08>[1] = {}) {
   const r = parse(text, { v08: true });
@@ -175,4 +175,23 @@ test('다중 줄 외부 근거 정규화와 §3.21 E22·E17', () => {
 
   const missExt = parse('<1 · ● [see,say] 누락 *7B8↓증99>', { v08: true });
   assert.ok(missExt.diagnostics.some((d) => d.code === 'E17'));
+});
+
+test('단일 진입점 parseTurn: 마크다운 머리표·다중 줄 블록·명시 규격(0.7 대 0.8) 고정', () => {
+  const okLon = parseTurn('<think>추론</think>\n`론:` <2 · ● [inf,say] 원인 확정 *6G8↓1↓증1>\n풀이: 요약', {
+    profile: 'lon',
+    spec: '0.8',
+    lang: 'ko',
+    turnNo: 2,
+    priorLines: ['<1 · ● [see,say] 로그 확인 *6B9↓증1> 증1 <[ 첫 줄\n둘째 줄 ]>'],
+  });
+  assert.equal(okLon.ok, true, okLon.errors.map((e) => e.code).join(','));
+  assert.equal(okLon.message.clauses.length, 1);
+
+  const strict08 = parseTurn('<1 ● [봄,다] 옛 꼴 *B9>', { profile: 'gyeol', spec: '0.8', lang: 'ko' });
+  assert.equal(strict08.ok, false);
+  assert.ok(strict08.errors.some((e) => e.code === 'E25'));
+
+  const explicit07 = parseTurn('<1 ● [봄,다] 옛 꼴 *B9>', { profile: 'gyeol', spec: '0.7', lang: 'ko' });
+  assert.equal(explicit07.ok, true);
 });
