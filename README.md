@@ -201,7 +201,7 @@ Since v0.7 (2026-10-29) the internal markers, the canonical form, and the muk na
 | Item | Version |
 | --- | --- |
 | Grammar | v0.7 (experimental, since 2026-10-29). Measurement baseline v0.7.2 (2026-11-04) |
-| Dictionary | v0.7 (2026-10-29): English is canonical, muk name `#b01c1d` ([`dict/HASHES.md`](dict/HASHES.md)); translations are not part of the identity |
+| Dictionary | v0.7 (2026-10-29): English is canonical, muk name `#05a885` ([`dict/HASHES.md`](dict/HASHES.md)); translations are not part of the identity |
 | Muk (credibility) | v6 (restarted 2026-10-29, everyone at 5 = no information yet) |
 | Diagnostics | 37 error codes, 35 warning codes ([`spec/03-grammar.md`](spec/03-grammar.md)) |
 | Tests | `npm test`: 111 passing (890 in the development repository) |

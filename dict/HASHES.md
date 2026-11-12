@@ -17,7 +17,7 @@
 | `dict/base-v0.5.5.txt` | `#601a9f` | `601a9f16142b706a8a0d4aef777b32ebd1ba01202f74a36bd4d9d17461a4227a` |
 | `dict/base-v0.6.txt` | `#7923a6` | `7923a666492ef01cb978a860b239e328a98c45a0ee39f86c4357fcf077415210` |
 | `dict/base-v0.6.5.txt` | `#68a276` | `68a2769bbb752a0b5e4638a1fc285234097ad9da6752014d265af11e91ac072e` |
-| `dict/base-v0.7.txt` | `#b01c1d` | `b01c1d79b3d92615ded48734a23275e0c0ba1dc436558804b17dc3f398dd7702` |
+| `dict/base-v0.7.txt` | `#05a885` | `05a885f25d565575b13169c0c3ae6fe3cd0193160419f0c5a3635755fc080fb7` |
 | `dict/examples-v0.2.txt` | `#437510` | `43751013c5b376728f331ac10f566b0b0926093c99c8380efcc2e9aacb4d2f79` |
 
 ## 번역본 (정체가 아니다)
@@ -26,12 +26,12 @@ v0.7(2026-10-29, `spec/09-names.md` 9.4)부터 사전 정본은 영어(`dict/bas
 
 | 파일 | 짧은 이름 | 전체 |
 | --- | --- | --- |
-| `dict/base-v0.7.ko.txt` | `#be54e8` | `be54e8978621fb32eae9822c6a6d9a44c83c320e3448384a38bd24210495a601` |
-| `dict/base-v0.7.zh-Hans.txt` | `#fc5fc4` | `fc5fc4eea380bc308ef6d14f8788ef368494a4c225f09b944822089cb7f9cdd2` |
-| `dict/base-v0.7.zh-Hant.txt` | `#257f9f` | `257f9fcd55585ebc3355760119c9d796bd5fc8ef76d8ed691c38307e4a782edb` |
-| `dict/base-v0.7.ja.txt` | `#934419` | `93441946c63fa90e73e4990f096e7eee9d32b20b1e7c1daf7d86006726133cfe` |
-| `dict/base-v0.7.de.txt` | `#65e223` | `65e2238a60502dc8ba2e09226ea8eb572a87b9e9a51e262145444166ed3aef12` |
-| `dict/base-v0.7.fr.txt` | `#36f68e` | `36f68eba7990f1b6bf9d1608d0e8c831b83c19674fe918ff80546f14f34bd3ee` |
-| `dict/base-v0.7.it.txt` | `#bef55f` | `bef55f36d51c69bcff94b55b2fe4b1467509311345228fdafe5770e947228c41` |
-| `dict/base-v0.7.es.txt` | `#bdb6c5` | `bdb6c5d599741e487784a05667393b3012f11c828d1a770af68b1c6ac4bea26b` |
-| `dict/base-v0.7.ru.txt` | `#f827a4` | `f827a4725a8f972bf8ab38296562d7392cefaea10d4f307cb176c2632c805739` |
+| `dict/base-v0.7.ko.txt` | `#243ff3` | `243ff3b4b606d3400a46ee9c73fead83c05eb30f3747454af8a0da38bede560e` |
+| `dict/base-v0.7.zh-Hans.txt` | `#219e7a` | `219e7a2c29160c54ef99afb32d808decdaa51f6844b092885900b36babe3fe3d` |
+| `dict/base-v0.7.zh-Hant.txt` | `#1e27da` | `1e27da3620da0a6744fc747d5a652c7a4fccbcbc25b0f0585473981cd00530fa` |
+| `dict/base-v0.7.ja.txt` | `#5abd6e` | `5abd6e0b44601bc0a72ca66e4d89a15b03f0fb800ca8b7821dff3efe186b8055` |
+| `dict/base-v0.7.de.txt` | `#2e2523` | `2e25239d6c6fc2f955b2caf4f7c8d4ec1ee93a1146984c77f65d210a97dcc622` |
+| `dict/base-v0.7.fr.txt` | `#3ee3d2` | `3ee3d2b149cfa32bfd2f1b19885cc79dca55b183c35d18e0ae43ea90ab0396f5` |
+| `dict/base-v0.7.it.txt` | `#a87a5d` | `a87a5dc202b5e4c651d210f6a46c18bbca0a15741165a954433290e75c01b4fc` |
+| `dict/base-v0.7.es.txt` | `#fe82d6` | `fe82d60d3466129076a3952e223b9b3567e6301ba8a28b76dca375f857ec0c8b` |
+| `dict/base-v0.7.ru.txt` | `#becc6e` | `becc6e3012a43979fc4f21ac7750b59c42f1841a8b1db5c415cca0e9282030b3` |

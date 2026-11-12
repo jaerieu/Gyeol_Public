@@ -10,15 +10,15 @@ function codesOf(text: string, opts: Parameters<typeof rules08>[1] = {}) {
 
 test('v0.8 <N · 고정 표기: <1 · ●>, <1 ·→●>, <1 ·●> 모두 E18 없이 <1 · ●>로 정규화되고 · 누락(<1 ●>)은 E25', () => {
   for (const input of [
-    '<1 · ● [see,say] 기온이 3度 올랐다 *5B8↓Q1>',
-    '<1 ·→● [see,say] 기온이 3度 올랐다 *5B8↓Q1>',
-    '<1 ·● [see,say] 기온이 3度 올랐다 *5B8↓Q1>',
+    '<1 · ● [see,say] 기온이 3度 올랐다 *5B8↓T1>',
+    '<1 ·→● [see,say] 기온이 3度 올랐다 *5B8↓T1>',
+    '<1 ·● [see,say] 기온이 3度 올랐다 *5B8↓T1>',
   ]) {
     const r = parse(input, { v08: true });
     assert.deepEqual(r.diagnostics, [], input);
     assert.deepEqual(rules08(r, { lang: 'ko', ink: 5 }), [], input);
     const canon = format(r.message);
-    assert.equal(canon, '<1 · ● [see,say] 기온이 3度 올랐다 *5B8↓Q1>\n', input);
+    assert.equal(canon, '<1 · ● [see,say] 기온이 3度 올랐다 *5B8↓T1>\n', input);
     const again = parse(canon);
     assert.deepEqual(again.diagnostics, []);
     assert.equal(format(again.message), canon);
@@ -35,7 +35,7 @@ test('v0.8 E34 완화 및 E15 폐지: top 절은 ↓N 근거 가능하고 gut �
     '<2 · ● ↔1 [inf,say] 新法을得하여 분석한다 *6C8↓1>',
     '<3 · ● [gut,say] 미세 tremor가 느껴진다 *6Y5>',
     '<4 · ● [inf,say] 미검증 hunch를 근거 삼음 *6B7↓3>',
-    '<5 · ● sup→3 [see,say] 실측 로그에서 latency 급증을 확인함 *6G9↓Q2>',
+    '<5 · ● sup→3 [see,say] 실측 로그에서 latency 급증을 확인함 *6G9↓T2>',
   ].join('\n');
   const r = parse(doc);
   assert.deepEqual(r.diagnostics, []);
@@ -49,9 +49,9 @@ test('v0.8 E34 완화 및 E15 폐지: top 절은 ↓N 근거 가능하고 gut �
 test('론(Lon: Lineage Oriented Notation) 프로파일: 머리 줄 왕복, *먹채·gut·시제 유지, W29·W32 면제, 비허용 표지 E39', () => {
   const lonDoc = [
     'lon 0.8 · lang ko',
-    '<1 · ● [see,pst,say] 센서 데이터가 정상 범위(normal)였다 *7B8↓Q1>',
+    '<1 · ● [see,pst,say] 센서 데이터가 정상 범위(normal)였다 *7B8↓T1>',
     '<2 ·→kimi ↔1 [gut,lim,say] 미세 진동 패턴이 이상하다 *6Y4>',
-    '<3 · ● sup→2 [inf,fut,say] 베어링 마모가 진행될 것이다 *7C8↓Q2>',
+    '<3 · ● sup→2 [inf,fut,say] 베어링 마모가 진행될 것이다 *7C8↓T2>',
   ].join('\n');
   const r = parse(lonDoc);
   assert.equal(r.message.profile, 'lon');
@@ -66,10 +66,10 @@ test('론(Lon: Lineage Oriented Notation) 프로파일: 머리 줄 왕복, *먹�
   assert.equal(format(r2.message), formatted);
 
   assert.deepEqual(codesOf('<1 · ● [top,say] 화두 열기 *5B7>', { profile: 'lon' }), ['E39']);
-  assert.deepEqual(codesOf('<1 · ● [see,new,say] 새 발견 *5B7>', { profile: 'lon' }), ['E39']);
+  assert.deepEqual(codesOf('<1 · ● [see,new,say] 새 발견 *5B7↓T0>', { profile: 'lon' }), ['E39']);
   assert.deepEqual(codesOf('<1 · ● [inf,met,say] 비유 표현 *5B7>', { profile: 'lon' }), ['E39']);
-  assert.deepEqual(codesOf('<1 · ● [see,say] 채 누락>', { profile: 'lon' }), ['E33']);
-  assert.deepEqual(codesOf('<1 · ● [봄,다] 한글 표지 *5B7>', { profile: 'lon' }), ['W26']);
+  assert.deepEqual(codesOf('<1 · ● [see,say] 채 누락>', { profile: 'lon' }), ['E33', 'W40']);
+  assert.deepEqual(codesOf('<1 · ● [봄,다] 한글 표지 *5B7↓T0>', { profile: 'lon' }), ['W26']);
 
   const gyeolSingle = parse('gyeol 0.8 · lang ko\n<1 · ● [see,say] 한글 어절만 둘 이상 썼다 *5B8>');
   const gd = rules08(gyeolSingle);
@@ -135,7 +135,7 @@ test('extractTrailingEvidences: 다중 외부 근거 분리, 내부 꺽쇠 보�
   const nestedVerbatim = extractTrailingEvidences('<1 · ● [see,say] 시험 *7B9> 증1 <[ outer 증2 <[ inner ]>');
   assert.deepEqual(nestedVerbatim.evidences, [{ kind: 'evd', id: '1', text: 'outer 증2 <[ inner' }]);
 
-  const midLine = parse('<1 ·→B [see,say] Q101 전달 *G8↓증101↓Q101> 증101 <[ 원문 그대로 ]> <1.1 ·→B [inf,say] 추론 *Y6↓1>', { v08: true });
+  const midLine = parse('<1 ·→B [see,say] Q101 전달 *G8↓증101> 증101 <[ 원문 그대로 ]> <1.1 ·→B [inf,say] 추론 *Y6↓1>', { v08: true });
   assert.deepEqual(midLine.diagnostics, []);
   assert.equal(midLine.message.clauses.length, 2);
   assert.deepEqual(rules08(midLine, { knownExtra: new Set(['Q101']) }), []);

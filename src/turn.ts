@@ -11,6 +11,8 @@ export interface ParseTurnOptions {
   ink?: number | null;
   priorLines?: string[];
   turnNo?: number | null;
+  /** v0.8.1(3.22절): 호출부가 미리 준 받은 자료 번호(`evd103` 등). 선언 없이 ↓evd103으로 가리켜도 E17을 내지 않는다 */
+  issued?: readonly string[];
 }
 
 export interface ParseTurnResult {
@@ -106,7 +108,8 @@ export function parseTurn(rawText: string, opts: ParseTurnOptions = {}): ParseTu
     const emptyErr: Diagnostic = { severity: '오류', code: 'E01', line: 1, message: '결 줄이 비었다' };
     return { line: '', message: parse('').message, diagnostics: [emptyErr], errors: [emptyErr], warnings: [], ok: false };
   }
-  const parseOpts = use08 ? { v08: true } : undefined;
+  const issued = Array.isArray(opts.issued) && opts.issued.length ? opts.issued : undefined;
+  const parseOpts = use08 ? { v08: true, issued } : issued ? { issued } : undefined;
   let priors = Array.isArray(opts.priorLines) ? opts.priorLines.map((x) => String(x ?? '').trim()).filter(Boolean) : [];
   const turnDiags: Diagnostic[] = [];
   if (opts.turnNo != null) {

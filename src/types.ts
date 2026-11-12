@@ -47,10 +47,14 @@ export interface Ref {
  */
 // v0.6(2026-10-24): 지난 대화의 절 { thread: 53, clause: '절12' }(↓53:12). 메시지 밖이라 E17을 보지 않는다.
 // v0.8(2026-11-11 Jae): 외부·보조 근거 식별자 { ext: 'ref' | 'evd', id: '1' }(↓ref1·↓evd2·↓근1·↓증2). 결·론 공통.
+// v0.8.1(2026-11-12 Jae, 3.22절): 출처 세 갈래. 맥락 { ctx: N }(↓T0 대화 주제, ↓T1… 호출부가 준 배경),
+//   evd = 받은 자료(호출부가 원문을 쥔 것, 옛 Q 번호대를 물려받음), ref = 가져온 자료(말하는 이 책임, 차례 번호).
+//   옛 { quiz: N }(↓Q3)는 지난 기록을 읽으려고 그대로 두고 rules08이 W41(옛 표기)로 알린다.
 export type Because =
   | Ref
   | { url: string }
   | { quiz: number }
+  | { ctx: number }
   | { agent: string }
   | { thread: number; clause: string }
   | { ext: ExtEvidenceKind; id: string };

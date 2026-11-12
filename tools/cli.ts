@@ -23,7 +23,7 @@ const flagValue = (name: string) => {
   const i = rest.indexOf(name);
   return i >= 0 && rest[i + 1] && !rest[i + 1].startsWith('--') ? rest[i + 1] : undefined;
 };
-const arg = rest.find((a) => !a.startsWith('--') && !['--lang', '--form', '--profile'].includes(rest[rest.indexOf(a) - 1] ?? ''));
+const arg = rest.find((a) => !a.startsWith('--') && !['--lang', '--form', '--profile', '--issued'].includes(rest[rest.indexOf(a) - 1] ?? ''));
 
 function read(f: string | undefined): string {
   if (!f || f === '-') return readFileSync(0, 'utf8');
@@ -39,7 +39,9 @@ async function main() {
   switch (cmd) {
     case 'check': {
       const use08 = flags.has('--rules08') || flags.has('--lon') || flagValue('--profile') !== undefined;
-      const r = parse(read(file), use08 ? { v08: true } : {});
+      // v0.8.1(3.22절): --issued evd103,evd201 = 호출부가 미리 준 받은 자료 번호(선언 없이 가리켜도 E17을 내지 않는다)
+      const issued = (flagValue('--issued') ?? '').split(',').map((x) => x.trim()).filter(Boolean);
+      const r = parse(read(file), use08 ? { v08: true, issued } : { issued });
       const simp = toSimplifiedMap();
       const diags = [...r.diagnostics, ...(simp ? variantWarnings(r.message, simp) : [])];
       for (const d of diags) console.log(`${d.severity} ${d.code}${d.line ? ` (줄 ${d.line})` : ''}: ${d.message}`);
@@ -139,7 +141,7 @@ async function main() {
       break;
     }
     default:
-      console.log('명령: check [--rules07|--rules08] [--lon|--profile lon|gyeol] [--lang xx] | format [--form 0.6] | json | name [--doc] | gloss [--lang xx] | fold <점|절|펼침> | hashes | simplify');
+      console.log('명령: check [--rules07|--rules08] [--lon|--profile lon|gyeol] [--issued evd103,evd201] [--lang xx] | format [--form 0.6] | json | name [--doc] | gloss [--lang xx] | fold <점|절|펼침> | hashes | simplify');
       process.exitCode = 2;
   }
 }

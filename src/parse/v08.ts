@@ -56,6 +56,39 @@ function canonMarks(c: Clause): string {
   return `[${[m.ev, m.news ? 'new' : undefined, m.fig, m.tense, m.act].filter(Boolean).join(',')}]`;
 }
 
+/**
+ * 봄의 닿음(W40, 2026-11-12 Jae, 3.22절): 본 것(see) 절이 근거를 따라가 바깥 출처에 닿는가.
+ * - 바로 닿음: 맥락 ↓T, 받은 자료 ↓evd, 가져온 자료 ↓ref, 주소, 참가자 ↓@, 지난 대화 ↓53:12, 옛 ↓Q.
+ * - 절을 가리킨 것(끝 ↓N, 앞 ↓N, ↖N, ↔N): 앞 차례의 절이거나 이 글에서 찾지 못한 절이면 남의 말을 본 것으로 닿음,
+ *   이 차례 안의 see 절이면 그 절이 닿을 때만 닿음(순환은 막는다), rec·inf·gut·if·top 절은 닿지 않음.
+ * 'ok' 닿음, 'none' 근거가 하나도 없음(t1 꼴), 'inferred' 절 근거가 있으나 추론·직감·가정에서 끊김(t3 꼴).
+ */
+export function seeReach(c: Clause, clauses: Clause[], nums: Map<string, Clause>, from: number, seen: Set<Clause> = new Set()): 'ok' | 'none' | 'inferred' {
+  seen.add(c);
+  const because = c.because ?? [];
+  if (because.some((b) => !('label' in b))) return 'ok';
+  const refs = [
+    ...because.filter((b): b is Extract<typeof b, { label: string }> => 'label' in b),
+    ...(c.place && (c.place.rel === '↓' || c.place.rel === '↖' || c.place.rel === '↔') ? [c.place.target] : []),
+  ];
+  if (!refs.length) return 'none';
+  let sawNone = false;
+  for (const g of refs) {
+    if (g.msg !== null || g.thread !== undefined) return 'ok';
+    const t = nums.get(g.label.slice(1));
+    if (!t) return 'ok';
+    const at = clauses.indexOf(t);
+    if (at < from) return 'ok';
+    if (t === c || seen.has(t)) continue;
+    if (t.marks.ev === 'see') {
+      const sub = seeReach(t, clauses, nums, from, seen);
+      if (sub === 'ok') return 'ok';
+      if (sub === 'none') sawNone = true;
+    }
+  }
+  return sawNone ? 'none' : 'inferred';
+}
+
 export function rules08(r: ParseResult, opts: Rules08Options = {}): Diagnostic[] {
   const out: Diagnostic[] = [];
   const profile: Profile = opts.profile ?? r.message.profile ?? 'gyeol';
@@ -131,6 +164,20 @@ export function rules08(r: ParseResult, opts: Rules08Options = {}): Diagnostic[]
       const t = nums.get(back.label.slice(1));
       if (t && !(t.marks.ev && BACKABLE_EV.has(t.marks.ev))) {
         push('W36', `sup→${back.label.slice(1)}은 직감(gut)·새 화두(top) 절을 뒤늦게 받칠 때 쓴다. 그 밖의 절은 끝에 ↓${back.label.slice(1)}로 근거 삼는다`);
+      }
+    }
+
+    // 5b. 출처 세 갈래(2026-11-12 Jae, 3.22절): 옛 ↓Q(W41)와 봄의 닿음(W40)
+    if ((c.because ?? []).some((b) => 'quiz' in b)) {
+      push('W41', '↓Q는 옛 표기다(뜻은 그대로 읽었다). 대화 주제·배경은 ↓T(맥락), 미리 받은 자료는 ↓evd(받은 자료)로 쓴다');
+    }
+    // W40: t3형(추론·직감·가정에서 끊김)은 결·론 모두, t1형(근거 없음)은 론에서만 낸다(2026-11-12 Jae 확정 안 1: 본래 결은 현장 발화 여백을 위해 면제하고 계보 추적용 결;론에서만 낸다)
+    if (c.marks.ev === 'see') {
+      const reach = seeReach(c, clauses, nums, opts.from ?? 0);
+      if (reach === 'none' && isLon) {
+        push('W40', '본 것(see)이 바깥 출처에 닿지 않는다. ↓T(맥락)·↓evd(받은 자료)·↓ref(가져온 자료)·↖N으로 출처를 달거나, 본 것이 아니면 inf·rec로 쓴다');
+      } else if (reach === 'inferred') {
+        push('W40', '본 것(see)의 근거가 추론·직감·가정 절뿐이다. 본 출처를 ↓T·↓evd·↓ref·↖N으로 달거나, 본 것이 아니면 inf로 쓴다');
       }
     }
 

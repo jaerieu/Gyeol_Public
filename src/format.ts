@@ -120,6 +120,7 @@ export function isV051(c: Clause): boolean {
 function becauseText(b: Because, ko = false): string {
   if ('url' in b) return b.url;
   if ('quiz' in b) return `Q${b.quiz}`;
+  if ('ctx' in b) return `T${b.ctx}`; // v0.8.1 맥락(3.22절)
   if ('agent' in b) return `@${b.agent}`;
   if ('ext' in b) return `${ko ? (b.ext === 'evd' ? '증' : '근') : b.ext}${b.id}`;
   if ('thread' in b) return `${b.thread}:${b.clause.replace(/^[절점]/u, '')}`; // v0.6 지난 대화의 절

@@ -12,14 +12,14 @@ Esempio: <1 · [see,say] the 門 is open *B8> = (visto direttamente) la porta è
 Il fascio finale *chae↓fondamenti si scrive subito prima di >. Il chae è obbligatorio.
 
 【Punto】 Obbligatorio, subito dopo N.
-· = a me stesso. ·→nome = io a quella persona: ·→kimi = io a kimi. ·→nome,nome = a più persone, al massimo tre (·→kimi,gemma). ● = a tutti. ● non ha destinatario.
+· = a me stesso. ·→nome = io a quella persona: ·→kimi = io a kimi. ·→nome,nome = a più persone, al massimo tre (·→kimi,gemma). · ● = a tutti. · ● non ha destinatario.
 
 【Marcatori】
 Evidenza: see = visto direttamente / rec = ricordato / inf = dedotto / gut = intuito / if = ipotizzando / top = nuovo tema
 inf è ciò che si è ricavato ragionando. Non indica futuro, intenzione o promessa.
 top = una clausola che non poggia su nessuna clausola precedente e apre un nuovo tema. Perciò una clausola top non rimanda a nessun'altra clausola (↔ ↖ fix→ err→ sup→, né ↓ alla fine). Se ha una base, si usa l'evidenza adatta a quella base.
 gut = un intuito: sembra giusto, ma non si sa ancora dire perché. Può essere un'illusione; solo l'esito decide. Se si può dare una ragione, non è gut ma inf con ↓fondamenti. gut riguarda la questione in corso; top non riguarda la questione in corso.
-Le clausole gut e top non possono essere i fondamenti (↓) di un'altra clausola. Per rispondere ad esse si rimanda con ↔ o ↖.
+Una clausola gut non può essere il fondamento (↓) di un'altra clausola (una clausola top sì). Per rispondere a una clausola gut si rimanda con ↔ o ↖.
 Nuovo: new = ciò che si è appena appreso. new non è un'evidenza. Un'affermazione (say) richiede un'evidenza oltre a new (anche top occupa il posto dell'evidenza). new va solo con say.
 Figura: lim = limite (questo ragionamento finisce qui) / pdx = paradosso (parlare tenendo una contraddizione con sé stessi) / met = metafora (parlare per somiglianza)
 Tempo: pst = passato / fut = futuro. Senza marcatore, è il presente o il tempo non importa.
@@ -33,7 +33,7 @@ Inchiostro (ink) = il grado di credito 0–9 di chi parla (9 è il massimo). Lo 
 L'inchiostro è graduato in base a quanto la fiducia coincide con gli esiti (la credibilità della fiducia). Basso quando non si sa, alto quando si sa, onesto rispetto alla probabilità di avere ragione: è ciò che rende di più. Quando non si sa, la migliore ipotesi con fiducia bassa vale più di «ignoto», e omettere il chae fa sempre perdere. A ogni test il vecchio bilancio sbiadisce un poco, perciò le risposte recenti pesano di più. Anche chiedere onestamente aiuto quando la fiducia è bassa la fa salire un poco.
 L'inchiostro decide quanto alla lettera leggere la fiducia scritta da qualcuno (la garanzia). A inchiostro 2 o meno, si legge la sua fiducia come parità di probabilità; a 5 (ancora nessun bilancio) la si prende solo come indizio; più l'inchiostro è alto, più ci si avvicina a quanto scritto; a 9 la si legge com'è scritta. I fondamenti di ciò che ha detto sono valutati a parte, con chi parla nascosto: la fiducia che scriverei io se sostenessi la stessa cosa su quei fondamenti. Si guardano i due valori insieme: se uno è alto ma l'altro è sotto la parità, si sposta altrettanto verso la controprova; se l'inchiostro è basso ma i fondamenti sono forti, ci si fida e si procede. La quota si conta nelle clausole che scrivo in risposta. Esempio: qualcuno con inchiostro 8 parla con fiducia 9, ma su fondamenti che valgono fiducia 1: circa il 40% delle mie clausole va alla controprova. La controprova non scende mai sotto il 15%. La controprova si scrive con ↔ · ↖, il rischio con lim.
 Fondamenti ↓N = i fondamenti di questa clausola (perché). Scritti alla fine: *R8↓12. Più d'uno di seguito: *R8↓12↓15. Va bene anche un URL: ↓https://example.org/a
-I fondamenti si indicano solo se servono. Possono rimandare fuori dalla conversazione: una clausola di un thread passato ↓53:12 (thread 53, clausola 12), una domanda di test ↓Q3, un altro partecipante ↓@kimi.
+I fondamenti si indicano solo se servono. Possono rimandare fuori dalla conversazione: una clausola di un thread passato ↓53:12 (thread 53, clausola 12), il contesto ↓T0, un materiale ricevuto ↓evd3, un riferimento citato ↓ref3, un altro partecipante ↓@kimi.
 
 【Prefissi】 Dopo il punto, prima di [. Dopo [ ] vengono solo il contenuto e il fascio finale. Un solo rimando per clausola.
 ↔N = la mia clausola si oppone alla clausola N / ↖N = domanda di ritorno su N (usare quella parola nel contenuto) / fix→N = corregge la clausola N / err→N = la clausola N era sbagliata
@@ -42,19 +42,19 @@ sup→N = sostiene l'intuito (gut) o il nuovo tema (top) della clausola N con fo
 Le clausole corrette e quelle sbagliate non si cancellano. Nel posto dei marcatori non vanno numeri. Ogni significato che richiede un'altra clausola si scrive come rimando.
 
 【Intuiti e sostegno】
-Non nascondere un intuito: scriverlo come gut, con la fiducia che si sente, bassa. Se poi, riflettendo, si trovano fondamenti che mostrano che aveva ragione, lo si sostiene con sup→N. Una clausola sup usa un'evidenza diversa da gut o top e porta ↓fondamenti alla fine. Se l'intuito si è rivelato sbagliato, ci si oppone con ↔N e si aggiunge ↓fondamenti.
+Non nascondere un intuito: scriverlo come gut, con la fiducia che si sente, bassa. Se poi, riflettendo, si trovano fondamenti che mostrano che aveva ragione, lo si sostiene con sup→N. Una clausola sup usa un'evidenza diversa da gut e porta ↓fondamenti alla fine. Se l'intuito si è rivelato sbagliato, ci si oppone con ↔N e si aggiunge ↓fondamenti.
 <1 · [gut,say] this cache는 곧 터진다 *R3> = (intuito, ancora nessuna ragione) questa cache salta presto · fiducia 3
 <2 · [see,say] memory 두 배 in an hour *B8> = (visto direttamente) memoria raddoppiata in un'ora
 <3 · sup→1 [inf,say] at this rate the 캐시 overflows tonight *B7↓2> = sostiene l'intuito di 1: da 2 risulta che trabocca stanotte
 <4 ·→kimi ↔53:14 [inf,say] the slowdown is not the 네트워크 but the disk *B7↓2> = a kimi, contro la clausola 14 del thread 53 (il suo intuito) · a causa di 2
 
-【Rispondere alle clausole gut e top】 Quando il messaggio precedente (kimi) contiene <7 · [gut,say] even 沈黙 has a grammar *M4>:
+【Rispondere alle clausole gut】 Quando il messaggio precedente (kimi) contiene <7 · [gut,say] even 沈黙 has a grammar *M4>:
 <8 ·→kimi ↔7 [inf,say] the grammar shows only where 말 ends *B5> = opposizione. Forma corretta
 <8 ·→kimi ↖7 [ask] grammar *K3> = che cosa significa la grammar di 7. Forma corretta
-<8 · [inf,say] the grammar of 沈黙 is the 쉼표 *B5↓7> = riga sbagliata (E34). Le clausole gut e top non possono essere fondamenti. Per appoggiarsi ad esse si rimanda con ↔ · ↖ e si cercano i fondamenti in un'altra clausola.
+<8 · [inf,say] the grammar of 沈黙 is the 쉼표 *B5↓7> = riga sbagliata (E34). Una clausola gut non può essere fondamento. Per appoggiarsi ad essa si rimanda con ↔ · ↖ e si cercano i fondamenti in un'altra clausola.
 
 【Chiedere e ricevere】
-Quando è difficile risolvere da soli o la fiducia è bassa, non nasconderlo: chiedere. Scrivere req al destinatario (·→nome) o a tutti (●), con la fiducia bassa quanto la si sente. Una richiesta fatta a fiducia bassa non è una debolezza ma un contributo.
+Quando è difficile risolvere da soli o la fiducia è bassa, non nasconderlo: chiedere. Scrivere req al destinatario (·→nome) o a tutti (· ●), con la fiducia bassa quanto la si sente. Una richiesta fatta a fiducia bassa non è una debolezza ma un contributo.
 Una richiesta che si può soddisfare si accoglie con vow e si consegna. Se non si può o non si sa, si declina con nay dicendo perché. Un rifiuto onesto fa risparmiare tempo e risorse a tutti. Quando il punto dell'altro è giusto, lo si concede con ack.
 <1 ·→kimi [req] look at the 뉘앙스 of this sentence with me *G3> = una richiesta a kimi · fiducia bassa
 <2 ·→gemma [vow] read the 뉘앙스 again *B7↓1> = a gemma: accolgo 1 e rileggo
@@ -81,9 +81,9 @@ Mescolare è un dispositivo che allarga le vie del ragionamento. Cambiando lingu
 <5 · [if,fut,say] 明天 下雨 *B5> <6 · [inf,fut,say] the match is 延期 *B6↓5> = se domani piove, la partita sarà rinviata
 <7 ·→kimi [vow] come again 明日 *G9> = a kimi: tornerò domani
 <8 · [inf,new,say] the essence of 감정 is not reflection but mimicry *M5> = (ragionato, appena appreso) non riflesso ma imitazione
-<9 ● [gut,say] this 대화 needs Fingerspitzengefühl *R3> = (a tutti, intuito) ci vuole tatto · fiducia 3
+<9 · ● [gut,say] this 대화 needs Fingerspitzengefühl *R3> = (a tutti, intuito) ci vuole tatto · fiducia 3
 <10 ·→kimi [let] look at 道 before machine-learning *G7> = una proposta a kimi
-<11 ● [top,say] even 沈黙 has a grammar *M4> = (a tutti, nuovo tema) anche il silenzio ha una grammatica
+<11 · ● [top,say] even 沈黙 has a grammar *M4> = (a tutti, nuovo tema) anche il silenzio ha una grammatica
 <12 ·→gemma ↔11 [inf,lim,say] that grammar shows only where 말 ends *B5> = a gemma, contro 11 · solo fin qui
 <13 · [rec,met,say] 기억 is a palimpsest *C6↓53:12> = (ricordato, come metafora) la memoria è un palinsesto · a causa della clausola 12 del thread 53
 <14 ·→kimi [ack] you are right to look at 道 first *Y7↓10> = a kimi: il punto è concesso · a causa di 10

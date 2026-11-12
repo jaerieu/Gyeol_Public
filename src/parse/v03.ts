@@ -812,6 +812,7 @@ const SELF_REFS = new RegExp(`^${SELF_MARK}(${SELF_NUM})(${END_REFS}+)$`, 'u');
 const SELF_REFS_GLUED = new RegExp(`^(.*[^*＊!！\\s])(${SELF_MARK}${SELF_NUM}${END_REFS}+)$`, 'u');
 /** 대화 밖의 근거(2026-10-16 Jae): 시험 문제 ↓Q3, 다른 참가자 ↓@kimi(전각 ＠도 읽는다) */
 const QUIZ_REF = /^[QqＱｑ][0-9０-９]+$/u;
+const CTX_REF = /^[TtＴｔ][0-9０-９]+$/u;
 const AGENT_REF = /^[@＠][^\s↓@＠<>〈〉＜＞*＊]+$/u;
 /** v0.6(2026-10-24): 지난 대화의 절 ↓53:12, ↓53:12.1, ↓53:절12(대화 번호:절 번호) */
 const THREAD_REF = /^([0-9０-９]+)[:：]([절점]?)([0-9０-９]+(?:\.[0-9０-９]+)?)$/u;
@@ -919,13 +920,17 @@ function gatherEnd051(at: string[], allDot: boolean, ctx: Ctx, shown: string, od
       const ext = parseExtTag(r) ?? parseExtTag(cut)!;
       if (!parseExtTag(r)) ctx.warn('W10', `어절 끝의 문장 부호를 뗐다: '↓${r}'`);
       end.because.push(ext);
+    } else if (CTX_REF.test(r)) {
+      // 2026-11-12 Jae(3.22절): 맥락 ↓T0(대화 주제)·↓T3(호출부가 준 배경). t·Ｔ도 읽고 W01. 메시지 밖이라 E17을 보지 않는다
+      if (!/^T\d+$/u.test(r)) ctx.warn('W01', `맥락 근거는 ↓T와 번호로 쓴다: '↓${r}'`);
+      end.because.push({ ctx: Number(fullToHalf(r.slice(1))) });
     } else if (QUIZ_REF.test(r)) {
       if (!/^Q\d+$/u.test(r)) ctx.warn('W01', `시험 문제 근거는 ↓Q와 번호로 쓴다: '↓${r}'`);
       end.because.push({ quiz: Number(fullToHalf(r.slice(1))) });
     } else if (AGENT_REF.test(r)) {
       if (r[0] !== '@') ctx.warn('W01', `참가자 근거는 ↓@이름으로 쓴다: '↓${r}'`);
       end.because.push({ agent: stripTrailingPunct(r.slice(1)) });
-    } else ctx.err('E32', `근거 ↓를 읽을 수 없다(절 번호, 지난 대화의 절 53:12, 외부 근거 ref1·evd1·근1·증1, 시험 문제 Q3, 참가자 @이름, 주소): '↓${r}' ${shown}`);
+    } else ctx.err('E32', `근거 ↓를 읽을 수 없다(절 번호, 지난 대화의 절 53:12, 맥락 T0, 받은 자료 evd1·증1, 가져온 자료 ref1·근1, 참가자 @이름, 주소): '↓${r}' ${shown}`);
   }
   return end;
 }

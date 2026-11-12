@@ -145,11 +145,22 @@ function unclosedExtCloser(rawLine: string): string | null {
 export interface ParseOptions {
   /** v0.8 문맥에서 머리 줄 없이 단절을 읽을 때 true(E15 폐지 및 <절N · ● …> 허용) */
   v08?: boolean;
+  /**
+   * v0.8.1(2026-11-12 Jae, 3.22절): 호출부가 미리 준 받은 자료 번호(`evd103`, `증201`).
+   * 받은 자료는 원문을 호출부가 쥐고 있으므로 메시지 안에 선언하지 않고 ↓evd103으로 가리켜도 E17을 내지 않는다.
+   * 가져온 자료(ref)는 여기에 넣어도 받지 않는다(말하는 이가 메시지 안에 원문을 함께 써야 한다).
+   */
+  issued?: readonly string[];
 }
 
 export function parse(input: string, opts: ParseOptions = {}): ParseResult {
   const ctx = new Ctx();
   if (opts.v08) ctx.v08 = true;
+  const issued = new Set<string>();
+  for (const raw of opts.issued ?? []) {
+    const tag = parseExtTag(String(raw ?? '').trim());
+    if (tag && tag.ext === 'evd') issued.add(`${tag.ext}:${tag.id}`);
+  }
   const msg = emptyMessage();
   const rawLines = input.replace(/\r\n?/g, '\n').normalize('NFC').split('\n');
   const lines = [...rawLines];
@@ -262,7 +273,7 @@ export function parse(input: string, opts: ParseOptions = {}): ParseResult {
     }
   });
 
-  checkMessage(msg, ctx);
+  checkMessage(msg, ctx, issued);
   const ok = !ctx.diags.some((d) => d.severity === '오류');
   const forms: LineForm[] = msg.clauses.map((c) => (ctx.newForm.has(c) ? '0.3' : '0.2'));
   // v0.5(2026-10-15): 절마다 글에 쓴 꼴(rules05가 본다). 옛 꼴 절은 빈 것
@@ -271,7 +282,7 @@ export function parse(input: string, opts: ParseOptions = {}): ParseResult {
 }
 
 /** 메시지 전체에 걸친 규칙: 이름표, 가리킴, 측정법. */
-function checkMessage(msg: Message, ctx: Ctx) {
+function checkMessage(msg: Message, ctx: Ctx, issued: ReadonlySet<string> = new Set()) {
   ctx.line = 0;
   const labeled = msg.clauses.filter((c) => c.label !== null).length;
   if (labeled > 0 && labeled < msg.clauses.length) ctx.err('E23', '일부 절에만 이름표가 있다. 모두 붙이거나 모두 빼야 한다');
@@ -303,9 +314,10 @@ function checkMessage(msg: Message, ctx: Ctx) {
     checkRef(c.place?.second, loose); // v0.6 ⊗N,M의 둘째 절
     checkRef(c.process?.target, loose);
     // v0.5.1: 끝 묶음 뒤의 근거(주소는 보지 않는다). v0.8: 선언되지 않은 외부 근거 인용은 E17로 잡는다.
+    // v0.8.1(3.22절): 호출부가 준 받은 자료 번호(issued)는 선언으로 본다. 맥락 ↓T는 메시지 밖이라 보지 않는다.
     for (const b of c.because ?? []) {
-      if ('label' in b) checkRef(b, loose); // 주소·시험 문제·참가자·지난 대화의 절(v0.6)은 메시지 밖이라 보지 않는다
-      else if ('ext' in b && !extLabels.has(`${b.ext}:${b.id}`)) ctx.err('E17', `가리킨 외부 근거가 이 메시지에 없다: ${b.ext}${b.id}`);
+      if ('label' in b) checkRef(b, loose); // 주소·맥락·시험 문제·참가자·지난 대화의 절(v0.6)은 메시지 밖이라 보지 않는다
+      else if ('ext' in b && !extLabels.has(`${b.ext}:${b.id}`) && !issued.has(`${b.ext}:${b.id}`)) ctx.err('E17', `가리킨 외부 근거가 이 메시지에 없다: ${b.ext}${b.id}`);
     }
   }
   // 측정법(W05)은 옛 꼴의 먹에만 묻는다. v0.3 줄의 먹 한 자리는 측정 기록(D1)에 측정법이 남는다.

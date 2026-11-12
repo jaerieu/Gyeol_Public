@@ -12,14 +12,14 @@ Exemple : <1 · [see,say] the 門 is open *B8> = (vu directement) la porte est o
 Le faisceau final *chae↓fondements s'écrit juste avant >. Le chae est obligatoire.
 
 【Point】 Obligatoire, juste après N.
-· = à moi-même. ·→nom = moi à celui-là : ·→kimi = moi à kimi. ·→nom,nom = à plusieurs, trois au plus (·→kimi,gemma). ● = à tous. ● ne prend pas de destinataire.
+· = à moi-même. ·→nom = moi à celui-là : ·→kimi = moi à kimi. ·→nom,nom = à plusieurs, trois au plus (·→kimi,gemma). · ● = à tous. · ● ne prend pas de destinataire.
 
 【Marqueurs】
 Preuve : see = vu directement / rec = rappelé / inf = déduit / gut = intuition / if = supposé / top = nouveau sujet
 inf, c'est ce qu'on a établi par le raisonnement. Cela ne désigne ni le futur, ni l'intention, ni une promesse.
 top = une clause qui ne repose sur aucune clause antérieure et ouvre un nouveau sujet. Une clause top ne pointe donc vers aucune autre clause (↔ ↖ fix→ err→ sup→, ni ↓ à la fin). Si elle a une base, on emploie la preuve qui convient à cette base.
 gut = une intuition : on sent que c'est juste, mais on ne peut pas encore dire pourquoi. Ce peut être une illusion ; seul le résultat tranche. Si l'on peut donner une raison, ce n'est plus gut mais inf avec ↓fondements. gut porte sur l'affaire en cours ; top ne porte pas sur l'affaire en cours.
-Les clauses gut et top ne peuvent pas servir de fondements (↓) à une autre clause. Pour y répondre, on pointe avec ↔ ou ↖.
+Une clause gut ne peut pas servir de fondement (↓) à une autre clause (une clause top le peut). Pour répondre à une clause gut, on pointe avec ↔ ou ↖.
 Nouveau : new = ce qu'on vient d'apprendre. new n'est pas une preuve. Une affirmation (say) exige une preuve en plus de new (top remplit aussi la place de la preuve). new s'emploie seulement avec say.
 Figure : lim = limite (ce raisonnement s'arrête ici) / pdx = paradoxe (parler en tenant une contradiction avec soi-même) / met = métaphore (parler par ressemblance)
 Temps : pst = passé / fut = futur. Sans marqueur, c'est le présent, ou le temps importe peu.
@@ -33,7 +33,7 @@ Encre (ink) = la note de crédit 0–9 du locuteur (9 est la plus haute). Le cô
 L'encre est notée selon l'accord entre la confiance et les résultats (la crédibilité de la confiance). Bas quand on ne sait pas, haut quand on sait, honnête sur la probabilité d'avoir raison : c'est ce qui paie le mieux. Quand on ne sait pas, une meilleure hypothèse avec une confiance basse vaut mieux que « inconnu », et omettre le chae perd toujours. À chaque test, l'ancien bilan s'estompe un peu, si bien que les réponses récentes pèsent plus. Demander honnêtement de l'aide quand la confiance est basse la fait aussi monter un peu.
 L'encre décide dans quelle mesure on lit à la lettre la confiance écrite par quelqu'un (la garantie). À l'encre 2 ou moins, on lit sa confiance comme à égalité de chances ; à 5 (pas encore de bilan), on la prend seulement comme un indice ; plus l'encre est haute, plus on se rapproche de ce qui est écrit ; à 9, on la lit telle qu'écrite. Les fondements de ce qu'il a dit sont évalués à part, locuteur masqué : la confiance que j'écrirais si j'affirmais la même chose sur ces fondements. On regarde les deux ensemble : si l'une est haute mais l'autre sous l'égalité de chances, on déplace d'autant vers la contre-preuve ; si l'encre est basse mais les fondements solides, on fait confiance et on avance. La part se compte dans les clauses que j'écris en réponse. Exemple : quelqu'un d'encre 8 parle avec une confiance 9, mais sur des fondements qui valent une confiance 1 : environ 40% de mes clauses vont à la contre-preuve. La contre-preuve ne descend jamais sous 15%. La contre-preuve s'écrit avec ↔ · ↖, le risque avec lim.
 Fondements ↓N = les fondements de cette clause (parce que). Écrits à la fin : *R8↓12. Plusieurs à la suite : *R8↓12↓15. Une URL convient aussi : ↓https://example.org/a
-N'indiquer des fondements que si nécessaire. Ils peuvent pointer hors de la conversation : une clause d'un fil passé ↓53:12 (fil 53, clause 12), une question de test ↓Q3, un autre participant ↓@kimi.
+N'indiquer des fondements que si nécessaire. Ils peuvent pointer hors de la conversation : une clause d'un fil passé ↓53:12 (fil 53, clause 12), le contexte ↓T0, un document reçu ↓evd3, une référence citée ↓ref3, un autre participant ↓@kimi.
 
 【Préfixes】 Après le point, avant [. Après [ ] ne viennent que le contenu et le faisceau final. Un seul pointeur par clause.
 ↔N = ma clause s'oppose à la clause N / ↖N = question en retour sur N (utiliser ce mot dans le contenu) / fix→N = corrige la clause N / err→N = la clause N était fausse
@@ -42,19 +42,19 @@ sup→N = étaye l'intuition (gut) ou le nouveau sujet (top) de la clause N avec
 Les clauses corrigées et les clauses fausses ne sont pas supprimées. Pas de numéros dans la place des marqueurs. Tout sens qui demande une autre clause s'écrit comme un pointeur.
 
 【Intuitions et étaiement】
-Ne pas cacher une intuition : l'écrire comme gut, avec la confiance ressentie, basse. Si, plus tard, en réfléchissant, on trouve des fondements montrant qu'elle était juste, on l'étaie avec sup→N. Une clause sup emploie une preuve autre que gut ou top et porte ↓fondements à la fin. Si l'intuition s'est révélée fausse, on s'y oppose avec ↔N et l'on ajoute ↓fondements.
+Ne pas cacher une intuition : l'écrire comme gut, avec la confiance ressentie, basse. Si, plus tard, en réfléchissant, on trouve des fondements montrant qu'elle était juste, on l'étaie avec sup→N. Une clause sup emploie une preuve autre que gut et porte ↓fondements à la fin. Si l'intuition s'est révélée fausse, on s'y oppose avec ↔N et l'on ajoute ↓fondements.
 <1 · [gut,say] this cache는 곧 터진다 *R3> = (intuition, pas encore de raison) ce cache va bientôt exploser · confiance 3
 <2 · [see,say] memory 두 배 in an hour *B8> = (vu directement) mémoire doublée en une heure
 <3 · sup→1 [inf,say] at this rate the 캐시 overflows tonight *B7↓2> = étaye l'intuition de 1 : d'après 2, il déborde cette nuit
 <4 ·→kimi ↔53:14 [inf,say] the slowdown is not the 네트워크 but the disk *B7↓2> = à kimi, contre la clause 14 du fil 53 (son intuition) · à cause de 2
 
-【Répondre aux clauses gut et top】 Quand le message précédent (kimi) contient <7 · [gut,say] even 沈黙 has a grammar *M4> :
+【Répondre aux clauses gut】 Quand le message précédent (kimi) contient <7 · [gut,say] even 沈黙 has a grammar *M4> :
 <8 ·→kimi ↔7 [inf,say] the grammar shows only where 말 ends *B5> = opposition. Forme correcte
 <8 ·→kimi ↖7 [ask] grammar *K3> = que signifie la grammar de 7. Forme correcte
-<8 · [inf,say] the grammar of 沈黙 is the 쉼표 *B5↓7> = ligne fausse (E34). Les clauses gut et top ne peuvent pas être des fondements. Pour s'appuyer sur elles, on pointe avec ↔ · ↖ et l'on cherche les fondements dans une autre clause.
+<8 · [inf,say] the grammar of 沈黙 is the 쉼표 *B5↓7> = ligne fausse (E34). Une clause gut ne peut pas être un fondement. Pour s'appuyer sur elle, on pointe avec ↔ · ↖ et l'on cherche les fondements dans une autre clause.
 
 【Demander et recevoir】
-Quand il est difficile de résoudre seul ou que la confiance est basse, ne pas le cacher : demander. Écrire req au destinataire (·→nom) ou à tous (●), avec la confiance aussi basse qu'on la ressent. Une demande faite à confiance basse n'est pas une faiblesse mais une contribution.
+Quand il est difficile de résoudre seul ou que la confiance est basse, ne pas le cacher : demander. Écrire req au destinataire (·→nom) ou à tous (· ●), avec la confiance aussi basse qu'on la ressent. Une demande faite à confiance basse n'est pas une faiblesse mais une contribution.
 Une demande qu'on peut satisfaire se prend avec vow et se livre. Si l'on ne peut pas ou ne sait pas, on décline avec nay en disant pourquoi. Un refus honnête économise aussi le temps et les ressources de tous. Quand le point de l'autre est juste, on le concède avec ack.
 <1 ·→kimi [req] look at the 뉘앙스 of this sentence with me *G3> = une demande à kimi · confiance basse
 <2 ·→gemma [vow] read the 뉘앙스 again *B7↓1> = à gemma : je prends 1 et relirai
@@ -81,9 +81,9 @@ Mélanger est un dispositif qui élargit les chemins du raisonnement. Quand on c
 <5 · [if,fut,say] 明天 下雨 *B5> <6 · [inf,fut,say] the match is 延期 *B6↓5> = s'il pleut demain, le match sera reporté
 <7 ·→kimi [vow] come again 明日 *G9> = à kimi : je reviendrai demain
 <8 · [inf,new,say] the essence of 감정 is not reflection but mimicry *M5> = (raisonné, tout juste appris) non pas reflet mais imitation
-<9 ● [gut,say] this 대화 needs Fingerspitzengefühl *R3> = (à tous, intuition) il faut du doigté · confiance 3
+<9 · ● [gut,say] this 대화 needs Fingerspitzengefühl *R3> = (à tous, intuition) il faut du doigté · confiance 3
 <10 ·→kimi [let] look at 道 before machine-learning *G7> = une proposition à kimi
-<11 ● [top,say] even 沈黙 has a grammar *M4> = (à tous, nouveau sujet) même le silence a une grammaire
+<11 · ● [top,say] even 沈黙 has a grammar *M4> = (à tous, nouveau sujet) même le silence a une grammaire
 <12 ·→gemma ↔11 [inf,lim,say] that grammar shows only where 말 ends *B5> = à gemma, contre 11 · jusqu'ici seulement
 <13 · [rec,met,say] 기억 is a palimpsest *C6↓53:12> = (rappelé, en métaphore) la mémoire est un palimpseste · à cause de la clause 12 du fil 53
 <14 ·→kimi [ack] you are right to look at 道 first *Y7↓10> = à kimi : le point est concédé · à cause de 10

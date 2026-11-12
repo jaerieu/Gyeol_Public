@@ -38,6 +38,8 @@ export interface GlossTable {
   /** 끝의 근거가 주소·시험 문제일 때의 이름(ko '주소'·'문제 Q', en 'URL'·'Q') */
   url: string;
   quiz: string;
+  /** v0.8.1(2026-11-12 Jae, 3.22절): 맥락 근거 ↓T의 이름(ko '맥락 T', en 'context T') */
+  ctx: string;
 }
 
 export const GLOSS: Record<string, GlossTable> = {
@@ -62,6 +64,7 @@ export const GLOSS: Record<string, GlossTable> = {
     clause: '절',
     url: '주소',
     quiz: '문제 Q',
+    ctx: '맥락 T',
   },
   en: {
     ev: { see: 'seen directly', rec: 'recalled', hrd: 'heard from others', inf: 'inferred', com: 'common knowledge', gut: 'gut feeling', if: 'supposing', top: 'new topic' },
@@ -84,6 +87,7 @@ export const GLOSS: Record<string, GlossTable> = {
     clause: 'clause ',
     url: 'URL',
     quiz: 'Q',
+    ctx: 'context T',
   },
   // 2026-10-29 v0.7 몫 C(reports/v0.7-design.md 11절): 나머지 여덟 언어. 열쇠는 ko·en과 같은 영어 내부 값이다.
   // 자리표시자(N 절, X 받는 이, M 둘째 절, T 대화)는 글자 하나라서, 그 말의 다른 글자(큰 N·X·M·T)를 자리표시자 앞에 두지 않는다(replace가 첫 글자를 바꾼다).
@@ -109,6 +113,7 @@ export const GLOSS: Record<string, GlossTable> = {
     clause: '小句',
     url: '网址',
     quiz: '试题Q',
+    ctx: '背景T',
   },
   'zh-Hant': {
     ev: { see: '親眼所見', rec: '回想', hrd: '聽說', inf: '推斷', com: '常識', gut: '直覺', if: '假設', top: '新話題' },
@@ -131,6 +136,7 @@ export const GLOSS: Record<string, GlossTable> = {
     clause: '小句',
     url: '網址',
     quiz: '試題Q',
+    ctx: '背景T',
   },
   ja: {
     ev: { see: '直接見た', rec: '思い出した', hrd: '伝え聞いた', inf: '推論', com: '周知', gut: '直感', if: '仮定', top: '新しい話題' },
@@ -153,6 +159,7 @@ export const GLOSS: Record<string, GlossTable> = {
     clause: '節',
     url: 'URL',
     quiz: '問題Q',
+    ctx: '文脈T',
   },
   de: {
     ev: { see: 'direkt gesehen', rec: 'erinnert', hrd: 'vom Hörensagen', inf: 'gefolgert', com: 'Allgemeinwissen', gut: 'Bauchgefühl', if: 'angenommen', top: 'neues Thema' },
@@ -175,6 +182,7 @@ export const GLOSS: Record<string, GlossTable> = {
     clause: 'Satz ',
     url: 'URL',
     quiz: 'Frage Q',
+    ctx: 'Kontext T',
   },
   fr: {
     ev: { see: 'vu directement', rec: 'rappelé', hrd: 'entendu dire', inf: 'déduit', com: 'savoir commun', gut: 'intuition', if: 'supposé', top: 'nouveau sujet' },
@@ -197,6 +205,7 @@ export const GLOSS: Record<string, GlossTable> = {
     clause: 'clause ',
     url: 'URL',
     quiz: 'question Q',
+    ctx: 'contexte T',
   },
   it: {
     ev: { see: 'visto direttamente', rec: 'ricordato', hrd: 'sentito dire', inf: 'dedotto', com: 'sapere comune', gut: 'intuito', if: 'ipotizzando', top: 'nuovo tema' },
@@ -219,6 +228,7 @@ export const GLOSS: Record<string, GlossTable> = {
     clause: 'clausola ',
     url: 'URL',
     quiz: 'domanda Q',
+    ctx: 'contesto T',
   },
   es: {
     ev: { see: 'visto directamente', rec: 'recordado', hrd: 'oído de otros', inf: 'inferido', com: 'saber común', gut: 'corazonada', if: 'suponiendo', top: 'tema nuevo' },
@@ -241,6 +251,7 @@ export const GLOSS: Record<string, GlossTable> = {
     clause: 'cláusula ',
     url: 'URL',
     quiz: 'pregunta Q',
+    ctx: 'contexto T',
   },
   ru: {
     ev: { see: 'увидено напрямую', rec: 'вспомнено', hrd: 'услышано от других', inf: 'выведено', com: 'общеизвестно', gut: 'чутьё', if: 'допустим', top: 'новая тема' },
@@ -263,6 +274,7 @@ export const GLOSS: Record<string, GlossTable> = {
     clause: '№',
     url: 'ссылка',
     quiz: 'вопрос Q',
+    ctx: 'контекст T',
   },
 };
 
@@ -272,6 +284,8 @@ const becauseName = (b: Because, g: GlossTable) =>
     ? g.url
     : 'quiz' in b
       ? `${g.quiz}${b.quiz}`
+      : 'ctx' in b
+        ? `${g.ctx}${b.ctx}`
       : 'agent' in b
         ? b.agent
         : 'ext' in b
