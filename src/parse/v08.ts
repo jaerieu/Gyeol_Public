@@ -41,6 +41,8 @@ export interface Rules08Options {
   priorClauses?: readonly Clause[];
   priorEvidences?: readonly ExtEvidence[];
   issued?: readonly string[];
+  /** 게이트웨이 참조 복사(ref_copy)가 이미 해당 줄 범위만 잘라 주입했으면 true */
+  preSlicedExt?: boolean;
 }
 
 export function mixesScripts(words: Word[], group: ScriptGroup): boolean {
@@ -396,9 +398,41 @@ export function rules08(r: ParseResult, opts: Rules08Options = {}): Diagnostic[]
     const otherGrounds =
       (c.because ?? []).filter((b) => !('ext' in b)).length + (c.place?.rel === '↓' ? 1 : 0);
     if (extRefs.length > 0 && otherGrounds === 0 && extRefs.every((b) => extTextMap.has(`${b.ext}:${b.id}`))) {
-      const evdBlob = extRefs.flatMap((b) => extTextMap.get(`${b.ext}:${b.id}`) ?? []).join('\n');
-      const w43Reason = checkGhostW43(c.words.map((wd) => wd.text).join(' '), evdBlob);
-      if (w43Reason) push('W43', `${w43Reason}(인용한 외부 근거와 대조 필요)`);
+      const blobs: string[] = [];
+      let sliceOutOfRange: string | null = null;
+      for (const b of extRefs) {
+        const blocks = extTextMap.get(`${b.ext}:${b.id}`) ?? [];
+        if (!b.lines) {
+          blobs.push(...blocks);
+          continue;
+        }
+        const [startLine, endLine] = b.lines;
+        const needCount = endLine - startLine + 1;
+        let maxLines = 0;
+        const matchedSlices: string[] = [];
+        for (const blk of blocks) {
+          const linesArr = blk.split(/\r?\n/u);
+          if (linesArr.length > maxLines) maxLines = linesArr.length;
+          if (linesArr.length >= endLine) {
+            matchedSlices.push(linesArr.slice(startLine - 1, endLine).join('\n'));
+          } else if (opts.preSlicedExt && linesArr.length === needCount) {
+            matchedSlices.push(linesArr.join('\n'));
+          }
+        }
+        if (matchedSlices.length === 0) {
+          const tagRange = startLine === endLine ? `[L${startLine}]` : `[L${startLine}:L${endLine}]`;
+          sliceOutOfRange = `외부 근거 ${b.ext}${b.id}의 줄 범위 ${tagRange}가 원문 줄 수(${maxLines})를 벗어난다(인용한 외부 근거와 대조 필요)`;
+          break;
+        }
+        blobs.push(...matchedSlices);
+      }
+      if (sliceOutOfRange) {
+        push('W43', sliceOutOfRange);
+      } else {
+        const evdBlob = blobs.join('\n');
+        const w43Reason = checkGhostW43(c.words.map((wd) => wd.text).join(' '), evdBlob);
+        if (w43Reason) push('W43', `${w43Reason}(인용한 외부 근거와 대조 필요)`);
+      }
     }
 
     // 6. 프로파일별 규칙(본래 결 gyeol 대 산업 표준 론 lon)

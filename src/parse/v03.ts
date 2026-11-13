@@ -282,14 +282,22 @@ function moveOutsideTo(s: string, line: string, ctx: Ctx): string {
 // ───────── 외부·보조 근거 전용 괄호꺽쇠 블록 (v0.8, 2026-11-11 Jae: 결·론 공통) ─────────
 // 절 뒤(`… *7B8> 증1 <[원문·링크·수식]>`)나 단독 줄(`ref2 <[…]>`)에 넓은 단위의 근거를 붙인다.
 // 전용 괄호꺽쇠 `<[ … ]>`(유니코드 `⟪ … ⟫`·역순 `[< … >]`도 수용) 안은 어절·스크립트·특수문자 검사에서 완전히 면제한다.
-const EXT_TAG_RE = /^(증|근|evd|ref)([0-9０-９]+(?:\.[0-9０-９]+)?)$/iu;
+const EXT_TAG_RE = /^(증|근|evd|ref)([0-9０-９]+(?:\.[0-9０-９]+)?)(?:\[[LlＬｌ]([0-9０-９]+)(?::[LlＬｌ]?([0-9０-９]+))?\])?$/iu;
 
-export function parseExtTag(raw: string): { ext: ExtEvidenceKind; id: string } | null {
+export function parseExtTag(raw: string): { ext: ExtEvidenceKind; id: string; lines?: [number, number] } | null {
   const m = EXT_TAG_RE.exec(raw);
   if (!m) return null;
   const k = m[1].toLowerCase();
-  const id = m[2].replace(/[０-９]/gu, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0));
-  return { ext: k === '증' || k === 'evd' ? 'evd' : 'ref', id };
+  const toAsciiDigits = (s: string) => s.replace(/[０-９]/gu, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0));
+  const id = toAsciiDigits(m[2]);
+  const ext: ExtEvidenceKind = k === '증' || k === 'evd' ? 'evd' : 'ref';
+  if (m[3] !== undefined) {
+    const start = Number(toAsciiDigits(m[3]));
+    const end = m[4] !== undefined ? Number(toAsciiDigits(m[4])) : start;
+    if (!Number.isInteger(start) || !Number.isInteger(end) || start < 1 || end < start) return null;
+    return { ext, id, lines: [start, end] };
+  }
+  return { ext, id };
 }
 
 /** 줄 안(절 닫는 > 뒤 또는 줄 끝·단독 줄)에 붙은 전용 괄호꺽쇠 근거 블록들을 scanExtBlocks로 떼어 낸다. */
@@ -805,8 +813,10 @@ function gatherEnd051(at: string[], allDot: boolean, ctx: Ctx, shown: string, od
     // 2026-10-16 Jae: 대화 밖의 근거 — 시험 문제 ↓Q3(q·Ｑ도 읽고 W01), 다른 참가자 ↓@kimi
     // 2026-11-11 Jae: 외부·보조 근거 ↓증1·↓근1·↓evd1·↓ref1 (결·론 공통)
     else if (parseExtTag(r) || (cut !== r && parseExtTag(cut))) {
-      const ext = parseExtTag(r) ?? parseExtTag(cut)!;
-      if (!parseExtTag(r)) ctx.warn('W10', `어절 끝의 문장 부호를 뗐다: '↓${r}'`);
+      const used = parseExtTag(r) ? r : cut;
+      const ext = parseExtTag(used)!;
+      if (used !== r) ctx.warn('W10', `어절 끝의 문장 부호를 뗐다: '↓${r}'`);
+      if (fullToHalf(used) !== used) odd.v = true;
       end.because.push(ext);
     } else if (CTX_REF.test(r)) {
       // 2026-11-12 Jae(3.22절): 맥락 ↓T0(대화 주제)·↓T3(호출부가 준 배경). t·Ｔ도 읽고 W01. 메시지 밖이라 E17을 보지 않는다
@@ -885,7 +895,9 @@ function parseClause03(rawInner: string, ctx: Ctx, lead: string | null, odd: { v
     outerParen = pm[1];
     after = after.slice(pm[0].length);
   }
-  const second = firstOf(after, SQ_OPEN_CODES);
+  const EXT_SLICE_MASK_RE = /↓(?:증|근|evd|ref)[0-9０-９]+(?:\.[0-9０-９]+)?\[[^\s[\]［］【】〔〕]*\]/giu;
+  const afterMasked = after.replace(EXT_SLICE_MASK_RE, (m) => 'x'.repeat(m.length));
+  const second = firstOf(afterMasked, SQ_OPEN_CODES);
   if (second >= 0) {
     ctx.err('E19', `표지 블록이 둘 이상이다: '${shown}'`);
     const end = firstOf(after, SQ_CLOSE_CODES, second + 1);

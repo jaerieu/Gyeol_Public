@@ -57,7 +57,7 @@ export type Because =
   | { ctx: number }
   | { agent: string }
   | { thread: number; clause: string }
-  | { ext: ExtEvidenceKind; id: string };
+  | { ext: ExtEvidenceKind; id: string; lines?: [number, number] };
 
 export interface Word {
   text: string; // 어절 그대로 (정규화 뒤)

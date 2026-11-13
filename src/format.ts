@@ -64,7 +64,10 @@ function becauseText(b: Because): string {
   if ('quiz' in b) return `Q${b.quiz}`;
   if ('ctx' in b) return `T${b.ctx}`;
   if ('agent' in b) return `@${b.agent}`;
-  if ('ext' in b) return `${b.ext}${b.id}`;
+  if ('ext' in b) {
+    const slice = b.lines ? (b.lines[0] === b.lines[1] ? `[L${b.lines[0]}]` : `[L${b.lines[0]}:L${b.lines[1]}]`) : '';
+    return `${b.ext}${b.id}${slice}`;
+  }
   if ('thread' in b) return `${b.thread}:${b.clause.replace(/^[절점]/u, '')}`;
   return refNum(b);
 }

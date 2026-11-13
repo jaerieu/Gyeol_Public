@@ -289,7 +289,7 @@ const becauseName = (b: Because, g: GlossTable) =>
       : 'agent' in b
         ? b.agent
         : 'ext' in b
-          ? `${g.clause === '절' ? (b.ext === 'evd' ? '증' : '근') : b.ext}${b.id}`
+          ? `${g.clause === '절' ? (b.ext === 'evd' ? '증' : '근') : b.ext}${b.id}${b.lines ? (b.lines[0] === b.lines[1] ? `[L${b.lines[0]}]` : `[L${b.lines[0]}:L${b.lines[1]}]`) : ''}`
           : 'thread' in b
             ? g.past.replace('T', String(b.thread)).replace('N', g.clause + b.clause.replace(/^[절점]/u, ''))
             : refName(b, g);

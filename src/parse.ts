@@ -182,6 +182,29 @@ export function parse(input: string, opts: ParseOptions = {}): ParseResult {
     ctx.err('E19', `줄을 읽을 수 없다: '${line}'`);
   });
 
+  // 여러 줄에 걸친 닫힌 외부 근거 블록의 원문 줄바꿈을 복원한다([L시작:L끝] 줄 범위 대조용).
+  const rawExtQueue = scanExtBlocks(cleaned)
+    .filter((sp) => sp.closed && sp.tag)
+    .map((sp) => ({
+      kind: sp.tag!.ext,
+      id: sp.tag!.id,
+      text: cleaned.slice(sp.innerStart, sp.innerEnd).trim(),
+    }));
+  if (rawExtQueue.some((e) => e.text.includes('\n'))) {
+    let qPos = 0;
+    const restoreEv = (ev: ExtEvidence) => {
+      for (let i = qPos; i < rawExtQueue.length; i++) {
+        if (rawExtQueue[i].kind === ev.kind && rawExtQueue[i].id === ev.id) {
+          if (rawExtQueue[i].text.includes('\n')) ev.text = rawExtQueue[i].text;
+          qPos = i + 1;
+          break;
+        }
+      }
+    };
+    for (const c of msg.clauses) for (const ev of c.evidences ?? []) restoreEv(ev);
+    for (const ev of msg.evidences ?? []) restoreEv(ev);
+  }
+
   checkMessage(msg, ctx, issued, opts);
   const ok = !ctx.diags.some((d) => d.severity === '오류');
   const forms: LineForm[] = msg.clauses.map(() => '0.3');

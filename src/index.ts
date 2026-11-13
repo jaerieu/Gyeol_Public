@@ -13,3 +13,5 @@ export { glossClause, glossLang, GLOSS } from './gloss.ts';
 export { canonDocument, formatNumber, parseNumber } from './text.ts';
 export { sha256Hex, documentName, messageName, short } from './hash.ts';
 export * as tables from './tables.ts';
+export { normalizeEvdId, sliceEvidenceLines, resolveRefCopyTurn } from './ref-copy.ts';
+export type { RefCopyCondition, RefCopyOptions, RefCopyResult } from './ref-copy.ts';
