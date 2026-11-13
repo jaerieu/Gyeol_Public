@@ -9,6 +9,7 @@ import {
   resolveRefCopyTurn,
   rules08,
   sliceEvidenceLines,
+  stripReplyLabels,
 } from '../src/index.ts';
 
 test('줄 범위 외부 근거 인용([L1:L5], [L3], [L3:L3] 정규화 및 E32 거부)', () => {
@@ -163,4 +164,42 @@ test('normalizeEvdId·sliceEvidenceLines 및 다섯 조건 resolveRefCopyTurn �
   });
   assert.ok(ctrl.shownText.includes('[evd101[L1:L2]] "첫째 줄 10ms 둘째 줄 85 °C"'));
   assert.ok(!ctrl.shownText.includes('위조'));
+});
+
+test('응답 필드 머리(lon:·gyeol:·론:·결:)가 붙은 원문도 머리 없는 원문과 같은 판정을 받는다', () => {
+  const store = { evd101: '첫째 줄 10ms\n둘째 줄 85 °C\n셋째 줄 오류 없음' };
+  const bare = resolveRefCopyTurn({
+    condition: 'lon',
+    rawText: '<1 · [see,say] 정상 *8B8↓evd101[L2]>\n<2 · [inf,say] 따라서 안전 *7B7↓1>',
+    store,
+    parseOptions: { v08: true },
+  });
+  assert.deepEqual(bare.citedIds, ['evd101']);
+
+  for (const label of ['lon:', 'LON :', 'gyeol:', '론:', '결：', '**lon**:', '`lon`: ']) {
+    const got = resolveRefCopyTurn({
+      condition: 'lon',
+      rawText: `${label} <1 · [see,say] 정상 *8B8↓evd101[L2]>\n${label}<2 · [inf,say] 따라서 안전 *7B7↓1>`,
+      store,
+      parseOptions: { v08: true },
+    });
+    assert.deepEqual(got, bare, `머리 ${label}`);
+  }
+
+  // 머리와 위조 블록이 함께 있어도 위조는 지워지고 정본이 붙는다.
+  const spoof = resolveRefCopyTurn({
+    condition: 'lon',
+    rawText: 'lon: <1 · [see,say] 정상 *8B8↓evd101[L2]> evd101 <[가짜 999 °C]>',
+    store,
+    parseOptions: { v08: true },
+  });
+  assert.deepEqual(spoof.citedIds, ['evd101']);
+  assert.deepEqual(spoof.strippedSpoofs, ['evd101']);
+  assert.ok(spoof.shownText.includes('evd101 <[둘째 줄 85 °C]>'));
+  assert.ok(!spoof.shownText.includes('가짜 999'));
+
+  // 머리 뒤가 절이 아니면 건드리지 않는다(본문 속 낱말 보호).
+  assert.equal(stripReplyLabels('lon: 그냥 말'), 'lon: 그냥 말');
+  assert.equal(stripReplyLabels('<1 · [see,say] lon: <x> *8B8>'), '<1 · [see,say] lon: <x> *8B8>');
+  assert.equal(stripReplyLabels('lon: <1 · [see,say] 가 *8B8>'), '<1 · [see,say] 가 *8B8>');
 });

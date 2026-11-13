@@ -118,6 +118,21 @@ function stripSpeakerEvdBlocks(
     .join('\n');
 }
 
+/**
+ * 줄 맨 앞의 응답 필드 머리(`결:`·`gyeol:`·`론:`·`lon:`)를 떼어 낸다.
+ * 규칙표가 가르치는 줄 꼴(`lon: <N · …`)을 그대로 받은 바깥 호출자도 하네스 경로(머리를 먼저 떼는 parseReply)와
+ * 같은 판정을 받게 한다. 머리 바로 뒤가 절 여는 `<`일 때만 떼므로 본문 속 낱말은 건드리지 않는다.
+ */
+const REPLY_LABEL_RE = /^[ \t]*(?:[*_`]+[ \t]*)*(?:결|gyeol|론|lon)[ \t]*(?:[*_`]+[ \t]*)*[:：][ \t]*(?:[*_`]+[ \t]*)*(?=<)/iu;
+
+export function stripReplyLabels(rawText: string): string {
+  if (!/[:：]/u.test(rawText)) return rawText;
+  return rawText
+    .split(/\r?\n/u)
+    .map((l) => l.replace(REPLY_LABEL_RE, ''))
+    .join('\n');
+}
+
 function resolveGyeolOrLon(
   rawText: string,
   storeMap: Map<string, string>,
@@ -130,7 +145,7 @@ function resolveGyeolOrLon(
   const resolvedSlices: Record<string, string> = {};
   const outOfRangeSlices: string[] = [];
 
-  const cleaned = stripSpeakerEvdBlocks(rawText, storeMap, strippedSpoofs);
+  const cleaned = stripSpeakerEvdBlocks(stripReplyLabels(rawText), storeMap, strippedSpoofs);
   const parsed = parse(cleaned, parseOptions);
   const perKeySlices = new Map<string, string[]>();
 

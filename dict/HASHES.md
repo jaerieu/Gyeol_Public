@@ -19,7 +19,7 @@
 | `archive/dict/base-v0.6.5.txt` | `#68a276` | `68a2769bbb752a0b5e4638a1fc285234097ad9da6752014d265af11e91ac072e` |
 | `archive/dict/base-v0.7.txt` | `#05a885` | `05a885f25d565575b13169c0c3ae6fe3cd0193160419f0c5a3635755fc080fb7` |
 | `dict/base-v0.8.txt` | `#ec2c42` | `ec2c42f347a39175113aa1c6bbdd54dbc36730d59244e8251e639772b5ac1ee3` |
-| `dict/lon-v0.8.txt` | `#62caf2` | `62caf2f049496dad2df4a61107ec3af4888695a088b27fafc7e201ccbfba8bce` |
+| `dict/lon-v0.8.txt` | `#a9cf4d` | `a9cf4d99908c42283adb8ebba7b0719fa36c85645f1b265ad3cd795deb0e74b6` |
 | `archive/dict/examples-v0.2.txt` | `#437510` | `43751013c5b376728f331ac10f566b0b0926093c99c8380efcc2e9aacb4d2f79` |
 
 ## 번역본 (정체가 아니다)
@@ -37,12 +37,12 @@ v0.8.2(2026-11-13, `spec/09-names.md` 9.4)부터 현행 사전 정본은 영어(
 | `dict/base-v0.8.it.txt` | `#a504b4` | `a504b45b5d114485ebeec3918737db5d8cc12dd330fb0524ee8148ea6fe085ea` |
 | `dict/base-v0.8.es.txt` | `#494f31` | `494f317fbc069e66d9d21ac80707f5adaba1193e9c4bfe69740c7d8ae971967d` |
 | `dict/base-v0.8.ru.txt` | `#e0bd6e` | `e0bd6e6ab634c5e391b4031511b01c8d5af9c6c58608aa83cbe4c6874147b71f` |
-| `dict/lon-v0.8.ko.txt` | `#df4c35` | `df4c355d9849026f0ca1f2276d99095d0b290c6151f93cd28c4d5db36c9f6c05` |
-| `dict/lon-v0.8.zh-Hans.txt` | `#30a206` | `30a206284df4d94d0b01b527a3ce0fcc5bea7014245e50a2f305202934565944` |
-| `dict/lon-v0.8.zh-Hant.txt` | `#d65fc7` | `d65fc78c85fc1cd2934d1e3cf8d23e22527298775e3b1027f931f945c619cf56` |
-| `dict/lon-v0.8.ja.txt` | `#c98406` | `c98406065576e7ed4fd39318a49498c01857508afe89e89275df6fc8b075b7cc` |
-| `dict/lon-v0.8.de.txt` | `#0d8106` | `0d8106d277ecd866ec577c6fff89e824ca2a44202e675013a853a5a3f9b121fb` |
-| `dict/lon-v0.8.fr.txt` | `#a84b96` | `a84b9618d48148e7790894bec5516e1f7a9909593f4f7ca6281a034184a6ee68` |
-| `dict/lon-v0.8.it.txt` | `#50463d` | `50463dcfcacb225b19c0322e2e358aea1bc84bb8e715c8595694f30a527e906e` |
-| `dict/lon-v0.8.es.txt` | `#784089` | `7840893552b5f02c3926ece4cc5ea439a3780693475064c7ab0111d9c95999f7` |
-| `dict/lon-v0.8.ru.txt` | `#7e5ae2` | `7e5ae28c7f2f43718a1671b34b9e29492a3a7fa231ec56e2b8c57f03146595a5` |
+| `dict/lon-v0.8.ko.txt` | `#47eea6` | `47eea6d13ce736754b20f2c19692210ead1a81a979517c97fed9a94759bcdde6` |
+| `dict/lon-v0.8.zh-Hans.txt` | `#18774d` | `18774d5a802a3b5be0de1aa5879884691496b26cf2269d88a45eac61b13eb0f7` |
+| `dict/lon-v0.8.zh-Hant.txt` | `#a99517` | `a99517cf0eb6c8dbbccb98819c8234a84523a981764b4abbe4d1daa39d9fa8e9` |
+| `dict/lon-v0.8.ja.txt` | `#178674` | `17867411195cc4b8f690dcb054311eca57e385667f57260e3b63f68d6ee08524` |
+| `dict/lon-v0.8.de.txt` | `#d91ca7` | `d91ca7b3511242a901b950f3c46e9e3fc16c8a6d24f111a9e4f7b064af6870f6` |
+| `dict/lon-v0.8.fr.txt` | `#38669c` | `38669c78fd43d2d6d5c2b5c2bc6f25df72a7ec504136dbc96c0acfccf0fba541` |
+| `dict/lon-v0.8.it.txt` | `#ffca81` | `ffca81130a41785f25ef654b8da796ce6bcbb014bcdd53197778608c72fc2740` |
+| `dict/lon-v0.8.es.txt` | `#e36bb8` | `e36bb81173ab88b16582724d22d23e7265ac48259d2aa71efe5e7917a12c73d0` |
+| `dict/lon-v0.8.ru.txt` | `#66763e` | `66763e6fc8eac3cfb873e0760a9de2616479195a908d9ea58448de6d8fa1bbd6` |
