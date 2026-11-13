@@ -108,16 +108,14 @@ test('전용 괄호꺽쇠 외부 근거(증N·근N·refN·evdN <[ … ]>): 결·
   assert.deepEqual(rg2.diagnostics, []);
   assert.equal(format(rg2.message), canonG);
 
-  // 2. 론(lon) 프로파일 + 유니코드 ⟪ … ⟫ 별칭 입력도 <1 · ● …> evd1 <[ … ]>로 정규화
+  // 2. 론(lon) 프로파일 + 유니코드 ⟪ … ⟫ 별칭은 v0.8.2에서 Tier 2 E26
   const lonEvd = [
     'lon 0.8 · lang ko',
     '<1 · ● [gut,say] 배열 경계 조건이 위험해 보인다 *6Y5>',
     '<2 · ● sup→1 [see,say] 재현 시험에서 오버플로를 확인했다 *7R9> 증1 ⟪idx >= buf[0] * 2 -> panic("OOB <fatal>") at line 412⟫',
   ].join('\n');
   const rl = parse(lonEvd);
-  assert.deepEqual(rl.diagnostics, []);
-  assert.deepEqual(rules08(rl), []);
-  assert.match(format(rl.message), /\*7R9↓evd1> evd1 <\[idx >= buf\[0\] \* 2 -> panic/);
+  assert.deepEqual(rl.diagnostics.map((d) => d.code), ['E26']);
 });
 
 test('extractTrailingEvidences: 다중 외부 근거 분리, 내부 꺽쇠 보존, 미완성 열림 O(n) 방어', () => {
@@ -141,7 +139,7 @@ test('extractTrailingEvidences: 다중 외부 근거 분리, 내부 꺽쇠 보�
   assert.deepEqual(rules08(midLine, { knownExtra: new Set(['Q101']) }), []);
 
   const unclosedSecond = parse('<1 · ● [see,say] 시험 *7B9> 증1 <[ outer ]> 증2 <[ inner', { v08: true });
-  assert.ok(unclosedSecond.diagnostics.some((d) => d.code === 'E19'));
+  assert.ok(unclosedSecond.diagnostics.some((d) => d.code === 'E02'));
 
   const huge = '<1 · ● [see,say] x *5B8> 증1 <[ ' + 'a '.repeat(50_000);
   const t0 = performance.now();
@@ -150,7 +148,7 @@ test('extractTrailingEvidences: 다중 외부 근거 분리, 내부 꺽쇠 보�
   assert.equal(he.evidences.length, 0);
   assert.ok(dtExtract < 20, `100KB 미완성 외부 근거 추출 지연: ${dtExtract.toFixed(2)}ms`);
   const hr = parse(huge, { v08: true });
-  assert.ok(hr.diagnostics.some((d) => d.code === 'E19'));
+  assert.ok(hr.diagnostics.some((d) => d.code === 'E02'));
 });
 
 test('다중 줄 외부 근거 정규화와 §3.21 E22·E17', () => {
@@ -168,10 +166,10 @@ test('다중 줄 외부 근거 정규화와 §3.21 E22·E17', () => {
   assert.equal(mr.diagnostics[0].line, 5);
 
   const unclosedMulti = parse('<1 · ● [see,say] 미완 *7B8> 증1 <[\n둘째 줄', { v08: true });
-  assert.ok(unclosedMulti.diagnostics.some((d) => d.code === 'E19' && d.line === 1));
+  assert.ok(unclosedMulti.diagnostics.some((d) => d.code === 'E02' && d.line === 1));
 
   const dup = parse('<1 · ● [see,say] 중복 *7B8↓증1> 증1 <[ A ]> 증1 <[ B ]>', { v08: true });
-  assert.ok(dup.diagnostics.some((d) => d.code === 'E22'));
+  assert.ok(dup.diagnostics.some((d) => d.code === 'E45'));
 
   const missExt = parse('<1 · ● [see,say] 누락 *7B8↓증99>', { v08: true });
   assert.ok(missExt.diagnostics.some((d) => d.code === 'E17'));

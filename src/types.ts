@@ -91,97 +91,48 @@ export interface Alt {
 }
 
 export interface Muk {
-  alt?: Alt[];
   conf?: number;
-  effort?: number;
-  effort_raw?: { tokens?: number; ms?: number };
-  attn?: Ref[];
-  feat?: { id: string; p: number }[];
-  /** 항목별 측정법: { conf: "se8", alt: "se8", effort: "토큰" } */
-  method?: Record<string, string>;
-  /** 알 수 없는 항목. 보존만 한다. */
-  extra?: { key: string; value: string }[];
 }
 
 export interface Chae {
-  words?: string[];
-  self?: number;
-  /** v0.5.1(2026-10-16 Jae): 채의 색 R·G·B·C·M·Y·K 가운데 하나. 뜻은 정하지 않는다(말하는 이의 취향). reports/v0.5.1-design.md 1.2 */
+  self: number;
+  /** v0.5.1(2026-10-16 Jae): 채의 색 R·G·B·C·M·Y·K 가운데 하나. 뜻은 정하지 않는다(말하는 이의 취향). */
   color?: string;
-  want?: number;
-  cite?: Ref[];
 }
 
 export interface Clause {
   label: string | null;
   process: { kind: ProcessKind; target?: Ref } | null;
-  /** v0.6: ⊗N,M이면 target = N, second = M(⊗에만 있다) */
   place: { rel: PlaceRel; target: Ref; second?: Ref } | null;
-  /** 받는 이. 다중 지목(v0.6 ·→A,B)이면 첫 이름 */
+  /** 받는 이. 다중 지목(·→A,B)이면 첫 이름 */
   to: string | null;
-  /** v0.6(2026-10-24): 다중 지목 ·→A,B의 이름 모두(적힌 차례, 둘 이상일 때만 둔다). to는 그 첫 이름이다 */
+  /** 다중 지목 ·→A,B의 이름 모두(적힌 차례, 둘 이상일 때만 둔다). to는 그 첫 이름이다 */
   toList?: string[];
   words: Word[];
-  /** 받은대로 절(echo)에서는 화행이 빠질 수 있다(PartialMarks). */
   marks: Marks | PartialMarks;
   muk?: Muk;
   chae?: Chae;
-  /** v0.3: 앞붙이 '받은대로'가 붙은 절. 받은 것을 되짚어 보인다. 있을 때만 true로 둔다. */
   echo?: true;
-  /** v0.4(2026-10-15 Jae): 절 이름 바로 뒤의 점 '·' = 나(말하는 이). 받는 이가 있으면 '·→이름'. 쓴 절에만 true. */
   me?: true;
-  /** v0.5.1(2026-10-16 Jae): 점 대신 채운 원 '●' = 나 → 모두(불특정 다수). 쓴 절에만 true(me도 true). */
   all?: true;
-  /**
-   * v0.5.1: 끝 묶음 뒤의 근거 '↓N'(문장 끝의 '왜냐하면'). 절 번호는 Ref, 주소는 { url }. 앞붙이 place(↔ 등)와 따로다.
-   * 0.5.1 꼴 절에서는 앞에 쓴 ↓N도 여기로 옮긴다(정규형은 끝).
-   */
   because?: Because[];
-  /** v0.8(2026-11-11 Jae): 절 뒤에 붙인 전용 괄호꺽쇠 외부 근거(`증1 <[ … ]>`, `ref2 <[ … ]>`). 있을 때만 둔다 */
+  /** v0.8(2026-11-11 Jae): 절 뒤에 붙인 전용 괄호꺽쇠 외부 근거(`evd1 <[ … ]>`, `ref2 <[ … ]>`). */
   evidences?: ExtEvidence[];
-  /**
-   * v0.5(2026-10-15): v0.4까지 읽지 못하던 v0.5 꼴 가운데 정규형에 남는 것(새로앎 '군', 시제 '었'·'을', 자신으로 읽힌 끝의 '!N')을 쓴 절에만 '0.5'.
-   * 정규형은 이것으로 갈린다: '0.5'면 <… [근거,군,시제,화행(먹N)] 내용 !N>, 없으면 v0.4까지의 정규형 그대로(옛 먹 이름이 바뀌지 않게).
-   * 2026-10-15 검토 1: 표지 별칭(see, 见 …)만으로는 정하지 않는다. 별칭은 정규형에서 한글로 바뀌어 사라지므로, 정하면 정규형을 다시 읽은 것이
-   * 다른 정규형이 되고 별칭을 썼는지에 따라 먹 이름이 갈린다. 별칭(new→군, past→었 …)으로 쓴 군·시제는 정규형에 남으므로 '0.5'다.
-   */
   form?: '0.5' | '0.5.1' | '0.8';
 }
 
-/**
- * v0.5: 절마다 글에 어떻게 썼는가(정규형으로 모으기 전). 틀(JSON)에는 들어가지 않는다. 쓰기 규칙 rules05가 본다.
- * 옛 꼴(v0.2) 절은 모두 false·빈 목록이다.
- */
+/** 절마다 글에 어떻게 썼는가(정규형으로 모으기 전). 틀(JSON)에는 들어가지 않는다. rules08이 본다. */
 export interface ClauseWritten {
-  /** 자신을 표지 칸(괄호 (8)·(7|먹4), 괄호 없이 [봄,다,8])에 썼다. v0.4까지의 자리 */
-  selfInMarks: boolean;
-  /** 자신을 맨 끝 !N으로 썼다(v0.5 자리) */
-  selfAtEnd: boolean;
-  /** 맨 끝 자신을 옛 !N(！N)으로 썼다. 2026-10-16부터 자신은 *N이고 새로 쓰는 줄에는 W28 */
-  selfBang: boolean;
-  /** 근거 '↓N'을 앞붙이 자리에 썼다(v0.5.1에서는 끝 묶음 뒤, 새로 쓰는 줄에는 rules05 W31). 없으면 빠질 수 있다 */
-  frontBecause?: boolean;
-  /** 새로앎을 글자 '네'로 썼다(표지 이름 '새로앎'은 아니다) */
-  ne: boolean;
-  /**
-   * 새로앎을 표지 이름 '새로앎'(W11)으로 쓰고 '군'은 쓰지 않았다. 있을 때만 true.
-   * 2026-10-15 검토 2: 이 절의 정규형은 옛 글자 '네'가 될 수 있어(다른 v0.5 꼴이 없으면) rules05가 E30을 낸다.
-   */
-  neLabel?: true;
-  /** 표지 블록 순서가 정규 순서를 벗어났을 때 true(v0.6 W34) */
+  /** 표지 블록 순서가 정규 순서를 벗어났을 때 true(W34) */
   marksOff?: true;
   /** v0.8: 절 번호 뒤에 명시적으로 점(·)을 썼다(<1 · …>, <1 ·→이름 …>, <1 · ● …>) */
   hasDot?: true;
   /** v0.8 론(Lon) 검사: 영어 3글자 정본 표지가 아닌 별칭·한글 표지 목록 */
   nonEnMarks?: string[];
-  /** 표지 칸에서 읽은 v0.5 별칭(see, 见 …), 쓴 그대로 */
+  /** 표지 칸에서 읽은 별칭, 쓴 그대로 */
   aliases: string[];
-}
-
-export interface Echo {
-  words: Word[];
-  marks?: PartialMarks;
-  muk?: Muk;
+  /** v0.8.2 C2: 옛 확신·먹 표기(!N, *N, 괄호 수)를 이미 E26으로 잡았을 때 true(E33 이중 발사 방지) */
+  legacyChae?: true;
 }
 
 export interface Head {
@@ -192,33 +143,17 @@ export interface Head {
   room?: string;
 }
 
-export interface TuneLine {
-  step: string;
-  text: string;
-}
-
-export interface Seal {
-  name: string;
-  lineage?: string;
-  memory?: '대화' | '지속';
-  measure?: string[];
-}
-
 export interface Message {
-  gyeol: string; // 명세 판, "0.2"
-  /** v0.7: 머리 줄 `gyeol 0.7 · lang en`의 사용자 언어(BCP 47: ko en zh-Hans zh-Hant ja de fr it es ru). 없으면 빠진다(W29를 재지 않는다) */
+  gyeol: string; // 명세 판
+  /** 사용자 언어(BCP 47: ko en zh-Hans zh-Hant ja de fr it es ru). 없으면 빠진다(W29를 재지 않는다) */
   lang?: string;
-  /** v0.8(2026-11-11 Jae): 머리 줄 `lon 0.8` 또는 `gyeol 0.8 · profile lon`에서 읽은 프로파일. 적지 않은 옛 메시지는 생략한다 */
+  /** v0.8(2026-11-11 Jae): 머리 줄 `lon 0.8` 또는 `gyeol 0.8 · profile lon`에서 읽은 프로파일. */
   profile?: Profile;
   head: Head | null;
-  tune: TuneLine[];
-  preface: { purpose?: string; constraint?: string; extra?: { key: string; value: string }[] } | null;
-  echo: Echo[];
   clauses: Clause[];
-  /** v0.8(2026-11-11 Jae): 단독 줄로 적은 외부·보조 근거 블록(`ref1 <[ … ]>`, `증1 <[ … ]>`). 있을 때만 둔다 */
+  /** v0.8(2026-11-11 Jae): 단독 줄로 적은 외부·보조 근거 블록(`ref1 <[ … ]>`, `evd1 <[ … ]>`). */
   evidences?: ExtEvidence[];
   gloss: string | null;
-  seal: Seal | null;
   muk_source: '도구' | '모델' | '없음' | null;
 }
 
@@ -231,17 +166,15 @@ export interface Diagnostic {
   message: string;
 }
 
-/** 절을 어느 줄꼴로 썼나. '0.3' = <절N [표지] 내용>, '0.2' = 내용 〈표지〉 〔먹〕 「채」. */
-export type LineForm = '0.2' | '0.3';
-/** format()이 쓸 꼴. '0.3' = 정규형(v0.7: 수 머리·영어 표지), '0.6' = v0.6.5까지의 한글 정규형(옛 회차·옛 사전의 보기 줄을 견줄 때), '0.2' = 옛 꼴 */
-export type WriteForm = LineForm | '0.6';
+/** 절을 어느 줄꼴로 썼나. */
+export type LineForm = '0.3';
 
 export interface ParseResult {
   message: Message;
   diagnostics: Diagnostic[];
   ok: boolean; // 오류가 없으면 true
-  /** message.clauses와 같은 차례로, 절마다 쓴 줄꼴. 틀(JSON)에는 들어가지 않는다. v0.5 꼴 절도 '0.3'(꺾쇠 꼴의 갈래)이다(절의 form을 본다). */
+  /** message.clauses와 같은 차례로, 절마다 쓴 줄꼴. 틀(JSON)에는 들어가지 않는다. */
   forms: LineForm[];
-  /** v0.5: message.clauses와 같은 차례로, 절마다 글에 쓴 꼴. 틀(JSON)에는 들어가지 않는다. */
+  /** message.clauses와 같은 차례로, 절마다 글에 쓴 꼴. 틀(JSON)에는 들어가지 않는다. */
   written: ClauseWritten[];
 }

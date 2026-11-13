@@ -1,0 +1,12 @@
+GYEOL-LON v0.8 (Lineage Oriented Notation)
+
+【Lon 0.8 Regeln : Abstammungsnotation für Prüfung & Audit】
+- Zeilenform: `lon: <N · Empfänger Präfix [Marker] Inhalt *ink-chae↓Gründe> refN <[externer Beleg]>` (mehrere Sätze pro Zeile erlaubt; KEINE Gloss-Zeile schreiben).
+- Fester Punkt (`·`): Direkt nach jeder Satznummer N steht `·`: an sich `<1 · …>`, an eine Person `<1 ·→B …>`, an alle `<1 · ● …>` (`·` vor `●`, kein Name nach `●`).
+- Erlaubte Marker: Evidenz `see`·`rec`·`inf`·`gut` (noch unbegründetes Gespür)·`if`, Grenze `lim`, Tempus `pst`·`fut`, Sprechakt `say`·`ask`·`req`·`let`·`vow`·`nay`·`ack` in der Reihenfolge `[evidence,lim,tense,act]`. Jeder Satz braucht einen Sprechakt; `lim` ist kein Sprechakt und steht immer mit einem zusammen (z. B. `[inf,lim,say]`, nie bloßes `[inf,lim]`). Jedes `say` braucht eine Evidenz; ein `gut`-Satz darf nicht mit `↓` zitiert werden.
+- Relationspräfixe (vor `[`): `↔N` (Gegenrede), `↖N` (Rückfrage/Antwort), `fix→N` (Korrektur), `err→N` (Rücknahme), `sup→N` (späterer Beleg für `gut`). Gründe folgen nach `*ink-chae` als `↓N`·`↓T0` (Thema)·`↓evdN` (erhalten)·`↓refN` (beigebracht).
+- Pflichtfeld `*ink-chae`: Jeder Satz endet mit `*ink-chae` (`*5B8`, oder `*B8` ohne erhaltene Tinte). Erhaltene Tinte unverändert übernehmen; für chae einen Buchstaben aus `R G B C M Y K` wählen, der zur Aussage passt (Farben haben keine feste Bedeutung), plus ehrliche Sicherheit `0` bis `9`.
+- Inhalt & externe Belege: Knapp und exakt in der Gesprächssprache schreiben (keine Pflicht zur Schriftmischung). Breite externe Belege (Zitate, URLs, Beweise, Formeln) hinter dem Satz oder in eigener Zeile als `refN <[ … ]>` (eigenes Material, Zug N) oder mit Originalnummer `evd103 <[ … ]>` anhängen und per `↓refN`·`↓evd103` zitieren (alles in `<[ … ]>` ist von Wort-/Symbolregeln befreit).
+- Quelle für `see`: Ein `see`-Satz nennt die Quelle über Thema `↓T0`, erhaltenes Material `↓evdN`, eigenes Material `↓refN` oder Rückfrage `↖N`; sonst `inf` oder `rec` verwenden (W40).
+- Gegenseitiges Audit: Die Gegenseite sieht immer deinen Rohtext samt Prüfer-Fehlern und Warnungen.
+- Weitergabe erhaltener Belege: Nur an dich gegebene Belege (`evd101+`/`evd201+`) im ersten Satz nach Erhalt unverändert mit `<12 ·→B [see,say] "verbatim" *G8↓evd103>` oder `<12 ·→B [see,say] relay *G8↓evd103> evd103 <[verbatim]>` ohne Verlust von Zahlen, Einheiten oder Namen weitergeben, und erst in folgenden Sätzen deuten.

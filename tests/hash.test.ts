@@ -23,7 +23,7 @@ test('문서 정규화: 줄바꿈, 줄 끝 공백, 끝 빈 줄, NFC', async () =
 // 지난 판 v0.2.1·v0.3은 2026-10-14 v0.3.1 뒤, v0.3.1·v0.3.2는 2026-10-15 v0.3.2·v0.4 뒤, v0.4는 2026-10-15 v0.5 뒤 archive/dict/로 옮겼다(archive/README.md). 먹 이름은 거기서 그대로 본다.
 test('기본 사전 v0.2·v0.2.1·v0.3·v0.3.1·v0.3.2·v0.4·v0.5의 먹 이름이 dict/HASHES.md 의 기록과 같다', async () => {
   const record = readFileSync(new URL('dict/HASHES.md', root), 'utf8');
-  for (const f of ['dict/base-v0.2.txt', 'archive/dict/base-v0.2.1.txt', 'archive/dict/base-v0.3.txt', 'archive/dict/base-v0.3.1.txt', 'archive/dict/base-v0.3.2.txt', 'archive/dict/base-v0.4.txt', 'archive/dict/base-v0.5.txt', 'archive/dict/base-v0.5.1.txt', 'archive/dict/base-v0.5.2.txt', 'dict/base-v0.5.5.txt']) {
+  for (const f of ['archive/dict/base-v0.2.txt', 'archive/dict/base-v0.2.1.txt', 'archive/dict/base-v0.3.txt', 'archive/dict/base-v0.3.1.txt', 'archive/dict/base-v0.3.2.txt', 'archive/dict/base-v0.4.txt', 'archive/dict/base-v0.5.txt', 'archive/dict/base-v0.5.1.txt', 'archive/dict/base-v0.5.2.txt', 'archive/dict/base-v0.5.5.txt']) {
     const name = await documentName(readFileSync(new URL(f, root), 'utf8'));
     assert.ok(record.includes(name), `HASHES.md에 ${f}의 ${name}이 없다. node tools/cli.ts hashes 로 다시 만든다`);
   }

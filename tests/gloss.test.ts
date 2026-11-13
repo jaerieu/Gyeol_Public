@@ -15,9 +15,9 @@ test('열 언어 모두 풀이표가 있고, ko와 같은 칸·같은 열쇠를 
     for (const k of ['ev', 'tense', 'fig', 'act', 'place', 'process']) assert.deepEqual(Object.keys(g[k]).sort(), Object.keys(ko[k]).sort(), `${l}.${k}`);
     const all = (o: any): string[] => Object.values(o).flatMap((v) => (typeof v === 'string' ? [v] : all(v)));
     for (const v of all(g)) assert.ok(v.trim() !== '', `${l}: 빈 칸`);
-    // 영어 내부 값이 열쇠다(한글 표지 글자가 열쇠가 아니다)
-    for (const k of Object.keys(g.ev)) assert.ok(tables.MARKS_07.has(k), `${l}.ev.${k}`);
-    for (const k of Object.keys(g.act)) assert.ok(tables.MARKS_07.has(k), `${l}.act.${k}`);
+    // 영어 내부 값이 열쇠다(한글 표지 글자가 열쇠가 아니다; hrd·com·chk·dfr은 옛 기록 풀이 호환으로 표에 남음)
+    for (const k of Object.keys(g.ev)) if (!['hrd', 'com'].includes(k)) assert.ok(tables.MARKS_07.has(k), `${l}.ev.${k}`);
+    for (const k of Object.keys(g.act)) if (!['chk', 'dfr'].includes(k)) assert.ok(tables.MARKS_07.has(k), `${l}.act.${k}`);
   }
 });
 
@@ -66,7 +66,7 @@ test('glossClause: 같은 절이 열 언어로 풀린다', () => {
 test('glossClause: 맞섬·양립 안 됨·지난 대화·주소·시험 문제·모두에게도 언어마다 자리표시자가 남지 않는다', () => {
   const lines = [
     '<12 ● ⊗3,4 [inf,say] x *K6↓3↓4>',
-    '<13 ·→kimi,gemma ↔53:14 [see,new,pst,say(ink4)] y *B8↓Q3↓@kimi↓https://example.org/a>',
+    '<13 ·→kimi,gemma ↔53:14 [see,new,pst,say(ink4)] y *B8↓ref3↓@kimi↓https://example.org/a>',
     '<14 · [rec,met,say] z *C6↓53:12>',
     '<15 · fix→1 [ask] *Y4>',
     '<16 · err→1 [if,fut,lim,say] w *M2↓1>',
@@ -90,8 +90,9 @@ test('glossClause: 맞섬·양립 안 됨·지난 대화·주소·시험 문제�
     const past = glossClause(msg.clauses[5], l);
     assert.ok(past.includes('53') && past.includes('14'), `${l}: ${past}`);
   }
-  // 주소·시험 문제 칸은 그 말로(ko 주소·문제 Q, en URL·Q)
-  const c = parse(ctx + lines[1]).message.clauses[4];
+  // 주소·시험 문제 칸은 그 말로(ko 주소·문제 Q, en URL·Q; ↓Q는 v0.8.2에서 E26이라 { quiz: 3 } 직접 주입으로 gloss 검증)
+  const parsedC = parse(ctx + lines[1]).message.clauses[4];
+  const c = { ...parsedC, because: [{ quiz: 3 }, ...(parsedC.because ?? [])] };
   assert.match(glossClause(c, 'ko'), /문제 Q3 때문\(근거\)/);
   assert.match(glossClause(c, 'ko'), /주소 때문\(근거\)/);
   assert.match(glossClause(c, 'en'), /because of Q3/);

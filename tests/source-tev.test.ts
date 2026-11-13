@@ -50,11 +50,9 @@ test('W40 닿음: ↓T·↓evd·↓ref·주소·참가자·지난 대화, see �
   assert.deepEqual(codes('<1 · [see,say] a is true *5G7↓2>\n<2 · [see,say] b is true *5G7↓1>').rules, [[1, 'W40'], [2, 'W40']]);
 });
 
-test('W41 옛 ↓Q: 뜻은 그대로 읽고(quiz 틀) 경고한다', () => {
+test('v0.8.2 옛 ↓Q: Tier 2 E26 오류다', () => {
   const r = parse('<1 · [see,say] the delay is 12 minutes *5G8↓Q103>', { v08: true });
-  assert.deepEqual(r.diagnostics, []);
-  assert.deepEqual(r.message.clauses[0].because, [{ quiz: 103 }]);
-  assert.deepEqual(rules08(r, { profile: 'lon' }).map((d) => d.code), ['W41']);
+  assert.deepEqual(r.diagnostics.map((d) => d.code), ['E26']);
 });
 
 test('받은 자료 issued: 호출부가 준 evd 번호는 선언 없이 가리켜도 E17이 없고, ref는 받지 않는다', () => {

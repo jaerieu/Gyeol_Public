@@ -30,9 +30,10 @@ test('내부 값은 세 글자까지의 영어 낱말이고, 근거·새로앎·
   const all = cats.flat();
   assert.equal(new Set(all).size, all.length);
   assert.equal(MARKS_07.size, all.length);
-  // 한글 ↔ 영어 왕복(네·군은 둘 다 new, 되돌리면 군)
-  for (const [ko, en] of Object.entries(MARK_KO2EN)) if (ko !== '네') assert.equal(MARK_EN2KO[en], ko);
-  assert.equal(MARK_KO2EN['네'], 'new');
+  // 한글 ↔ 영어 왕복(군 = new, v0.2 네는 C2에서 완전 삭제)
+  for (const [ko, en] of Object.entries(MARK_KO2EN)) assert.equal(MARK_EN2KO[en], ko);
+  assert.equal(MARK_KO2EN['군'], 'new');
+  assert.equal(MARK_KO2EN['네'], undefined);
 });
 
 test('열 언어 표: 가르치는 표지 19개마다 라틴 다섯(de fr it es)·러시아어·간체·번체·일본어 별칭이 있고 모두 세 글자까지다', () => {

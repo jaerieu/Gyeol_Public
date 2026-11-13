@@ -16,7 +16,7 @@
 //   6. 론(Lon) 표지 집합(E39·W26): 근거 5종(see·rec·inf·gut·if), 결 1종(lim), 시제 2종(pst·fut), 화행 7종(say·ask·req·let·vow·nay·ack),
 //      앞붙이 ↔·↖·fix→·err→·sup→ 및 끝 근거 ↓만 허용하고 영어 3글자 정본 표지를 쓴다(top·new·met·pdx 등은 E39).
 
-import type { Clause, Diagnostic, ParseResult, Profile } from '../types.ts';
+import type { Clause, Diagnostic, ExtEvidence, ParseResult, Profile, Word } from '../types.ts';
 import {
   LON_ACT,
   LON_EV,
@@ -27,9 +27,9 @@ import {
   TO_MAX,
   markOf07,
   scriptGroupOf,
+  scriptGroupOfChar,
+  type ScriptGroup,
 } from '../tables.ts';
-import { removedMarks065 } from './v065.ts';
-import { hasUserScript, mixesScripts } from './v07.ts';
 
 export interface Rules08Options {
   sender?: string | null;
@@ -37,17 +37,118 @@ export interface Rules08Options {
   lang?: string | null;
   ink?: number | null;
   profile?: Profile | null;
+  spec?: '0.7' | '0.8';
+  priorClauses?: readonly Clause[];
+  priorEvidences?: readonly ExtEvidence[];
+  issued?: readonly string[];
+}
+
+export function mixesScripts(words: Word[], group: ScriptGroup): boolean {
+  const counted = words.map((w) => [...w.text].filter((ch) => /\p{L}/u.test(ch))).filter((ls) => ls.length > 0);
+  if (counted.length < 2) return true;
+  return counted.some((ls) => ls.some((ch) => scriptGroupOfChar(ch) !== group));
+}
+
+export function hasUserScript(words: Word[], group: ScriptGroup): boolean {
+  const counted = words.map((w) => [...w.text].filter((ch) => /\p{L}/u.test(ch))).filter((ls) => ls.length > 0);
+  if (counted.length < 2) return true;
+  return counted.some((ls) => ls.some((ch) => scriptGroupOfChar(ch) === group));
 }
 
 const INLINE_GLOSS = /[(（]\s*[a-z]{2}(?:\s*[)）]|\s+\p{Script=Hangul})/u;
 const BACKABLE_EV: ReadonlySet<string> = new Set(['gut', 'top']);
+const ASCII_ID_RE = /^[A-Za-z0-9_.:-]+$/;
+// v0.8.2 재검토(2026-11-13): 한 글자 단위(s·h·b·k·m·g·w·v·a)는 수에 바로 붙었을 때만 단위로 읽는다('3 a test'의 a는 낱말).
+const UNIT_MULTI = '%|퍼센트|ms|us|µs|ns|sec|min|hr|kb|mb|gb|tb|khz|mhz|ghz|hz|℃|°c|°f|km|cm|mm|kg|mg|kw|mw|mv|ma|초|분|시간';
+const UNIT_SINGLE = 's|h|b|k|m|g|w|v|a';
+// 부호 글자 집합 안의 줄표를 이스케이프해 숫자가 부호로 먹히지 않게 한다.
+const NUM_UNIT_RE = new RegExp(
+  `(?<![A-Za-z0-9_])([+\\-−])?(\\d+(?:[.,]\\d+)?)(?:\\s*(${UNIT_MULTI})|(${UNIT_SINGLE}))(?![A-Za-z0-9_])`,
+  'giu',
+);
+const CODE_ID_RE = /\b[A-Za-z]{1,12}[-_][A-Za-z0-9_-]*\d[A-Za-z0-9_-]*\b/gu;
+const TAG_STRIP_RE = /(?:^|\s)(?:(?:evd|ref|Q|T)\d+(?:\.\d+)?|(?:증|근)\d+(?:\.\d+)?)[가-힣]*/giu;
 
-function byNumber(clauses: Clause[]): Map<string, Clause> {
+function canonUnit(u: string): string {
+  const l = u.toLowerCase();
+  if (l === '퍼센트') return '%';
+  if (l === 'sec' || l === '초') return 's';
+  if (l === '분') return 'min';
+  if (l === 'hr' || l === '시간') return 'h';
+  if (l === '℃' || l === '°c') return 'c';
+  if (l === '°f') return 'f';
+  if (l === 'µs') return 'us';
+  return l;
+}
+
+// v0.8.2 재검토(2026-11-13): 한글 비교어는 수(와 단위) 바로 뒤에 올 때만 비교어로 읽는다('이상하다'·'이하 생략'은 낱말).
+const KO_CMP_LOW_RE = new RegExp(`\\d(?:[.,]\\d+)?\\s*(?:(?:${UNIT_MULTI})|(?:${UNIT_SINGLE}))?\\s*(?:이하|미만)`, 'iu');
+const KO_CMP_HIGH_RE = new RegExp(`\\d(?:[.,]\\d+)?\\s*(?:(?:${UNIT_MULTI})|(?:${UNIT_SINGLE}))?\\s*(?:이상|초과)`, 'iu');
+
+function cmpDir(s: string): { hasLow: boolean; hasHigh: boolean } {
+  const hasLow = /<=|≤/u.test(s) || KO_CMP_LOW_RE.test(s) || /(?:^|[^<=\d])<(?!<|=)/u.test(s);
+  const hasHigh = />=|≥/u.test(s) || KO_CMP_HIGH_RE.test(s) || /(?:^|[^>=])>(?!>|=)/u.test(s);
+  return { hasLow, hasHigh };
+}
+
+function escRe(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+}
+
+function checkGhostW43(bodyText: string, evdBlob: string): string | null {
+  const clean = bodyText.replace(/`[^`]*`/gu, ' ').replace(TAG_STRIP_RE, ' ');
+  NUM_UNIT_RE.lastIndex = 0;
+  let m: RegExpExecArray | null;
+  while ((m = NUM_UNIT_RE.exec(clean))) {
+    const [, sign, rawNum, unitMulti, unitSingle] = m;
+    const rawUnit = unitMulti ?? unitSingle;
+    const numNorm = rawNum.replace(/,/g, '');
+    const esc = escRe(numNorm);
+    const numWithComma = /\d{4,}/.test(numNorm) ? numNorm.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : null;
+    const escPat = numWithComma ? `(?:${esc}|${escRe(numWithComma)})` : esc;
+    const numRe = new RegExp(`(?<!\\d)${escPat}(?!\\d)`, 'u');
+    if (!numRe.test(evdBlob)) return `외부 근거에 없는 수치 '${rawNum}'`;
+    if (sign === '+') {
+      const hasNeg = new RegExp(`[-−]\\s*${escPat}(?!\\d)`, 'u').test(evdBlob);
+      const hasPos = new RegExp(`\\+\\s*${escPat}(?!\\d)`, 'u').test(evdBlob);
+      if (hasNeg && !hasPos) return `외부 근거와 수치 부호가 다르다('${sign}${rawNum}')`;
+    } else if (sign === '-' || sign === '−') {
+      const hasPos = new RegExp(`(?:^|[^-−\\d])${escPat}(?!\\d)`, 'u').test(evdBlob);
+      const hasNeg = new RegExp(`[-−]\\s*${escPat}(?!\\d)`, 'u').test(evdBlob);
+      if (hasPos && !hasNeg) return `외부 근거와 수치 부호가 다르다('${sign}${rawNum}')`;
+    }
+    const wantUnit = canonUnit(rawUnit);
+    const evUnitRe = new RegExp(`(?<!\\d)${escPat}(?:\\s*(${UNIT_MULTI})|(${UNIT_SINGLE}))(?![A-Za-z0-9_])`, 'giu');
+    const foundUnits = [...evdBlob.matchAll(evUnitRe)].map((um) => canonUnit(um[1] ?? um[2]));
+    if (foundUnits.length > 0 && !foundUnits.includes(wantUnit)) {
+      return `외부 근거와 단위가 다르다('${rawNum}${rawUnit}')`;
+    }
+  }
+  const cd = cmpDir(clean);
+  const ed = cmpDir(evdBlob);
+  if (((cd.hasHigh && !cd.hasLow) && (ed.hasLow && !ed.hasHigh)) || ((cd.hasLow && !cd.hasHigh) && (ed.hasHigh && !ed.hasLow))) {
+    return '외부 근거와 비교 방향이 반대다';
+  }
+  const evLower = evdBlob.toLowerCase();
+  for (const idm of clean.matchAll(CODE_ID_RE)) {
+    const id = idm[0];
+    if (!evLower.includes(id.toLowerCase())) return `외부 근거에 없는 식별자 '${id}'`;
+  }
+  return null;
+}
+
+function byNumber(clauses: readonly Clause[], priorClauses: readonly Clause[] = []): Map<string, Clause> {
   const m = new Map<string, Clause>();
-  clauses.forEach((c, i) => {
+  priorClauses.forEach((c, i) => {
     const n = (c.label ?? `절${i + 1}`).slice(1);
     if (!m.has(n)) m.set(n, c);
   });
+  const curr = new Map<string, Clause>();
+  clauses.forEach((c, i) => {
+    const n = (c.label ?? `절${priorClauses.length + i + 1}`).slice(1);
+    if (!curr.has(n)) curr.set(n, c);
+  });
+  for (const [k, v] of curr) m.set(k, v);
   return m;
 }
 
@@ -63,7 +164,14 @@ function canonMarks(c: Clause): string {
  *   이 차례 안의 see 절이면 그 절이 닿을 때만 닿음(순환은 막는다), rec·inf·gut·if·top 절은 닿지 않음.
  * 'ok' 닿음, 'none' 근거가 하나도 없음(t1 꼴), 'inferred' 절 근거가 있으나 추론·직감·가정에서 끊김(t3 꼴).
  */
-export function seeReach(c: Clause, clauses: Clause[], nums: Map<string, Clause>, from: number, seen: Set<Clause> = new Set()): 'ok' | 'none' | 'inferred' {
+export function seeReach(
+  c: Clause,
+  clauses: Clause[],
+  nums: Map<string, Clause>,
+  from: number,
+  seen: Set<Clause> = new Set(),
+  priorSet?: ReadonlySet<Clause>,
+): 'ok' | 'none' | 'inferred' {
   seen.add(c);
   const because = c.because ?? [];
   if (because.some((b) => !('label' in b))) return 'ok';
@@ -77,11 +185,12 @@ export function seeReach(c: Clause, clauses: Clause[], nums: Map<string, Clause>
     if (g.msg !== null || g.thread !== undefined) return 'ok';
     const t = nums.get(g.label.slice(1));
     if (!t) return 'ok';
+    if (priorSet?.has(t)) return 'ok';
     const at = clauses.indexOf(t);
-    if (at < from) return 'ok';
+    if (at !== -1 && at < from) return 'ok';
     if (t === c || seen.has(t)) continue;
     if (t.marks.ev === 'see') {
-      const sub = seeReach(t, clauses, nums, from, seen);
+      const sub = seeReach(t, clauses, nums, from, seen, priorSet);
       if (sub === 'ok') return 'ok';
       if (sub === 'none') sawNone = true;
     }
@@ -99,9 +208,92 @@ export function rules08(r: ParseResult, opts: Rules08Options = {}): Diagnostic[]
   const lang = opts.lang ?? r.message.lang ?? null;
   const group = scriptGroupOf(lang);
   const clauses = r.message.clauses;
-  const nums = byNumber(clauses);
+  const priorClauses = opts.priorClauses ?? [];
+  const priorSet = priorClauses.length ? new Set(priorClauses) : undefined;
+  const start = priorClauses.length ? 0 : (opts.from ?? 0);
+  const nums = byNumber(clauses, priorClauses);
 
-  for (let k = opts.from ?? 0; k < clauses.length; k++) {
+  // W43용 외부 근거 원문 색인 및 W44용 무효·철회 절 집합
+  const extTextMap = new Map<string, string[]>();
+  const addExtText = (kind: string, id: string, text: string) => {
+    const k = `${kind}:${id}`;
+    const arr = extTextMap.get(k) ?? [];
+    arr.push(text);
+    extTextMap.set(k, arr);
+  };
+  for (const ev of opts.priorEvidences ?? []) addExtText(ev.kind, ev.id, ev.text);
+  for (const ac of priorClauses) for (const ev of ac.evidences ?? []) addExtText(ev.kind, ev.id, ev.text);
+  for (const ev of r.message.evidences ?? []) addExtText(ev.kind, ev.id, ev.text);
+  for (const ac of clauses) for (const ev of ac.evidences ?? []) addExtText(ev.kind, ev.id, ev.text);
+
+  const allClauses = priorClauses.length ? [...priorClauses, ...clauses] : clauses;
+  const allLabels = new Set<string>();
+  allClauses.forEach((ac, idx) => {
+    allLabels.add(ac.label ?? `절${idx + 1}`);
+    if (!ac.label) allLabels.add(`점${idx + 1}`);
+  });
+  const allExt = new Set<string>(extTextMap.keys());
+  for (const raw of opts.issued ?? []) {
+    const im = /^(?:증|evd)([0-9０-９]+(?:\.[0-9０-９]+)?)$/iu.exec(String(raw ?? '').trim());
+    if (im) allExt.add(`evd:${im[1].replace(/[０-９]/gu, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0xfee0))}`);
+  }
+  const hasLabel = (lbl: string) => {
+    const alt = (lbl.startsWith('절') ? '점' : '절') + lbl.slice(1);
+    return allLabels.has(lbl) || allLabels.has(alt);
+  };
+  const badGrounds = new Map<string, number>();
+  const markBad = (num: string, idx: number) => {
+    const prev = badGrounds.get(num);
+    if (prev === undefined || idx < prev) badGrounds.set(num, idx);
+  };
+  allClauses.forEach((ac, idx) => {
+    const acNum = (ac.label ?? `절${idx + 1}`).slice(1);
+    if (ac.process?.kind === 'err' && ac.process.target.msg === null && ac.process.target.thread === undefined) {
+      markBad(ac.process.target.label.replace(/^[절점]/u, ''), idx);
+    }
+    const acGrounds = [...(ac.because ?? []).filter((b) => 'label' in b), ...(ac.place?.rel === '↓' ? [ac.place.target] : [])];
+    for (const g of acGrounds) {
+      if (g.msg !== null || g.thread !== undefined) continue;
+      const t = nums.get(g.label.slice(1));
+      if (t && t !== ac && (t.marks.ev === 'gut' || (opts.spec === '0.7' && t.marks.ev === 'top'))) {
+        markBad(acNum, idx);
+      }
+    }
+    const localRefs = [ac.place?.target, ac.place?.second, ac.process?.target, ...(ac.because ?? []).filter((b) => 'label' in b)];
+    for (const ref of localRefs) {
+      if (ref && ref.msg === null && ref.thread === undefined && !hasLabel(ref.label)) {
+        markBad(acNum, idx);
+      }
+    }
+    for (const b of ac.because ?? []) {
+      if ('ext' in b && !allExt.has(`${b.ext}:${b.id}`)) markBad(acNum, idx);
+    }
+  });
+
+  // 0. 머리 줄 식별자 ASCII 확인(E44, spec 0.7 제외)
+  if (opts.spec !== '0.7' && r.message.head && start === 0) {
+    const h = r.message.head;
+    if (h.from && !ASCII_ID_RE.test(h.from)) {
+      out.push({
+        code: 'E44',
+        severity: '오류',
+        line: 1,
+        message: `식별자에 비ASCII 문자가 있다('${h.from}'). ASCII 영숫자·기호만 쓴다: 머리`,
+      });
+    }
+    for (const toId of h.to ?? []) {
+      if (!ASCII_ID_RE.test(toId)) {
+        out.push({
+          code: 'E44',
+          severity: '오류',
+          line: 1,
+          message: `식별자에 비ASCII 문자가 있다('${toId}'). ASCII 영숫자·기호만 쓴다: 머리`,
+        });
+      }
+    }
+  }
+
+  for (let k = start; k < clauses.length; k++) {
     const c = clauses[k];
     const w = r.written?.[k];
     const where = c.label ?? `절 ${k + 1}째`;
@@ -116,11 +308,22 @@ export function rules08(r: ParseResult, opts: Rules08Options = {}): Diagnostic[]
     // 1. 모든 절 번호 바로 뒤 점(·) 고정(<1 · …>, <1 ·→이름 …>, <1 · ● …>)
     if (!c.me) {
       push('E25', '점(·) 자리가 없다. 절 번호 바로 뒤에 ·(혼자), ·→이름(지목), · ●(모두)로 고정해 쓴다');
-    } else if (c.all && !w?.hasDot) {
+    } else if (c.all && !w?.hasDot && opts.spec !== '0.7') {
       push('E25', '점(·) 자리가 빠졌다. v0.8에서는 모두에게 말할 때도 절 번호 바로 뒤에 · ●로 고정해 쓴다');
     }
 
-    // 2. 받는 이 검사(자기 지목 W23, 다중 지목 W35)
+    // 2. 받는 이·참가자 식별자 검사(E44 ASCII, 자기 지목 W23, 다중 지목 W35)
+    if (opts.spec !== '0.7') {
+      const recips = c.toList ?? (c.to ? [c.to] : []);
+      for (const id of recips) {
+        if (!ASCII_ID_RE.test(id)) push('E44', `식별자에 비ASCII 문자가 있다(→${id}). ASCII 영숫자·기호만 쓴다`);
+      }
+      for (const b of c.because ?? []) {
+        if ('agent' in b && !ASCII_ID_RE.test(b.agent)) {
+          push('E44', `식별자에 비ASCII 문자가 있다(↓@${b.agent}). ASCII 영숫자·기호만 쓴다`);
+        }
+      }
+    }
     if (sender && c.to && c.to.toLowerCase() === sender) {
       push('W23', `받는 이가 자기 자신이다(→${c.to}). 받는 이가 없으면 · 만 쓴다`);
     }
@@ -136,26 +339,22 @@ export function rules08(r: ParseResult, opts: Rules08Options = {}): Diagnostic[]
       }
     }
 
-    // 3. 옛 표기 정리(E30, W24, W31, W34)
-    if (w?.ne) push('E30', '새로앎에 옛 글자 네는 쓰지 않는다. new(군)로 쓴다');
-    else if (w?.neLabel) push('E30', "표지 이름 '새로앎'은 쓰지 않는다. new(군)로 쓴다");
-    if (w?.selfInMarks) push('W24', '괄호 수는 먹 자리다. 채와 확신은 끝에 *먹채로 쓴다');
-    if (w?.frontBecause) push('W31', '근거는 끝 묶음 뒤에 쓴다: *5B8↓N');
+    // 3. 표지 순서(W34)
     if (w?.marksOff) push('W34', `표지는 정규 순서 [근거,군,결,시제,화행]로 쓴다(뜻은 그대로 읽었다). 정규형은 ${canonMarks(c)}`);
 
     // 4. *먹채(E33) 및 먹 누락(W38) — 결·론 공통 필수(채 색의 뜻은 절대 정의하지 않음)
-    if (c.chae?.color === undefined) {
+    if (c.chae?.color === undefined && !w?.legacyChae) {
       push('E33', '채는 꼭 쓴다: 색 하나(RGBCMYK)와 확신(0부터 9)을 끝에 *R8처럼 쓴다');
-    } else if (inkKnown && c.muk?.conf === undefined) {
+    } else if (c.chae?.color !== undefined && inkKnown && c.muk?.conf === undefined) {
       push('W38', `먹을 빠뜨렸다. 먹은 바깥에서 잰 신용 점수라 받은 그대로 쓴다: *${ink}`);
     }
 
-    // 5. 근거 자격(E34: gut만 금지, top은 허용) 및 받침 대상(W36: gut·top)
+    // 5. 근거 자격(E34: v0.8은 gut만 금지·top 허용, spec '0.7'은 gut·top 금지) 및 받침 대상(W36: gut·top)
     const grounds = [...(c.because ?? []).filter((b) => 'label' in b), ...(c.place?.rel === '↓' ? [c.place.target] : [])];
     for (const g of grounds) {
       if (g.msg !== null) continue;
       const t = nums.get(g.label.slice(1));
-      if (t && t !== c && t.marks.ev === 'gut') {
+      if (t && t !== c && (t.marks.ev === 'gut' || (opts.spec === '0.7' && t.marks.ev === 'top'))) {
         push('E34', `직감(gut·촉) 절은 아직 검증 전이라 근거가 될 수 없다: ↓${g.label.slice(1)}. 먼저 sup→${g.label.slice(1)}로 받치거나 ↔·↖로 가리킨다`);
       }
     }
@@ -167,18 +366,39 @@ export function rules08(r: ParseResult, opts: Rules08Options = {}): Diagnostic[]
       }
     }
 
-    // 5b. 출처 세 갈래(2026-11-12 Jae, 3.22절): 옛 ↓Q(W41)와 봄의 닿음(W40)
-    if ((c.because ?? []).some((b) => 'quiz' in b)) {
-      push('W41', '↓Q는 옛 표기다(뜻은 그대로 읽었다). 대화 주제·배경은 ↓T(맥락), 미리 받은 자료는 ↓evd(받은 자료)로 쓴다');
-    }
-    // W40: t3형(추론·직감·가정에서 끊김)은 결·론 모두, t1형(근거 없음)은 론에서만 낸다(2026-11-12 Jae 확정 안 1: 본래 결은 현장 발화 여백을 위해 면제하고 계보 추적용 결;론에서만 낸다)
+    // 5b. 봄의 닿음(W40): t3형(추론·직감·가정에서 끊김)은 결·론 모두, t1형(근거 없음)은 론에서만 낸다
     if (c.marks.ev === 'see') {
-      const reach = seeReach(c, clauses, nums, opts.from ?? 0);
+      const reach = seeReach(c, clauses, nums, start, new Set(), priorSet);
       if (reach === 'none' && isLon) {
         push('W40', '본 것(see)이 바깥 출처에 닿지 않는다. ↓T(맥락)·↓evd(받은 자료)·↓ref(가져온 자료)·↖N으로 출처를 달거나, 본 것이 아니면 inf·rec로 쓴다');
       } else if (reach === 'inferred') {
         push('W40', '본 것(see)의 근거가 추론·직감·가정 절뿐이다. 본 출처를 ↓T·↓evd·↓ref·↖N으로 달거나, 본 것이 아니면 inf로 쓴다');
       }
+    }
+
+    // 5c. 철회(err→) 또는 의미 오류(E17·E34) 절 인용(W44) — ↓N과 sup→N에만 적용
+    const w44Seen = new Set<string>();
+    const absIdx = priorClauses.length + k;
+    const citeRefs = [...grounds, ...(back ? [back] : [])];
+    for (const ref of citeRefs) {
+      if (ref.msg !== null || ref.thread !== undefined) continue;
+      const n = ref.label.slice(1);
+      const t = nums.get(n);
+      const badAt = badGrounds.get(n);
+      if (t && t !== c && badAt !== undefined && badAt < absIdx && !w44Seen.has(n)) {
+        w44Seen.add(n);
+        push('W44', `철회되었거나 의미 오류(E17·E34)가 있는 절을 근거·받침으로 인용했다: ${n}`);
+      }
+    }
+
+    // 5d. 유령 수치·단위·부호·비교어·식별자 대조(W43) — 외부 근거(evd·ref)만 단독 인용하고 원문이 있을 때만
+    const extRefs = (c.because ?? []).filter((b): b is Extract<typeof b, { ext: 'evd' | 'ref' }> => 'ext' in b);
+    const otherGrounds =
+      (c.because ?? []).filter((b) => !('ext' in b)).length + (c.place?.rel === '↓' ? 1 : 0);
+    if (extRefs.length > 0 && otherGrounds === 0 && extRefs.every((b) => extTextMap.has(`${b.ext}:${b.id}`))) {
+      const evdBlob = extRefs.flatMap((b) => extTextMap.get(`${b.ext}:${b.id}`) ?? []).join('\n');
+      const w43Reason = checkGhostW43(c.words.map((wd) => wd.text).join(' '), evdBlob);
+      if (w43Reason) push('W43', `${w43Reason}(인용한 외부 근거와 대조 필요)`);
     }
 
     // 6. 프로파일별 규칙(본래 결 gyeol 대 산업 표준 론 lon)
@@ -224,9 +444,6 @@ export function rules08(r: ParseResult, opts: Rules08Options = {}): Diagnostic[]
       const long = (w?.aliases ?? []).filter((a) => !SHORT_ALIASES_07.has(a) && !SHORT_ALIASES_07.has(a.toLowerCase()));
       if (long.length) {
         push('W26', `긴 별칭 ${long.join(', ')}을 표지로 읽었다(정규형은 ${long.map((a) => markOf07(a) ?? '?').join(', ')})`);
-      }
-      for (const g of removedMarks065(c)) {
-        push('W37', `v0.6.5 사전에서 뺀 것이다(뜻은 그대로 읽었다): ${g.what}. ${g.hint}`);
       }
     }
   }

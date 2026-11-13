@@ -1,8 +1,26 @@
 // 단일 차례 진입점(parseTurn): 생각 태그·머리표·다중 줄 외부 근거(<[ … ]>) 정규화와 명시 규격(0.7 · 0.8)·프로파일(gyeol · lon) 판정을 한 번에 수행한다.
-import type { Diagnostic, Message, Profile } from './types.ts';
-import { parse, parseExtTag } from './parse.ts';
-import { rules07 } from './parse/v07.ts';
+import type { Clause, Diagnostic, ExtEvidence, Message, Profile } from './types.ts';
+import { parse, type ParseOptions } from './parse.ts';
 import { rules08 } from './parse/v08.ts';
+
+export interface PriorContext {
+  clauses: Clause[];
+  evidences: ExtEvidence[];
+}
+
+/** 앞 차례 줄 목록을 한 번만 읽어 `priorClauses`·`priorEvidences` 맥락을 만든다. */
+export function parsePriorContext(
+  priorLines: readonly string[] | undefined,
+  opts: { v08?: boolean; issued?: readonly string[] } = {},
+): PriorContext {
+  const priors = Array.isArray(priorLines) ? priorLines.map((x) => String(x ?? '').trim()).filter(Boolean) : [];
+  if (!priors.length) return { clauses: [], evidences: [] };
+  const p = parse(priors.join('\n'), { v08: opts.v08 ?? true, ...(opts.issued?.length ? { issued: opts.issued } : {}) });
+  const evidences: ExtEvidence[] = [];
+  for (const c of p.message.clauses) if (c.evidences?.length) evidences.push(...c.evidences);
+  if (p.message.evidences?.length) evidences.push(...p.message.evidences);
+  return { clauses: p.message.clauses, evidences };
+}
 
 export interface ParseTurnOptions {
   profile?: Profile;
@@ -37,6 +55,8 @@ function stripThinkBlocks(raw: string): string {
   return s.trim();
 }
 
+import { scanExtBlocks } from './parse/shared.ts';
+
 /** 응답 원문에서 결·론 본문 줄만 발라낸다(마크다운 감싼 머리표 수용, 풀이: 이후 분리). */
 export function extractTurnLine(rawText: string): string {
   let clean = stripThinkBlocks(rawText);
@@ -47,30 +67,17 @@ export function extractTurnLine(rawText: string): string {
   const lines = clean.split(/\r?\n/u);
   const kept: string[] = [];
   let started = false;
-  let inExt: ']>' | '>]' | '⟫' | null = null;
-  const updateExt = (chunk: string) => {
-    for (let i = 0; i < chunk.length; i++) {
-      if (!inExt) {
-        if (chunk[i] === '<' && chunk[i + 1] === '[') {
-          inExt = ']>';
-          i++;
-        } else if (chunk[i] === '[' && chunk[i + 1] === '<') {
-          inExt = '>]';
-          i++;
-        } else if (chunk[i] === '⟪') {
-          inExt = '⟫';
-        }
-      } else if (inExt === '⟫' && chunk[i] === '⟫') {
-        inExt = null;
-      } else if (inExt.length === 2 && chunk[i] === inExt[0] && chunk[i + 1] === inExt[1]) {
-        inExt = null;
-        i++;
-      }
-    }
-  };
+  // v0.8.2 재검토: 줄마다 쌓인 본문 전체를 다시 훑으면 줄 수의 제곱이라, 여는 기호가 나온 뒤
+  // 풀이 머리표나 백틱 감싸기를 판단해야 하는 줄에서만 훑는다(판정은 같다).
+  const EXT_OPENER_RE = /<\[|\[<|⟪/u;
+  const BACKTICK_WRAP_RE = /^\s*`+(?=<)|(?<=>)`+\s*$/u;
+  let sawOpener = false;
+  const inUnclosedExt = () => sawOpener && kept.length > 0 && scanExtBlocks(kept.join('\n')).some((sp) => !sp.closed);
   for (const rawL of lines) {
     const t = rawL.trim();
-    if (!inExt && GLOSS_LABEL_RE.test(t)) break;
+    const glossHit = GLOSS_LABEL_RE.test(t);
+    const inExt = glossHit || BACKTICK_WRAP_RE.test(rawL) ? inUnclosedExt() : false;
+    if (!inExt && glossHit) break;
     if (!started) {
       const m = HEAD_LABEL_RE.exec(t);
       if (m) {
@@ -78,7 +85,7 @@ export function extractTurnLine(rawText: string): string {
         const body = m[1].replace(/\s*`+\s*$/u, '').trim();
         if (body) {
           kept.push(body);
-          updateExt(body);
+          if (EXT_OPENER_RE.test(body)) sawOpener = true;
         }
         continue;
       }
@@ -87,7 +94,7 @@ export function extractTurnLine(rawText: string): string {
     }
     const cleaned = !inExt ? rawL.replace(/^\s*`+(?=<)/u, '').replace(/(?<=>)`+\s*$/u, '') : rawL;
     kept.push(cleaned);
-    updateExt(cleaned);
+    if (EXT_OPENER_RE.test(cleaned)) sawOpener = true;
   }
   return kept.join('\n').trim();
 }
@@ -109,62 +116,30 @@ export function parseTurn(rawText: string, opts: ParseTurnOptions = {}): ParseTu
     return { line: '', message: parse('').message, diagnostics: [emptyErr], errors: [emptyErr], warnings: [], ok: false };
   }
   const issued = Array.isArray(opts.issued) && opts.issued.length ? opts.issued : undefined;
-  const parseOpts = use08 ? { v08: true, issued } : issued ? { issued } : undefined;
-  let priors = Array.isArray(opts.priorLines) ? opts.priorLines.map((x) => String(x ?? '').trim()).filter(Boolean) : [];
-  const turnDiags: Diagnostic[] = [];
-  if (opts.turnNo != null) {
-    const tStr = String(opts.turnNo);
-    const selfParsed = parse(line, parseOpts);
-    for (const c of selfParsed.message.clauses) {
-      if (c.label != null) {
-        const mNo = String(c.label).replace(/^[절점]/u, '');
-        if (mNo !== tStr && !mNo.startsWith(`${tStr}.`)) {
-          turnDiags.push({ severity: '오류', code: 'E22', line: 1, message: `차례 번호 불일치(다른 차례 번호 사용): 절${mNo}` });
-        }
-      }
-    }
-    if (priors.length) {
-      const selfHasDupExt = selfParsed.diagnostics.some((d) => d.code === 'E22' && String(d.message).startsWith('외부 근거 이름표가 겹친다:'));
-      const selfExtKeys = new Set<string>();
-      if (!selfHasDupExt) {
-        for (const c of selfParsed.message.clauses) for (const ev of c.evidences ?? []) selfExtKeys.add(`${ev.kind}:${ev.id}`);
-        for (const ev of selfParsed.message.evidences ?? []) selfExtKeys.add(`${ev.kind}:${ev.id}`);
-      }
-      const escT = tStr.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
-      const squatWrapRe = new RegExp(`([<〈＜⟨《‹]\\s*(?:[절점cC]\\s*)?)${escT}(\\.\\d+)?(?=\\s|[·•・ㆍ∙⋅‧●⬤⚫\\[])`, 'gu');
-      const squatLeadRe = new RegExp(`(^|\\n)(\\s*(?:[절점cC]\\s*))${escT}(\\.\\d+)?(?=\\s*[<〈＜⟨《‹])`, 'gu');
-      let seq = 1;
-      priors = priors.map((p) => {
-        let out = p
-          .replace(squatWrapRe, (_m, p1, sub) => `${p1}9000${seq++}${sub ?? ''}`)
-          .replace(squatLeadRe, (_m, p1, p2, sub) => `${p1}${p2}9000${seq++}${sub ?? ''}`);
-        if (selfExtKeys.size > 0) {
-          out = out.replace(
-            /(^|\s+)((?:증|근|evd|ref)[0-9０-９]+(?:\.[0-9０-９]+)?)(\s*[:：]?\s*(?:<\[|⟪|\[<))/giu,
-            (full, lead, rawTag, openPart) => {
-              const tag = parseExtTag(rawTag);
-              if (!tag || !selfExtKeys.has(`${tag.ext}:${tag.id}`)) return full;
-              return `${lead}${tag.ext}9000${seq++}${openPart}`;
-            },
-          );
-        }
-        return out;
-      });
-    }
-  }
-  const selfOnly = parse(line, parseOpts);
-  const priorParsed = priors.length ? parse(priors.join('\n'), parseOpts) : null;
-  const known = new Set((priorParsed?.diagnostics ?? []).map(diagKey));
-  const from = priorParsed ? priorParsed.message.clauses.length : 0;
-  const combined = priors.length ? parse([...priors, line].join('\n'), parseOpts) : selfOnly;
-  const after = combined.diagnostics.filter((d) => !known.has(diagKey(d)));
-  const ruleDiags = use08 ? rules08(combined, { lang, ink, from, profile }) : rules07(combined, { lang, ink, from });
-  const diagnostics = [...turnDiags, ...after, ...ruleDiags];
+  const prior = parsePriorContext(opts.priorLines, { v08: use08, issued });
+  const parseOpts: ParseOptions = {
+    ...(use08 ? { v08: true } : {}),
+    ...(issued ? { issued } : {}),
+    ...(prior.clauses.length ? { priorClauses: prior.clauses } : {}),
+    ...(prior.evidences.length ? { priorEvidences: prior.evidences } : {}),
+    ...(opts.turnNo != null ? { turnNo: opts.turnNo } : {}),
+  };
+  const res = parse(line, parseOpts);
+  const ruleDiags = rules08(res, {
+    lang,
+    ink,
+    profile,
+    spec,
+    priorClauses: prior.clauses,
+    priorEvidences: prior.evidences,
+    issued,
+  });
+  const diagnostics = [...res.diagnostics, ...ruleDiags];
   const errors = diagnostics.filter((d) => d.severity === '오류');
   const warnings = diagnostics.filter((d) => d.severity !== '오류');
   return {
     line,
-    message: selfOnly.message,
+    message: res.message,
     diagnostics,
     errors,
     warnings,

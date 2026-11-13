@@ -2,7 +2,6 @@
 
 export const HAN = /\p{Script=Han}/u;
 export const HANGUL = /\p{Script=Hangul}/u;
-const HAN_OR_HANGUL = /[\p{Script=Hangul}\p{Script=Han}]/u;
 
 /** 문서 정규화(2.3절). v0와 같은 규칙이라 기본 사전 v0의 먹 이름이 유지된다. */
 export function canonDocument(text: string): string {
@@ -10,37 +9,6 @@ export function canonDocument(text: string): string {
   const lines = t.split('\n').map((l) => l.replace(/[ \t]+$/u, ''));
   while (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
   return lines.join('\n') + '\n';
-}
-
-/** 구조 기호의 비슷한 꼴 → 정규 꼴. 결 문법으로 읽는 줄에만 적용한다. */
-const SYMBOL_MAP: [RegExp, string][] = [
-  [/[⟨《＜]/gu, '〈'],
-  [/[⟩》＞]/gu, '〉'],
-  [/[［⦗]/gu, '〔'],
-  [/[］⦘]/gu, '〕'],
-  [/[『｢]/gu, '「'],
-  [/[』｣]/gu, '」'],
-  [/[・･•ㆍ‧⋅∙]/gu, '·'],
-  [/⇣/gu, '↓'],
-  [/<->|⇄/gu, '↔'],
-  [/\|\||‖/gu, '∥'],
-  [/->|⇒/gu, '→'],
-];
-
-/** ASCII 꺾쇠·대괄호는 블록 자리에서만 바꾼다(덧글 같은 자유 글은 건드리지 않는다). */
-export function normalizeSymbols(line: string): { text: string; changed: boolean } {
-  let t = line;
-  for (const [re, to] of SYMBOL_MAP) t = t.replace(re, to);
-  // ASCII <…> 와 […]: 안에 한글·한자·수가 있는 경우만 블록으로 본다.
-  // 2026-10-14: 짝을 먼저 맞추고 안을 본다. 전의 /<([^<>]*[한글한자][^<>]*)>/는 닫히지 않은 '<' 뒤에 한글이 길게 오면
-  // 되짚기가 길이의 제곱이었다. 맞추는 짝과 바꾸는 글은 같다(안에 한글·한자가 없는 짝은 그대로 둔다).
-  t = t.replace(/<([^<>]*)>/gu, (m, inner: string) => (HAN_OR_HANGUL.test(inner) ? `〈${inner}〉` : m));
-  t = t.replace(/\[([^[\]]*)\]/gu, (m, inner: string) => (HAN_OR_HANGUL.test(inner) ? `〔${inner}〕` : m));
-  // 되물을 곳: 줄머리나 공백 뒤의 ^절N
-  t = t.replace(/(^|\s)\^((?:#[0-9a-f]+:)?[절점]\d+)/gu, '$1↖$2');
-  // 답하는 대상: re:#hash
-  t = t.replace(/(^|\s)re:\s*#/giu, '$1↩#');
-  return { text: t, changed: t !== line };
 }
 
 /** 앞뒤 공백을 함께 먹는 나눔 글자: spaced('·,;')는 정규식 \s*[·,;]\s* 과 같다. */

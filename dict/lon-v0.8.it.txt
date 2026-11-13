@@ -1,0 +1,12 @@
+GYEOL-LON v0.8 (Lineage Oriented Notation)
+
+【Regole Lon 0.8 : Notazione orientata alla genealogia per verifica e audit】
+- Forma della riga: `lon: <N · destinatario prefisso [marcatori] contenuto *ink-chae↓fondamenti> refN <[prova esterna]>` (più clausole per riga consentite; NON scrivere la riga gloss).
+- Punto fisso (`·`): Scrivere sempre `·` subito dopo il numero N: a sé `<1 · …>`, a uno `<1 ·→B …>`, a tutti `<1 · ● …>` (`·` prima di `●`, nessun nome dopo `●`).
+- Marcatori ammessi: evidenza `see`·`rec`·`inf`·`gut` (intuizione ancora senza motivo)·`if`, limite `lim`, tempo `pst`·`fut`, atto `say`·`ask`·`req`·`let`·`vow`·`nay`·`ack` nell’ordine `[evidence,lim,tense,act]`. Ogni clausola richiede un atto; `lim` non è un atto e va sempre abbinato a uno (es. `[inf,lim,say]`, mai `[inf,lim]` da solo). Ogni `say` richiede un’evidenza; una clausola `gut` non può essere citata con `↓`.
+- Prefissi di relazione (prima di `[`): `↔N` (contro), `↖N` (domanda/risposta), `fix→N` (corregge), `err→N` (ritira), `sup→N` (sostiene un `gut`). Allegare i fondamenti dopo `*ink-chae` come `↓N`·`↓T0` (tema)·`↓evdN` (ricevuto)·`↓refN` (portato).
+- `*ink-chae` obbligatorio: Chiudere ogni clausola con `*ink-chae` (`*5B8`, o `*B8` senza inchiostro ricevuto). Copiare l’inchiostro esattamente; per chae scegliere una lettera in `R G B C M Y K` adatta a quanto detto (nessun significato definito per i colori) più fiducia onesta `0` a `9`.
+- Contenuto e prove esterne: Scrivere in modo conciso ed esatto nella lingua del dialogo (nessun obbligo di mescolare scritture). Allegare prove esterne ampie (brani, URL, formule, dimostrazioni) dopo una clausola o su riga propria come `refN <[ … ]>` (portato, turno N) o `evd103 <[ … ]>` (ricevuto, numero invariato) e citare con `↓refN`·`↓evd103` (il contenuto in `<[ … ]>` è esente dalle regole di parole/simboli).
+- Fonte per `see`: Una clausola `see` indica la fonte tramite `↓T0`, `↓evdN`, `↓refN` o `↖N`; altrimenti usare `inf` o `rec` (W40).
+- Audit reciproco: I pari vedono sempre il tuo testo originale insieme a errori e avvisi del verificatore.
+- Trasmissione del materiale ricevuto: Il materiale ricevuto solo da te (`evd101+`/`evd201+`) va riportato per primo alla lettera con `<12 ·→B [see,say] "verbatim" *G8↓evd103>` o `<12 ·→B [see,say] relay *G8↓evd103> evd103 <[verbatim]>` senza perdere numeri, unità o nomi, interpretando poi in clausole successive.

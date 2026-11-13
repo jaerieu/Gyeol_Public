@@ -4,8 +4,8 @@
 // 2026-10-15(v0.5): 새 꼴 줄의 내용은 어느 언어의 낱말이든 받는다(parseWord의 anyScript). 옛 꼴은 그대로 읽는다.
 
 import type { Clause, ClauseWritten, Diagnostic, PlaceRel, ProcessKind, Ref, Word } from '../types.ts';
-import { MARK_ALIASES, PROCESS_ALIASES, PROCESS_ALIAS_RE } from '../tables.ts';
-import { HAN, HANGUL, stripTrailingPunct } from '../text.ts';
+import { PROCESS_ALIASES, PROCESS_ALIAS_RE } from '../tables.ts';
+import { HANGUL, stripTrailingPunct } from '../text.ts';
 
 export class Ctx {
   diags: Diagnostic[] = [];
@@ -104,16 +104,6 @@ const HANGUL_WORD = /^\p{Script=Hangul}+$/u;
  */
 const ANY_WORD = /^[\p{L}\p{M}\p{N}][\p{L}\p{M}\p{N}_\-'.’]*$/u;
 
-/** 한글 뒤에 한자가 오는가. 정규식 /한글.*한자/는 긴 어절에서 길이의 제곱이라 한 번 훑는다. */
-function hangulThenHan(t: string): boolean {
-  let seen = false;
-  for (const ch of t) {
-    if (!seen) seen = HANGUL.test(ch);
-    else if (HAN.test(ch)) return true;
-  }
-  return false;
-}
-
 /** 끝의 한글 꼬리를 나눈다(한글은 모두 BMP라 낱자로 훑는다). 꼬리가 없거나 어절이 모두 한글이면 어절 전체가 어근이다. */
 function splitTail(t: string): Word {
   let k = t.length;
@@ -140,11 +130,6 @@ export function parseWord(raw: string, ctx: Ctx, anyScript = false): Word | null
   if (HANGUL_WORD.test(t)) return { text: t };
   m = LATIN_WORD.exec(t);
   if (m && m[1]) return m[2] ? { text: t, root: m[1], suffix: m[2] } : { text: t, root: m[1] };
-  // 한글 꼬리 뒤에 한자가 다시 오는 경우. 새 꼴은 글자 그대로 '한글 뒤에 한자'일 때만 본다(AI感情이처럼 한자가 앞에만 있으면 받는다). v0.8에서는 폐지
-  if (!ctx.v08 && (anyScript ? hangulThenHan(t) : HAN.test(t) && HANGUL.test(t))) {
-    ctx.err('E15', `한 어절 안에서 한글 꼬리 뒤에 한자가 온다. 띄어 써야 한다: '${raw}'`);
-    return null;
-  }
   if (anyScript && ANY_WORD.test(t)) return splitTail(t);
   ctx.err('E19', `어절을 읽을 수 없다: '${raw}'`);
   return null;
@@ -162,9 +147,6 @@ export const RESERVED_IN_CONTENT = '<>〈〉＜＞⟨⟩《》‹›[]［］【�
 const RESERVED_SET = new Set(Array.from(RESERVED_IN_CONTENT));
 /** 점의 가운뎃점 꼴(v03.ts DOT_CHARS와 같다). 내용에서는 낱말 사이(떨림·불면)에만 쓴다 */
 const DOT_SET = new Set(Array.from('·•・ㆍ∙⋅‧'));
-/** 그림 문자(이모지). 감정·어조는 채가 맡는다. 글에서 흔한 ©®™‼⁉는 받는다 */
-const PICTO = /[\p{Extended_Pictographic}\p{Emoji_Modifier}\p{Regional_Indicator}\u{FE0F}\u{200D}\u{20E3}]/u;
-const PICTO_OK = new Set(Array.from('©®™‼⁉'));
 const LNM = /[\p{L}\p{M}\p{N}]/u;
 /** 어근 앞뒤에서 뗄 부호: 여는·닫는 괄호와 따옴표, 문장 끝 부호, 쉼표·쌍점, 줄표(—). 붙임표 -(-3)와 %·@·#·$ 같은 기호는 어근에 남긴다 */
 const EDGE = /[\p{Ps}\p{Pe}\p{Pi}\p{Pf}"'.,;:!?…、。，．！？；：¿¡—–‑‒―]/u;
@@ -185,22 +167,14 @@ function stripEdges(s: string): string {
  */
 export function parseWord052(raw: string, ctx: Ctx): Word | null {
   const cs = Array.from(raw);
-  const bad = cs.find((c, i) => RESERVED_SET.has(c) || (PICTO.test(c) && !PICTO_OK.has(c)) || (DOT_SET.has(c) && (i === 0 || i === cs.length - 1 || DOT_SET.has(cs[i - 1]) || DOT_SET.has(cs[i + 1]))));
+  // v0.8.2 재검토(2026-11-13 Jae): 이모지(그림 문자)는 대화 내용으로 받는다. 문법 기호(● ⬤ ⚫ 등)만 막는다.
+  const bad = cs.find((c, i) => RESERVED_SET.has(c) || (DOT_SET.has(c) && (i === 0 || i === cs.length - 1 || DOT_SET.has(cs[i - 1]) || DOT_SET.has(cs[i + 1]))));
   if (bad !== undefined) {
-    const why = DOT_SET.has(bad) ? '가운뎃점은 낱말 사이에만 쓴다(떨림·불면)' : PICTO.test(bad) ? '그림 문자(이모지)는 쓰지 않는다. 감정·어조는 채가 맡는다' : `'${bad}'는 문법 기호라 내용에 쓰지 않는다(< > [ ] * → ↓ ↔ ∥ ↖ ⊗ | ●)`;
+    const why = DOT_SET.has(bad) ? '가운뎃점은 낱말 사이에만 쓴다(떨림·불면)' : `'${bad}'는 문법 기호라 내용에 쓰지 않는다(< > [ ] * → ↓ ↔ ∥ ↖ ⊗ | ●)`;
     ctx.err('E19', `어절을 읽을 수 없다: '${raw}'. ${why}`);
     return null;
   }
   if (!cs.some((c) => LNM.test(c))) return { text: raw };
-  // E15: 부호로 나뉜 글자 덩이마다 '한글 뒤에 한자'를 본다(v0.8에서는 폐지, 보관 줄 판정 보존)
-  if (!ctx.v08) {
-    for (const run of raw.split(/[^\p{L}\p{M}\p{N}]+/u)) {
-      if (run && hangulThenHan(run)) {
-        ctx.err('E15', `한 어절 안에서 한글 꼬리 뒤에 한자가 온다. 띄어 써야 한다: '${raw}'`);
-        return null;
-      }
-    }
-  }
   // 끝의 닫는 부호를 빼고 한글 꼬리를 나눈다. 꼬리 앞(어근)에 한글 아닌 글자·숫자가 있을 때만 꼬리다
   let end = cs.length;
   while (end > 0 && !LNM.test(cs[end - 1])) end--;
@@ -213,18 +187,6 @@ export function parseWord052(raw: string, ctx: Ctx): Word | null {
   const all = Array.from(whole).filter((c) => LNM.test(c));
   if (all.every((c) => HANGUL.test(c))) return { text: raw };
   return { text: raw, root: whole };
-}
-
-// ───────── 표지 별칭 ─────────
-
-/**
- * 표지 이름(추론·단언 …)이면 W11을 내고 표지 글자를, 아니면 undefined. 두 줄꼴의 표지 블록이 함께 쓴다.
- * v0.6(2026-10-24): 새 꼴은 table로 MARK_ALIASES_06(새 표지 이름 거절·한계 …)을 넘긴다. 옛 꼴은 MARK_ALIASES 그대로다.
- */
-export function markAlias(t: string, ctx: Ctx, table: Record<string, string> = MARK_ALIASES): string | undefined {
-  if (!Object.hasOwn(table, t)) return undefined;
-  ctx.warn('W11', `표지 이름 '${t}'을 표지 글자 '${table[t]}'로 바꿨다`);
-  return table[t];
 }
 
 // ───────── 앞붙이 ─────────
@@ -266,8 +228,7 @@ export const PROCESS_SUP_RE = new RegExp(`^(?:${['sup', ...Object.entries(PROCES
 export function takePrefix(t: string, clause: Clause, ctx: Ctx, rules: PrefixRules): boolean {
   let m: RegExpExecArray | null;
   if (t === '숙고' || t === '미해결') {
-    if (clause.process) ctx.err('E18', `과정 앞붙이가 둘 이상이다: '${t}'`);
-    clause.process = { kind: t as ProcessKind };
+    ctx.err('E26', `옛 과정 앞붙이 '${t}'다. 낮은 확신·lim과 내용으로 쓴다`);
     return true;
   }
   // v0.7(2026-10-29): 과정 앞붙이의 내부 값은 영어(fix 고침, err 오류). 한글은 첫째 별칭으로 그대로 읽는다. 라틴은 큰·작은 글자를 가리지 않는다
@@ -281,7 +242,15 @@ export function takePrefix(t: string, clause: Clause, ctx: Ctx, rules: PrefixRul
     }
     return true;
   }
-  if ((m = /^([↓↔∥↖])(.+)$/u.exec(t))) {
+  if (/^∥.+$/u.test(t)) {
+    ctx.err('E26', `옛 앞붙이 '∥'다: '${t}'`);
+    return true;
+  }
+  if (/^↓.+$/u.test(t)) {
+    ctx.err('E26', `앞 근거 '${t}'는 옛 표기다. 근거는 끝 묶음 뒤에 *5B8↓N으로 쓴다`);
+    return true;
+  }
+  if ((m = /^([↔↖])(.+)$/u.exec(t))) {
     const r = rules.ref(m[2]);
     if (!r) ctx.err('E19', `가리킴을 읽을 수 없다: '${t}'`);
     else {
@@ -309,4 +278,256 @@ const TILDE = /[~∼～]/u;
 export function tightenTildes(s: string): string {
   if (!TILDE.test(s)) return s; // 물결표가 없으면 바꿀 것이 없다(거의 모든 줄)
   return s.replace(/[\s~∼～]+/gu, (run) => (TILDE.test(run) ? '~'.repeat(run.replace(/[^~∼～]/gu, '').length) : run));
+}
+
+// ───────── 가변 깊이 외부·보조 근거 스캐너 (v0.8.2) ─────────
+
+export interface ExtBlockSpan {
+  start: number;
+  end: number;
+  innerStart: number;
+  innerEnd: number;
+  depth: number;
+  closed: boolean;
+  legacy: boolean;
+  rawOpener: string;
+  tag: { ext: 'evd' | 'ref'; id: string; tagStart: number } | null;
+}
+
+const WS_CHAR_RE = /\s/u;
+const isExtDigit = (c: string | undefined): boolean => c !== undefined && ((c >= '0' && c <= '9') || (c >= '０' && c <= '９'));
+
+/**
+ * 여는 기호 바로 앞의 이름표(`증1`·`근2`·`evd1.2`·`ref3:`)를 뒤에서 앞으로 읽는다.
+ * 정규식 `(?:^|\s)((?:증|근|evd|ref)(D+(?:\.D+)?))\s*[:：]?\s*$`를 `s.slice(prevEnd, openerIdx)`에 건 것과 같되,
+ * 구간 전체를 다시 훑지 않고 이름표 길이만큼만 본다(v0.8.2 재검토: 여는 기호가 많은 긴 줄에서 길이의 제곱이던 것을 고침).
+ */
+function parsePrecedingExtTag(s: string, prevEnd: number, openerIdx: number): ExtBlockSpan['tag'] {
+  let j = openerIdx;
+  while (j > prevEnd && WS_CHAR_RE.test(s[j - 1])) j--;
+  if (j > prevEnd && (s[j - 1] === ':' || s[j - 1] === '：')) {
+    j--;
+    while (j > prevEnd && WS_CHAR_RE.test(s[j - 1])) j--;
+  }
+  const numEnd = j;
+  while (j > prevEnd && (isExtDigit(s[j - 1]) || s[j - 1] === '.')) j--;
+  const num = s.slice(j, numEnd);
+  if (!/^[0-9０-９]+(?:\.[0-9０-９]+)?$/u.test(num)) return null;
+  let kind: 'evd' | 'ref';
+  let tagStart: number;
+  const w1 = s[j - 1];
+  if (j - 1 >= prevEnd && (w1 === '증' || w1 === '근')) {
+    kind = w1 === '증' ? 'evd' : 'ref';
+    tagStart = j - 1;
+  } else if (j - 3 >= prevEnd) {
+    const w3 = s.slice(j - 3, j).toLowerCase();
+    if (w3 !== 'evd' && w3 !== 'ref') return null;
+    kind = w3 === 'evd' ? 'evd' : 'ref';
+    tagStart = j - 3;
+  } else {
+    return null;
+  }
+  if (tagStart > prevEnd && !WS_CHAR_RE.test(s[tagStart - 1])) return null;
+  const id = num.replace(/[０-９]/gu, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0));
+  return { ext: kind, id, tagStart };
+}
+
+/** 같은 바늘을 뒤로만 움직이며 거듭 찾을 때 앞 결과를 다시 쓰는 `indexOf`(없음·다음 위치를 기억해 끝까지 다시 훑지 않는다). */
+function memoIndexOf(s: string): (needle: string, from: number) => number {
+  const memo = new Map<string, { from: number; at: number }>();
+  return (needle, from) => {
+    const m = memo.get(needle);
+    if (m && from >= m.from && (m.at === -1 || from <= m.at)) return m.at;
+    const at = s.indexOf(needle, from);
+    memo.set(needle, { from, at });
+    return at;
+  };
+}
+
+/**
+ * 가변 깊이 `<[ … ]>`·`<[[ … ]]>`·옛 `⟪ … ⟫`·`[< … >]` 외부 근거 블록을 O(n)으로 찾는다.
+ * 백틱 언급(`` `…` ``) 밖에서 여는 기호를 찾고, 닫힌 블록 및 태그(`증·근·evd·ref`)가 붙은 미닫힘 블록만 반환한다.
+ */
+export function scanExtBlocks(s: string): ExtBlockSpan[] {
+  const spans: ExtBlockSpan[] = [];
+  const find = memoIndexOf(s);
+  let prevEnd = 0;
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (ch === '`') {
+      const nl = find('\n', i + 1);
+      const limit = nl === -1 ? s.length : nl;
+      const closeTick = find('`', i + 1);
+      if (closeTick !== -1 && closeTick < limit) i = closeTick;
+      continue;
+    }
+    if (ch === '<' && s[i + 1] === '[') {
+      let depth = 0;
+      while (s[i + 1 + depth] === '[') depth++;
+      const innerStart = i + 1 + depth;
+      const closer = ']'.repeat(depth) + '>';
+      const tag = parsePrecedingExtTag(s, prevEnd, i);
+      if (!tag && depth === 1) continue;
+      let closeIdx = find(closer, innerStart);
+      if (depth === 1) {
+        while (
+          closeIdx !== -1 &&
+          !/^(?:$|[\s<＜]|(?:증|근|evd|ref)[0-9０-９])/iu.test(s.slice(closeIdx + 2, closeIdx + 16))
+        ) {
+          closeIdx = s.indexOf(closer, closeIdx + 2);
+        }
+      }
+      if (closeIdx !== -1) {
+        const end = closeIdx + closer.length;
+        spans.push({
+          start: i,
+          end,
+          innerStart,
+          innerEnd: closeIdx,
+          depth,
+          closed: true,
+          legacy: false,
+          rawOpener: '<' + '['.repeat(depth),
+          tag,
+        });
+        prevEnd = end;
+        i = end - 1;
+      } else if (tag) {
+        spans.push({
+          start: i,
+          end: s.length,
+          innerStart,
+          innerEnd: s.length,
+          depth,
+          closed: false,
+          legacy: false,
+          rawOpener: '<' + '['.repeat(depth),
+          tag,
+        });
+        break;
+      }
+      continue;
+    }
+    if (ch === '⟪') {
+      const innerStart = i + 1;
+      const closeIdx = find('⟫', innerStart);
+      const tag = parsePrecedingExtTag(s, prevEnd, i);
+      if (closeIdx !== -1) {
+        const end = closeIdx + 1;
+        spans.push({ start: i, end, innerStart, innerEnd: closeIdx, depth: 1, closed: true, legacy: true, rawOpener: '⟪', tag });
+        prevEnd = end;
+        i = end - 1;
+      } else if (tag) {
+        spans.push({ start: i, end: s.length, innerStart, innerEnd: s.length, depth: 1, closed: false, legacy: true, rawOpener: '⟪', tag });
+        break;
+      }
+      continue;
+    }
+    if (ch === '[' && s[i + 1] === '<') {
+      const innerStart = i + 2;
+      const closeIdx = find('>]', innerStart);
+      const tag = parsePrecedingExtTag(s, prevEnd, i);
+      if (closeIdx !== -1) {
+        const end = closeIdx + 2;
+        spans.push({ start: i, end, innerStart, innerEnd: closeIdx, depth: 1, closed: true, legacy: true, rawOpener: '[<', tag });
+        prevEnd = end;
+        i = end - 1;
+      } else if (tag) {
+        spans.push({ start: i, end: s.length, innerStart, innerEnd: s.length, depth: 1, closed: false, legacy: true, rawOpener: '[<', tag });
+        break;
+      }
+    }
+  }
+  return spans;
+}
+
+/** 닫힌 외부 근거 블록과 태그가 붙은 미닫힘 블록 안을 공백으로 가린다(줄바꿈·인덱스 유지 옵션). */
+export function outsideExtBlocks(s: string, keepNewlines = false): string {
+  const spans = scanExtBlocks(s);
+  if (!spans.length) return s;
+  let out = '';
+  let pos = 0;
+  for (const sp of spans) {
+    out += s.slice(pos, sp.start);
+    const chunk = s.slice(sp.start, sp.end);
+    out += keepNewlines ? chunk.replace(/[^\r\n]/gu, ' ') : ' '.repeat(chunk.length);
+    pos = sp.end;
+  }
+  out += s.slice(pos);
+  return out;
+}
+
+/** 여러 줄에 걸쳐 닫힌 외부 근거 블록(`<[[ … ]]>`, `<[ … ]>`, `⟪ … ⟫`, `[< … >]`) 안의 줄바꿈을 한 줄 공백으로 접는다. */
+export function flattenExtNewlines(s: string): string {
+  if (!s.includes('\n') && !s.includes('\r')) return s;
+  const spans = scanExtBlocks(s).filter((sp) => sp.closed);
+  if (!spans.length) return s;
+  let out = '';
+  let pos = 0;
+  for (const sp of spans) {
+    out += s.slice(pos, sp.start);
+    out += s.slice(sp.start, sp.end).replace(/\s*\r?\n\s*/gu, ' ');
+    pos = sp.end;
+  }
+  out += s.slice(pos);
+  return out;
+}
+
+/** `parse`의 1-based 줄 번호를 지키면서 여러 줄에 걸친 닫힌 외부 근거 블록을 여는 줄에 합친다. */
+export function flattenExtLines(rawLines: string[]): string[] {
+  const lines = [...rawLines];
+  const joined = lines.join('\n');
+  const spans = scanExtBlocks(joined).filter((sp) => sp.closed);
+  if (!spans.length) return lines;
+  const lineStarts: number[] = [];
+  let off = 0;
+  for (const l of lines) {
+    lineStarts.push(off);
+    off += l.length + 1;
+  }
+  const lineOf = (idx: number): number => {
+    let lo = 0;
+    let hi = lineStarts.length - 1;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      if (lineStarts[mid] <= idx) lo = mid + 1;
+      else hi = mid - 1;
+    }
+    return Math.max(0, hi);
+  };
+  const merges = new Map<number, number>();
+  for (const sp of spans) {
+    const startLine = lineOf(sp.start);
+    const endLine = lineOf(Math.max(sp.start, sp.end - 1));
+    if (startLine >= endLine) continue;
+    const head = lines[startLine]?.trimEnd() ?? '';
+    if (!head || /^\s*```/u.test(head) || /^덧글(?:\s|$)/u.test(head)) continue;
+    const prev = merges.get(startLine) ?? startLine;
+    if (endLine > prev) merges.set(startLine, endLine);
+  }
+  for (let i = 0; i < lines.length; i++) {
+    let closeIdx = merges.get(i);
+    if (closeIdx === undefined) continue;
+    // 연속된 블록들이 겹쳐 이어질 때 최대 닫힘 줄까지 한 번에 합친다
+    for (let j = i + 1; j <= closeIdx; j++) {
+      const ext = merges.get(j);
+      if (ext !== undefined && ext > closeIdx) closeIdx = ext;
+    }
+    lines[i] = [lines[i].trim(), ...lines.slice(i + 1, closeIdx + 1).map((x) => x.trim())].filter(Boolean).join(' ');
+    for (let j = i + 1; j <= closeIdx; j++) lines[j] = '';
+    i = closeIdx;
+  }
+  return lines;
+}
+
+/** 본문 안의 `]>` / `]]>` 충돌을 피하는 최소 깊이 `<[+ … ]+>` 펜스를 감싼다. */
+export function formatExtFence(body: string): string {
+  let k = 1;
+  while (body.includes(']'.repeat(k) + '>')) k++;
+  if (k === 1 && !body.startsWith('[') && !body.endsWith(']')) return `<[${body}]>`;
+  if (body.startsWith('[') || body.endsWith(']')) {
+    if (k < 2) k = 2;
+    return `<${'['.repeat(k)} ${body} ${']'.repeat(k)}>`;
+  }
+  return `<${'['.repeat(k)}${body}${']'.repeat(k)}>`;
 }

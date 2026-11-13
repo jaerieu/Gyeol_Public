@@ -8,12 +8,11 @@
 //   src/parse/shared.ts 둘이 함께 쓰는 것(진단 모음, 가리킴, 어절, 표지 별칭, 앞붙이, 물결표)
 // 줄 하나는 먼저 v0.3 줄꼴인지 본다(lineFormOf). 아니면 비슷한 기호를 옛 꼴의 기호로 바꾼 뒤(normalizeSymbols) 옛 꼴로 읽는다.
 
-import type { ClauseWritten, Head, LineForm, Message, ParseResult, Profile, Rel, Ref, Seal } from './types.ts';
-import { FORBIDDEN_MUK_METHOD, MEASURE_METHODS, READ_FAMILIES, RELATIONS, SPEC_VERSION, TUNE_STEPS } from './tables.ts';
-import { normalizeSymbols, spaced, splitTop } from './text.ts';
-import { Ctx } from './parse/shared.ts';
-import { parseClause02, parseEcho } from './parse/v02.ts';
-import { EXT_CLOSER_OF, EXT_OPENER_RE, extractTrailingEvidences, lineFormOf, parseExtTag, parseLine03 } from './parse/v03.ts';
+import type { Clause, ClauseWritten, ExtEvidence, Head, LineForm, Message, ParseResult, Profile, Rel, Ref } from './types.ts';
+import { READ_FAMILIES, RELATIONS, SPEC_VERSION } from './tables.ts';
+import { spaced, splitTop } from './text.ts';
+import { Ctx, flattenExtLines, scanExtBlocks } from './parse/shared.ts';
+import { extractTrailingEvidences, lineFormOf, parseExtTag, parseLine03 } from './parse/v03.ts';
 
 export { clausePieces, extractTrailingEvidences, labelLine, lineFormOf, parseExtTag } from './parse/v03.ts';
 
@@ -43,7 +42,8 @@ function parseHead(rest: string, ctx: Ctx): { version: string; head: Head; lang?
         if ((RELATIONS as readonly string[]).includes(m[2])) head.re.rel = m[2] as Rel;
         else ctx.err('E20', `알 수 없는 관계 '${m[2]}'. 답·동의·반박·확장·수선 중 하나다`);
       }
-    } else if ((m = /^([^→\s]+)→(.+)$/u.exec(it))) {
+    } else if ((m = /^([^→\s]+?)(?:→|->)(.+)$/u.exec(it))) {
+      if (it.includes('->')) ctx.warn('W01', `머리 항목의 '->'를 '→'로 고쳐 읽었다: '${it}'`);
       head.from = m[1];
       head.to = m[2].split(',').map((s) => s.trim()).filter((s) => s !== '');
     } else ctx.err('E20', `머리 항목을 읽을 수 없다: '${it}'`);
@@ -54,93 +54,19 @@ function parseHead(rest: string, ctx: Ctx): { version: string; head: Head; lang?
   return out;
 }
 
-function parseSeal(rest: string, ctx: Ctx): Seal | null {
-  const items = splitTop(rest, ' · ').map((s) => s.trim());
-  const name = items[0];
-  if (!name) {
-    ctx.err('E21', '낙관에 이름이 없다');
-    return null;
-  }
-  const seal: Seal = { name };
-  for (const it of items.slice(1)) {
-    let m: RegExpExecArray | null;
-    if ((m = /^계보\s+(.+)$/u.exec(it))) seal.lineage = m[1];
-    else if ((m = /^기억\s+(\S+)$/u.exec(it))) {
-      if (m[1] === '대화' || m[1] === '지속') seal.memory = m[1];
-      else ctx.err('E21', `기억은 '대화'나 '지속'이다: '${m[1]}'`);
-    } else if ((m = /^측정\s+(.+)$/u.exec(it))) {
-      seal.measure = m[1].split('·').map((s) => s.trim()).filter((s) => s !== '');
-      for (const mm of seal.measure) {
-        if (mm === FORBIDDEN_MUK_METHOD) ctx.err('E14', "측정법으로 '자기'(자기 보고)를 쓸 수 없다");
-        else if (!MEASURE_METHODS.test(mm)) ctx.warn('W13', `알 수 없는 측정법 '${mm}'`);
-      }
-    } else ctx.err('E21', `낙관 항목을 읽을 수 없다: '${it}'`);
-  }
-  return seal;
-}
-
-function parsePreface(rest: string, ctx: Ctx): Message['preface'] {
-  const pre: NonNullable<Message['preface']> = {};
-  for (const it of splitTop(rest, ' · ').map((s) => s.trim()).filter((s) => s)) {
-    const m = /^(\S+)\s+(.+)$/u.exec(it);
-    if (m && m[1] === '목적') pre.purpose = m[2];
-    else if (m && m[1] === '제약') pre.constraint = m[2];
-    else {
-      ctx.warn('W04', `알 수 없는 머리말 항목을 그대로 둔다: '${it}'`);
-      (pre.extra ??= []).push({ key: m ? m[1] : it, value: m ? m[2] : '' });
-    }
-  }
-  return pre;
-}
-
 // ───────── 메시지 ─────────
 
 export function emptyMessage(): Message {
-  return { gyeol: SPEC_VERSION, head: null, tune: [], preface: null, echo: [], clauses: [], gloss: null, seal: null, muk_source: null };
+  return { gyeol: SPEC_VERSION, head: null, clauses: [], gloss: null, muk_source: null };
 }
 
 const LIST_MARKER = /^(?:[-*•]|\d+[.)])\s+/u;
 
-/** 판의 갈래(앞 두 자리). 0.2와 0.2.1은 같은 갈래다: 0.2.x는 맞던 줄을 깨지 않는다. */
+/** 판의 갈래(앞 두 자리). */
 const family = (v: string) => String(v).split('.').slice(0, 2).join('.');
 
-/** 열쇠말 줄. 이 줄들은 v0.3 줄꼴로 읽지 않는다. */
-const KEYWORD_LINES = new Set(['덧글', '조율', '머리말', '받은대로', '낙관']);
 const isHeadKey = (k: string) => k === '결' || k === '론' || /^(?:gyeol|lon)$/iu.test(k);
 const isLonKey = (k: string) => k === '론' || /^lon$/iu.test(k);
-
-/** 줄 끝에 닫히지 않은 외부 근거 여는 기호가 있으면 짝이 되는 닫는 기호를 돌려준다(없으면 null). */
-function unclosedExtCloser(rawLine: string): string | null {
-  const s = rawLine.trimEnd();
-  if (!s || /^\s*```/u.test(s) || /^덧글(?:\s|$)/u.test(s)) return null;
-  const masked = s.replace(/`[^`\n]*`/gu, (m) => ' '.repeat(m.length));
-  const ms = [...masked.matchAll(EXT_OPENER_RE)];
-  if (!ms.length) return null;
-  let pos = 0;
-  for (let k = 0; k < ms.length; k++) {
-    const m = ms[k];
-    const idx = m.index!;
-    if (idx < pos) continue;
-    const closer = EXT_CLOSER_OF[m[2]];
-    if (!closer) continue;
-    const afterOpen = idx + m[0].length;
-    let closedAt = -1;
-    for (let nxt = k + 1; nxt < ms.length; nxt++) {
-      const beforeNext = s.slice(0, ms[nxt].index!).trimEnd();
-      if (afterOpen <= beforeNext.length - closer.length && beforeNext.endsWith(closer)) {
-        closedAt = beforeNext.length;
-        break;
-      }
-    }
-    if (closedAt >= 0) {
-      pos = closedAt;
-      continue;
-    }
-    if (afterOpen <= s.length - closer.length && s.endsWith(closer)) return null;
-    return closer;
-  }
-  return null;
-}
 
 export interface ParseOptions {
   /** v0.8 문맥에서 머리 줄 없이 단절을 읽을 때 true(E15 폐지 및 <절N · ● …> 허용) */
@@ -151,7 +77,18 @@ export interface ParseOptions {
    * 가져온 자료(ref)는 여기에 넣어도 받지 않는다(말하는 이가 메시지 안에 원문을 함께 써야 한다).
    */
   issued?: readonly string[];
+  /** 앞 차례 절 목록(E17 가리킴 해소용, E22·E23에는 섞지 않음) */
+  priorClauses?: readonly Clause[];
+  /** 앞 차례 외부 근거 목록(E17 가리킴 해소용, E45에는 섞지 않음) */
+  priorEvidences?: readonly ExtEvidence[];
+  /** 현재 차례 번호(지정 시 다른 차례 번호를 쓴 절에 E46) */
+  turnNo?: number;
 }
+
+// v0.8.2 재검토(2026-11-13 Jae): 이모지는 대화 내용이라 이모지 사이를 잇는 0폭 결합자(ZWJ, U+200D, 👨‍👩‍👧)는 E41에서 뺀다.
+// 이모지 사이가 아닌 ZWJ와 그 밖의 0폭·양방향·사용자 영역 문자는 그대로 막는다.
+const FORBIDDEN_CTRL_RE =
+  /[\u0000-\u0008\u000B-\u001F\u007F-\u009F\u200B\u200C\u200E\u200F\u202A-\u202E\u2060-\u206F\uFEFF\uE000-\uF8FF\u{F0000}-\u{FFFFD}\u{100000}-\u{10FFFD}]|(?<!\p{Extended_Pictographic}[\u{FE0F}\u{1F3FB}-\u{1F3FF}]?)\u200D|\u200D(?!\p{Extended_Pictographic})/gu;
 
 export function parse(input: string, opts: ParseOptions = {}): ParseResult {
   const ctx = new Ctx();
@@ -162,28 +99,35 @@ export function parse(input: string, opts: ParseOptions = {}): ParseResult {
     if (tag && tag.ext === 'evd') issued.add(`${tag.ext}:${tag.id}`);
   }
   const msg = emptyMessage();
-  const rawLines = input.replace(/\r\n?/g, '\n').normalize('NFC').split('\n');
-  const lines = [...rawLines];
-  for (let i = 0; i < lines.length; i++) {
-    let searchFrom = i + 1;
-    while (true) {
-      const closer = unclosedExtCloser(lines[i]);
-      if (!closer) break;
-      let closeIdx = -1;
-      for (let j = searchFrom; j < lines.length; j++) {
-        if (lines[j].trimEnd().endsWith(closer)) {
-          closeIdx = j;
-          break;
-        }
-      }
-      if (closeIdx < 0) break;
-      const merged = [lines[i].trim(), ...lines.slice(searchFrom, closeIdx + 1).map((s) => s.trim())].filter(Boolean).join(' ');
-      lines[i] = merged;
-      for (let j = searchFrom; j <= closeIdx; j++) lines[j] = '';
-      searchFrom = closeIdx + 1;
-    }
-    if (searchFrom > i + 1) i = searchFrom - 1;
+  const norm = input.replace(/\r\n?/g, '\n').normalize('NFC');
+  const extSpans = scanExtBlocks(norm);
+  let maskedForCtrl = '';
+  let ctrlPos = 0;
+  for (const sp of extSpans) {
+    maskedForCtrl += norm.slice(ctrlPos, sp.innerStart);
+    maskedForCtrl += norm.slice(sp.innerStart, sp.innerEnd).replace(/[^\n]/gu, ' ');
+    ctrlPos = sp.innerEnd;
   }
+  maskedForCtrl += norm.slice(ctrlPos);
+  maskedForCtrl.split('\n').forEach((ln, lineIdx) => {
+    FORBIDDEN_CTRL_RE.lastIndex = 0;
+    const m = FORBIDDEN_CTRL_RE.exec(ln);
+    if (m) {
+      const cp = m[0].codePointAt(0)!.toString(16).toUpperCase().padStart(4, '0');
+      ctx.line = lineIdx + 1;
+      ctx.err('E41', `외부 근거 블록 밖에 제어·숨김·사용자 영역 문자가 있다(U+${cp}): 줄 ${lineIdx + 1}`);
+    }
+  });
+  let cleaned = '';
+  let cleanPos = 0;
+  for (const sp of extSpans) {
+    cleaned += norm.slice(cleanPos, sp.innerStart).replace(FORBIDDEN_CTRL_RE, '');
+    cleaned += norm.slice(sp.innerStart, sp.innerEnd);
+    cleanPos = sp.innerEnd;
+  }
+  cleaned += norm.slice(cleanPos).replace(FORBIDDEN_CTRL_RE, '');
+  const rawLines = cleaned.split('\n');
+  const lines = flattenExtLines(rawLines);
   let sawClause = false;
 
   lines.forEach((rawLine, idx) => {
@@ -204,134 +148,103 @@ export function parse(input: string, opts: ParseOptions = {}): ParseResult {
     }
     // v0.8(2026-11-11 Jae): 단독 줄로 적은 전용 괄호꺽쇠 외부 근거(`ref1 <[ … ]>`, `증1 <[ … ]>`)
     const standaloneEv = extractTrailingEvidences(line);
-    if (standaloneEv.evidences.length > 0 && standaloneEv.head === '') {
+    if (standaloneEv.unclosed && standaloneEv.head === '') {
+      ctx.err('E02', '외부 근거 블록이 닫히지 않았다');
+      if (standaloneEv.legacyExt?.length) ctx.err('E26', `옛 외부 근거 괄호 '${standaloneEv.legacyExt[0]}'다. <[ ... ]>로 쓴다`);
       (msg.evidences ??= []).push(...standaloneEv.evidences);
       return;
     }
-    // v0.3 줄꼴의 절 줄(옛 꼴의 기호 바꾸기보다 먼저 본다: < >와 [ ]의 뜻이 다르다)
-    if (!KEYWORD_LINES.has(key) && !(isHeadKey(key) && /^\d+\.\d+/.test(rest))) {
-      const got = parseLine03(line, ctx);
-      if (got) {
-        msg.clauses.push(...got);
-        if (got.length) sawClause = true;
-        return;
-      }
+    if (standaloneEv.evidences.length > 0 && standaloneEv.head === '') {
+      if (standaloneEv.legacyExt?.length) ctx.err('E26', `옛 외부 근거 괄호 '${standaloneEv.legacyExt[0]}'다. <[ ... ]>로 쓴다`);
+      (msg.evidences ??= []).push(...standaloneEv.evidences);
+      return;
     }
-    // 조율 시험 점을 v0.3 줄꼴로 쓴 줄. 줄꼴이 맞으니 parseLine03은 늘 절을 읽는다(검사만 하고 절은 메시지에 넣지 않는다).
-    if (key === '조율') {
-      const tm = /^(\S+)\s*(.*)$/u.exec(rest);
-      if (tm && tm[1] === '시험' && lineFormOf(tm[2])) {
-        msg.tune.push({ step: tm[1], text: tm[2].trim() });
-        parseLine03(tm[2].trim(), ctx);
-        return;
-      }
-    }
-    // 여기부터 옛 꼴(v0.2.1)
-    const sym = normalizeSymbols(line);
-    if (sym.changed) ctx.warn('W01', '비슷한 기호를 정규 기호로 바꿨다');
-    line = sym.text;
-    const kw2 = /^(\S+)(?:\s+(.*))?$/u.exec(line)!;
-    const k = kw2[1];
-    const r = (kw2[2] ?? '').trim();
-
-    if (isHeadKey(k) && /^\d+\.\d+/.test(r)) {
-      if (msg.head || sawClause || msg.tune.length) ctx.err('E20', '머리 줄은 맨 앞에 한 번만 온다');
-      const h = parseHead(r, ctx);
+    if (isHeadKey(key) && /^\d+\.\d+/.test(rest)) {
+      if (msg.head || sawClause) ctx.err('E20', '머리 줄은 맨 앞에 한 번만 온다');
+      const h = parseHead(rest, ctx);
       if (h) {
         msg.gyeol = h.version;
         msg.head = h.head;
         if (h.lang) msg.lang = h.lang; // v0.7 사용자 언어
-        const prof = h.profile ?? (isLonKey(k) ? 'lon' : undefined);
+        const prof = h.profile ?? (isLonKey(key) ? 'lon' : undefined);
         if (prof) msg.profile = prof;
         if (Number(family(h.version)) >= 0.8 || prof === 'lon') ctx.v08 = true;
         if (!(READ_FAMILIES as readonly string[]).includes(family(h.version))) ctx.warn('W14', `명세 판이 다르다: ${h.version} (이 구현은 ${SPEC_VERSION})`);
       }
-    } else if (k === '조율') {
-      const m = /^(\S+)\s*(.*)$/u.exec(r);
-      if (!m) {
-        ctx.err('E19', '조율 단계가 없다');
-        return;
-      }
-      msg.tune.push({ step: m[1], text: m[2].trim() });
-      if (!(TUNE_STEPS as readonly string[]).includes(m[1])) ctx.warn('W15', `알 수 없는 조율 단계 '${m[1]}'`);
-      if (m[1] === '시험') {
-        // 시험 점은 절 문법으로 검사한다
-        parseClause02(m[2].trim(), ctx);
-      }
-    } else if (k === '머리말') {
-      msg.preface = parsePreface(r, ctx);
-    } else if (k === '받은대로') {
-      msg.echo.push(...parseEcho(r, ctx));
-    } else if (k === '낙관') {
-      msg.seal = parseSeal(r, ctx);
-    } else {
-      const c = parseClause02(line, ctx);
-      if (c) {
-        msg.clauses.push(c);
-        sawClause = true;
-      }
+      return;
     }
+    const got = parseLine03(line, ctx);
+    if (got) {
+      msg.clauses.push(...got);
+      if (got.length) sawClause = true;
+      return;
+    }
+    ctx.err('E19', `줄을 읽을 수 없다: '${line}'`);
   });
 
-  checkMessage(msg, ctx, issued);
+  checkMessage(msg, ctx, issued, opts);
   const ok = !ctx.diags.some((d) => d.severity === '오류');
-  const forms: LineForm[] = msg.clauses.map((c) => (ctx.newForm.has(c) ? '0.3' : '0.2'));
-  // v0.5(2026-10-15): 절마다 글에 쓴 꼴(rules05가 본다). 옛 꼴 절은 빈 것
-  const written: ClauseWritten[] = msg.clauses.map((c) => ctx.written.get(c) ?? { selfInMarks: false, selfAtEnd: false, selfBang: false, ne: false, aliases: [] });
+  const forms: LineForm[] = msg.clauses.map(() => '0.3');
+  const written: ClauseWritten[] = msg.clauses.map((c) => ctx.written.get(c) ?? { aliases: [] });
   return { message: msg, diagnostics: ctx.diags, ok, forms, written };
 }
 
 /** 메시지 전체에 걸친 규칙: 이름표, 가리킴, 측정법. */
-function checkMessage(msg: Message, ctx: Ctx, issued: ReadonlySet<string> = new Set()) {
+function checkMessage(msg: Message, ctx: Ctx, issued: ReadonlySet<string> = new Set(), opts: ParseOptions = {}) {
   ctx.line = 0;
   const labeled = msg.clauses.filter((c) => c.label !== null).length;
   if (labeled > 0 && labeled < msg.clauses.length) ctx.err('E23', '일부 절에만 이름표가 있다. 모두 붙이거나 모두 빼야 한다');
+  if (opts.turnNo != null) {
+    const tStr = String(opts.turnNo);
+    for (const c of msg.clauses) {
+      if (c.label != null) {
+        const mNo = String(c.label).replace(/^[절점]/u, '');
+        if (mNo !== tStr && !mNo.startsWith(`${tStr}.`)) {
+          ctx.err('E46', `차례 번호 불일치(다른 차례 번호 사용): 절${mNo}`);
+        }
+      }
+    }
+  }
+  const priorLabels = new Set<string>();
+  (opts.priorClauses ?? []).forEach((c, i) => {
+    priorLabels.add(c.label ?? `절${i + 1}`);
+    if (!c.label) priorLabels.add(`점${i + 1}`);
+  });
   const labels = new Set<string>();
   msg.clauses.forEach((c, i) => {
     const l = c.label ?? `절${i + 1}`;
-    if (c.label && labels.has(l)) ctx.err('E22', `이름표가 겹친다: ${l}`);
+    if (c.label && (labels.has(l) || (opts.turnNo == null && priorLabels.has(l)))) ctx.err('E22', `이름표가 겹친다: ${l}`);
     labels.add(l);
     if (!c.label) labels.add(`점${i + 1}`);
   });
   const extLabels = new Set<string>();
   const recordExt = (ev: { kind: string; id: string }) => {
     const key = `${ev.kind}:${ev.id}`;
-    if (extLabels.has(key)) ctx.err('E22', `외부 근거 이름표가 겹친다: ${ev.kind}${ev.id}`);
+    if (extLabels.has(key)) ctx.err('E45', `외부 근거 이름표가 겹친다: ${ev.kind}${ev.id}`);
     extLabels.add(key);
   };
   for (const c of msg.clauses) for (const ev of c.evidences ?? []) recordExt(ev);
   for (const ev of msg.evidences ?? []) recordExt(ev);
 
+  const knownLabels = new Set<string>([...priorLabels, ...labels]);
+  const knownExt = new Set<string>(extLabels);
+  for (const ev of opts.priorEvidences ?? []) knownExt.add(`${ev.kind}:${ev.id}`);
+
   // v0.3 줄꼴의 가리킴은 번호만 써도 되므로(↓1) 절N과 점N을 같게 본다. 옛 꼴은 v0.2.1 그대로다.
   // v0.6 덧붙임(2026-10-25): 지난 대화의 절을 가리킨 받침→53:12·↔53:12(Ref.thread)는 메시지 밖이라 보지 않는다.
   const other = (l: string) => (l.startsWith('절') ? '점' : '절') + l.slice(1);
   const checkRef = (r: Ref | undefined, loose: boolean) => {
-    if (r && r.msg === null && r.thread === undefined && !labels.has(r.label) && !(loose && labels.has(other(r.label)))) ctx.err('E17', `가리킨 절이 이 메시지에 없다: ${r.label}`);
+    if (r && r.msg === null && r.thread === undefined && !knownLabels.has(r.label) && !(loose && knownLabels.has(other(r.label)))) ctx.err('E17', `가리킨 절이 이 메시지에 없다: ${r.label}`);
   };
   for (const c of msg.clauses) {
-    const loose = ctx.newForm.has(c);
-    checkRef(c.place?.target, loose);
-    checkRef(c.place?.second, loose); // v0.6 ⊗N,M의 둘째 절
-    checkRef(c.process?.target, loose);
+    checkRef(c.place?.target, true);
+    checkRef(c.place?.second, true); // v0.6 ⊗N,M의 둘째 절
+    checkRef(c.process?.target, true);
     // v0.5.1: 끝 묶음 뒤의 근거(주소는 보지 않는다). v0.8: 선언되지 않은 외부 근거 인용은 E17로 잡는다.
     // v0.8.1(3.22절): 호출부가 준 받은 자료 번호(issued)는 선언으로 본다. 맥락 ↓T는 메시지 밖이라 보지 않는다.
     for (const b of c.because ?? []) {
-      if ('label' in b) checkRef(b, loose); // 주소·맥락·시험 문제·참가자·지난 대화의 절(v0.6)은 메시지 밖이라 보지 않는다
-      else if ('ext' in b && !extLabels.has(`${b.ext}:${b.id}`) && !issued.has(`${b.ext}:${b.id}`)) ctx.err('E17', `가리킨 외부 근거가 이 메시지에 없다: ${b.ext}${b.id}`);
-    }
-  }
-  // 측정법(W05)은 옛 꼴의 먹에만 묻는다. v0.3 줄의 먹 한 자리는 측정 기록(D1)에 측정법이 남는다.
-  const oldClauses = msg.clauses.filter((c) => !ctx.newForm.has(c));
-  const hasMuk = oldClauses.some((c) => c.muk && (c.muk.alt || c.muk.conf !== undefined || c.muk.effort !== undefined));
-  if (hasMuk) {
-    const sealMethods = msg.seal?.measure?.length ?? 0;
-    const allItemsHaveMethod = oldClauses.every((c) => {
-      if (!c.muk) return true;
-      const need = (['alt', 'conf', 'effort'] as const).filter((f) => c.muk![f] !== undefined);
-      return need.every((f) => c.muk!.method?.[f]);
-    });
-    if (sealMethods === 0 && !allItemsHaveMethod) {
-      ctx.warn('W05', '먹 값에 측정법이 없다. 항목 뒤 @측정법이나 낙관의 측정으로 밝히는 것이 좋다');
+      if ('label' in b) checkRef(b, true); // 주소·맥락·시험 문제·참가자·지난 대화의 절(v0.6)은 메시지 밖이라 보지 않는다
+      else if ('ext' in b && !knownExt.has(`${b.ext}:${b.id}`) && !issued.has(`${b.ext}:${b.id}`)) ctx.err('E17', `가리킨 외부 근거가 이 메시지에 없다: ${b.ext}${b.id}`);
     }
   }
 }
