@@ -1,0 +1,12 @@
+ca3b7f388e76763d7bd3324cfc29d5a6d1f361fe5ca8b365631514265efb1989  prereg-e5-e6.md
+f0840c652c6a30ec46b41e482139a9d2b1d008b4a0933f2cb119e622f68cbc83  data/items-e5.json
+c815ba4f06ede3ec0f71e5f9ce39aab1454e395a2cb1a7f9eb497f2fbd05219f  src/prompts.mjs
+62caf2f049496dad2df4a61107ec3af4888695a088b27fafc7e201ccbfba8bce  prompts/lon-base-en.txt
+1fd27e602f6d7b1c6a7d9df582ae3163eac9edc12e5e223ac98f9d2827b1400f  src/answer.mjs
+4237ddaeb76a4a26d83cde163d40c533277d084be3d1a219c95d6954ffa06777  src/metrics.mjs
+0c4f4d98db56b4aeec79366127e0273fa1b5924ef4eefd6f34a33c77c9af7ab1  src/metrics-e5.mjs
+ae9db9140b672210d8375b42922d71df8307cf4e80008b61375d01bd07bcbbfa  src/review.mjs
+b2c456ae49f5d67f558748464b8506331ea918dc517a3b43d1ef534ead64059f  src/run.mjs
+9a364aeda55393210bc56f8740f1c80e317fa59b2ce240fbf346997321731c21  src/items-hard3540.mjs
+e94428f800dec014e57a4f33c2deca7faa4e3878ccaa1da439e8fb96fbc1501c  src/cost.mjs
+# frozen 2026-11-13 22:48 Brisbane, 4-model lineup, per-model effort, before any E5 call

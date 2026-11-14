@@ -36,6 +36,7 @@ function parseHead(rest: string, ctx: Ctx): { version: string; head: Head; lang?
     else if ((m = /^(?:방|room)\s+#([0-9a-f]{6,64})$/iu.exec(it))) head.room = m[1];
     else if ((m = /^(?:lang|언어)\s+([A-Za-z]{2,3}(?:-[A-Za-z]{2,8})?)$/iu.exec(it))) lang = m[1]; // 값은 쓴 그대로 둔다(글자군은 scriptGroupOf가 소문자로 본다)
     else if ((m = /^(?:profile|프로파일)\s+(gyeol|결|lon|론)$/iu.exec(it))) profile = /^(?:lon|론)$/iu.test(m[1]) ? 'lon' : 'gyeol';
+    else if (/^(?:snapshot|통째)$/iu.test(it)) head.snapshot = true;
     else if ((m = /^↩\s*#([0-9a-f]{6,64})(?:\s+(\S+))?$/u.exec(it))) {
       head.re = { id: m[1] };
       if (m[2]) {

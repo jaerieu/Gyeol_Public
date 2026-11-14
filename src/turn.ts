@@ -2,6 +2,7 @@
 import type { Clause, Diagnostic, ExtEvidence, Message, Profile } from './types.ts';
 import { parse, type ParseOptions } from './parse.ts';
 import { rules08 } from './parse/v08.ts';
+import { stripReplyLabels } from './ref-copy.ts';
 
 export interface PriorContext {
   clauses: Clause[];
@@ -31,6 +32,8 @@ export interface ParseTurnOptions {
   turnNo?: number | null;
   /** v0.8.1(3.22절): 호출부가 미리 준 받은 자료 번호(`evd103` 등). 선언 없이 ↓evd103으로 가리켜도 E17을 내지 않는다 */
   issued?: readonly string[];
+  /** 통째(snapshot) 이어쓰기 검사 강제 여부 */
+  snapshot?: boolean;
 }
 
 export interface ParseTurnResult {
@@ -76,7 +79,8 @@ export function extractTurnLine(rawText: string): string {
   for (const rawL of lines) {
     const t = rawL.trim();
     const glossHit = GLOSS_LABEL_RE.test(t);
-    const inExt = glossHit || BACKTICK_WRAP_RE.test(rawL) ? inUnclosedExt() : false;
+    const hasReplyColon = /[:：]/u.test(rawL);
+    const inExt = glossHit || BACKTICK_WRAP_RE.test(rawL) || hasReplyColon ? inUnclosedExt() : false;
     if (!inExt && glossHit) break;
     if (!started) {
       const m = HEAD_LABEL_RE.exec(t);
@@ -92,7 +96,9 @@ export function extractTurnLine(rawText: string): string {
       if (!t) continue;
       started = true;
     }
-    const cleaned = !inExt ? rawL.replace(/^\s*`+(?=<)/u, '').replace(/(?<=>)`+\s*$/u, '') : rawL;
+    const cleaned = !inExt
+      ? stripReplyLabels(rawL).replace(/^\s*`+(?=<)/u, '').replace(/(?<=>)`+\s*$/u, '')
+      : rawL;
     kept.push(cleaned);
     if (EXT_OPENER_RE.test(cleaned)) sawOpener = true;
   }
@@ -133,6 +139,7 @@ export function parseTurn(rawText: string, opts: ParseTurnOptions = {}): ParseTu
     priorClauses: prior.clauses,
     priorEvidences: prior.evidences,
     issued,
+    ...(opts.snapshot !== undefined ? { snapshot: opts.snapshot } : {}),
   });
   const diagnostics = [...res.diagnostics, ...ruleDiags];
   const errors = diagnostics.filter((d) => d.severity === '오류');

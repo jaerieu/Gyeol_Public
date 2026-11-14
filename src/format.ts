@@ -115,6 +115,7 @@ export function format(msg: Message, _opts: FormatOptions = {}): string {
     const items: string[] = [`${headWord} ${msg.gyeol}`];
     const h = msg.head;
     if (msg.profile === 'gyeol') items.push('profile gyeol');
+    if (h.snapshot) items.push('snapshot');
     if (msg.lang) items.push(`lang ${msg.lang}`);
     if (h.pact) items.push(`pact #${h.pact}`);
     if (h.from || (h.to && h.to.length)) items.push(`${h.from ?? ''}→${(h.to ?? []).join(',')}`);

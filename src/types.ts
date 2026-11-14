@@ -141,6 +141,7 @@ export interface Head {
   to?: string[];
   re?: { id: string; rel?: Rel };
   room?: string;
+  snapshot?: true;
 }
 
 export interface Message {

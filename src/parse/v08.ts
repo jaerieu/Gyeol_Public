@@ -43,6 +43,8 @@ export interface Rules08Options {
   issued?: readonly string[];
   /** 게이트웨이 참조 복사(ref_copy)가 이미 해당 줄 범위만 잘라 주입했으면 true */
   preSlicedExt?: boolean;
+  /** 통째(snapshot) 이어쓰기 검사: <1부터 연번 확인(W45) 및 see 근거 없음 경고(W40) 활성화 */
+  snapshot?: boolean;
 }
 
 export function mixesScripts(words: Word[], group: ScriptGroup): boolean {
@@ -204,6 +206,7 @@ export function rules08(r: ParseResult, opts: Rules08Options = {}): Diagnostic[]
   const out: Diagnostic[] = [];
   const profile: Profile = opts.profile ?? r.message.profile ?? 'gyeol';
   const isLon = profile === 'lon';
+  const isSnapshot = Boolean(opts.snapshot ?? r.message.head?.snapshot);
   const sender = opts.sender ? String(opts.sender).toLowerCase() : null;
   const ink = opts.ink == null ? NaN : Number(opts.ink);
   const inkKnown = Number.isInteger(ink) && ink >= 0 && ink <= 9;
@@ -368,10 +371,10 @@ export function rules08(r: ParseResult, opts: Rules08Options = {}): Diagnostic[]
       }
     }
 
-    // 5b. 봄의 닿음(W40): t3형(추론·직감·가정에서 끊김)은 결·론 모두, t1형(근거 없음)은 론에서만 낸다
+    // 5b. 봄의 닿음(W40): t3형(추론·직감·가정에서 끊김)은 결·론 모두, t1형(근거 없음)은 론·snapshot에서 낸다
     if (c.marks.ev === 'see') {
       const reach = seeReach(c, clauses, nums, start, new Set(), priorSet);
-      if (reach === 'none' && isLon) {
+      if (reach === 'none' && (isLon || isSnapshot)) {
         push('W40', '본 것(see)이 바깥 출처에 닿지 않는다. ↓T(맥락)·↓evd(받은 자료)·↓ref(가져온 자료)·↖N으로 출처를 달거나, 본 것이 아니면 inf·rec로 쓴다');
       } else if (reach === 'inferred') {
         push('W40', '본 것(see)의 근거가 추론·직감·가정 절뿐이다. 본 출처를 ↓T·↓evd·↓ref·↖N으로 달거나, 본 것이 아니면 inf로 쓴다');
@@ -478,6 +481,28 @@ export function rules08(r: ParseResult, opts: Rules08Options = {}): Diagnostic[]
       const long = (w?.aliases ?? []).filter((a) => !SHORT_ALIASES_07.has(a) && !SHORT_ALIASES_07.has(a.toLowerCase()));
       if (long.length) {
         push('W26', `긴 별칭 ${long.join(', ')}을 표지로 읽었다(정규형은 ${long.map((a) => markOf07(a) ?? '?').join(', ')})`);
+      }
+    }
+  }
+
+  if (isSnapshot && clauses.length > 0) {
+    let expected = 1;
+    for (let k = start; k < clauses.length; k++) {
+      const c = clauses[k];
+      if (!c.label) continue;
+      const m = /^[절점](\d+)$/u.exec(c.label);
+      if (!m) continue;
+      const n = Number(m[1]);
+      if (n > expected) {
+        out.push({
+          code: 'W45',
+          severity: '경고',
+          line: k + 1,
+          message: `snapshot 계보 빈틈: 통째 차례에서 본절 번호는 <1부터 하나씩 이어져야 한다(기대 <${expected}, 읽은 <${n}): ${c.label}`,
+        });
+        expected = n + 1;
+      } else if (n === expected) {
+        expected = n + 1;
       }
     }
   }

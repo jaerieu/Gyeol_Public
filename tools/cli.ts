@@ -8,7 +8,7 @@
 //   node tools/cli.ts hashes                    dict/HASHES.md 를 다시 만든다
 
 import { readFileSync, writeFileSync } from 'node:fs';
-import { parse, format, foldMessage, documentName, messageName, short, rules08, glossClause } from '../src/index.ts';
+import { parse, format, foldMessage, documentName, messageName, short, rules08, glossClause, stripReplyLabels } from '../src/index.ts';
 import type { FoldLevel, Profile } from '../src/index.ts';
 
 const root = new URL('..', import.meta.url);
@@ -30,12 +30,13 @@ async function main() {
     case 'check': {
       // v0.8.1(3.22절): --issued evd103,evd201 = 호출부가 미리 준 받은 자료 번호(선언 없이 가리켜도 E17을 내지 않는다)
       const issued = (flagValue('--issued') ?? '').split(',').map((x) => x.trim()).filter(Boolean);
-      const r = parse(read(file), { v08: true, issued });
+      const r = parse(stripReplyLabels(read(file)), { v08: true, issued });
       for (const d of r.diagnostics) console.log(`${d.severity} ${d.code}${d.line ? ` (줄 ${d.line})` : ''}: ${d.message}`);
       const lang = flagValue('--lang') ?? null;
       const profRaw = flags.has('--lon') ? 'lon' : flagValue('--profile');
       const profile: Profile | null = profRaw === 'lon' || profRaw === '론' ? 'lon' : profRaw === 'gyeol' || profRaw === '결' ? 'gyeol' : null;
-      const written = rules08(r, { lang, profile });
+      const snapshot = flags.has('--snapshot');
+      const written = rules08(r, { lang, profile, ...(snapshot ? { snapshot: true } : {}) });
       for (const d of written) console.log(`${d.severity} ${d.code} (절 ${d.line}째, 쓰기 규칙): ${d.message}`);
       const ok = r.ok && !written.some((d) => d.severity === '오류');
       console.log(ok ? `통과 · 절 ${r.message.clauses.length}개 · ${short(await messageName(r.message))}` : '오류 있음');
@@ -103,7 +104,7 @@ async function main() {
       break;
     }
     default:
-      console.log('명령: check [--rules08] [--lon|--profile lon|gyeol] [--issued evd103,evd201] [--lang xx] | format | json | name [--doc] | gloss [--lang xx] | fold <점|절|펼침> | hashes');
+      console.log('명령: check [--rules08] [--lon|--profile lon|gyeol] [--snapshot] [--issued evd103,evd201] [--lang xx] | format | json | name [--doc] | gloss [--lang xx] | fold <점|절|펼침> | hashes');
       process.exitCode = 2;
   }
 }

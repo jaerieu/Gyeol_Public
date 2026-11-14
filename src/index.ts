@@ -15,3 +15,5 @@ export { sha256Hex, documentName, messageName, short } from './hash.ts';
 export * as tables from './tables.ts';
 export { normalizeEvdId, sliceEvidenceLines, resolveRefCopyTurn, stripReplyLabels } from './ref-copy.ts';
 export type { RefCopyCondition, RefCopyOptions, RefCopyResult } from './ref-copy.ts';
+export { clauseWithEvidence, carryDiff } from './lineage.ts';
+export type { CarryChange, CarryDiffResult } from './lineage.ts';

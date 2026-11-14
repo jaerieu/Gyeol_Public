@@ -604,7 +604,11 @@ function parseMarkBlock(text: string, outerParen: string | null, ctx: Ctx): Mark
     } else {
       const en = markOf07(t);
       if (en === undefined) {
-        ctx.err('E05', `알 수 없는 표지 '${raw}': ${shown}`);
+        const isPref = /^(?:↔|↖)\s*\d+(?::\d+)?$|^(?:fix|err|sup|고침|철회|맞섬|물음|받침)\s*(?:→|->)\s*\d+/iu.test(t);
+        const msg = isPref
+          ? `알 수 없는 표지 '${raw}' ('${t}'는 표지가 아니라 앞붙이다. · 뒤 [ 앞에 둔다 예: <7 · fix→3 [see,say]>): ${shown}`
+          : `알 수 없는 표지 '${raw}': ${shown}`;
+        ctx.err('E05', msg);
         return;
       }
       pairs = [[en, t]];
