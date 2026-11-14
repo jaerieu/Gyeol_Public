@@ -24,7 +24,7 @@ const FMT_META = {
   natural: { label: 'Natural Prose', short: 'Prose', color: '#64748B', fill: '#F1F5F9' },
 };
 
-const MODEL_ORDER = ['deepseek_on', 'deepseek_off', 'luna_on', 'luna_off', 'haiku_off', 'haiku_on'];
+const MODEL_ORDER = ['deepseek_on', 'luna_on', 'haiku_on', 'deepseek_off', 'luna_off', 'haiku_off'];
 const MODEL_LABEL = {
   deepseek_on: 'DeepSeek v4.1 Flash (Think ON)',
   deepseek_off: 'DeepSeek v4.1 Flash (Think OFF)',
@@ -79,10 +79,10 @@ const mukMap = new Map(METRICS.muk.map((c) => [c.model, c]));
 
 // ---------------- FIGURE 1: 2x3 30-Hop Lineage Survival Trajectories ----------------
 function buildFig1() {
-  const W = 1200, H = 730;
+  const W = 1200, H = 762;
   const out = [];
   out.push(text(W / 2, 30, 'Figure 1. 30-Hop Non-Destructive Lineage Survival (L) Across 6 Model Cells × 4 Formats (240 Sessions)', { size: 17, weight: 'bold', anchor: 'middle' }));
-  out.push(text(W / 2, 50, 'Held-out scenarios S01–S10 (53 lineage events/scenario). Intention-to-treat (ITT) scores halted sessions 0; Haiku ON also overlays post-hoc wrapper-stripped L.', { size: 11.5, fill: '#475569', anchor: 'middle' }));
+  out.push(text(W / 2, 50, 'Top row: Reasoning ON · Bottom row: Reasoning OFF (paired vertically by model family). Held-out S01–S10 (53 lineage events/scenario).', { size: 11.5, fill: '#475569', anchor: 'middle' }));
 
   // Top legend bar
   const legY = 74;
@@ -103,8 +103,15 @@ function buildFig1() {
 
   const hops = [10, 15, 20, 25, 30];
   const cols = 3, rows = 2;
-  const panW = 355, panH = 262, gapX = 36, gapY = 58;
-  const startX = 64, startY = 104;
+  const panW = 355, panH = 258, gapX = 36, gapY = 68;
+  const startX = 64, startY = 120;
+
+  const gridEndX = startX + cols * panW + (cols - 1) * gapX;
+  out.push(text(startX, 110, 'TOP ROW — REASONING / THINKING ON', { size: 10.5, weight: 'bold', fill: '#0F766E' }));
+  out.push(`<line x1="${startX + 265}" y1="106" x2="${gridEndX}" y2="106" stroke="#99F6E4" stroke-width="1.4"/>`);
+  const row2RuleY = startY + panH + gapY - 10;
+  out.push(text(startX, row2RuleY, 'BOTTOM ROW — REASONING / THINKING OFF', { size: 10.5, weight: 'bold', fill: '#475569' }));
+  out.push(`<line x1="${startX + 288}" y1="${row2RuleY - 4}" x2="${gridEndX}" y2="${row2RuleY - 4}" stroke="#CBD5E1" stroke-width="1.4"/>`);
 
   MODEL_ORDER.forEach((m, idx) => {
     const col = idx % cols;
@@ -232,7 +239,7 @@ function buildFig2() {
     { key: 'json', label: 'Lon − Flat JSON', color: FMT_META.json.color },
     { key: 'jsonchain', label: 'Lon − JSON-chain', color: FMT_META.jsonchain.color },
   ];
-  const modelsOrd = ['deepseek_on', 'deepseek_off', 'luna_on', 'luna_off', 'haiku_off', 'haiku_on'];
+  const modelsOrd = ['deepseek_on', 'luna_on', 'haiku_on', 'deepseek_off', 'luna_off', 'haiku_off'];
   const totalRows = groups.length * modelsOrd.length + 2; // +2 gap slots
   const rowStep = ph / totalRows;
 
@@ -245,7 +252,11 @@ function buildFig2() {
       const sepY = plotT + (rIdx - 0.5) * rowStep - 4;
       out.push(`<line x1="${aX + 12}" y1="${sepY}" x2="${aX + aW - 12}" y2="${sepY}" stroke="#E2E8F0" stroke-width="1"/>`);
     }
-    modelsOrd.forEach((m) => {
+    modelsOrd.forEach((m, mi) => {
+      if (mi === 3) {
+        const sepMidY = plotT + (rIdx + 0.35) * rowStep;
+        out.push(`<line x1="${plotL - 48}" y1="${sepMidY}" x2="${plotR}" y2="${sepMidY}" stroke="#CBD5E1" stroke-dasharray="2,2" stroke-width="0.9"/>`);
+      }
       const yy = plotT + (rIdx + 0.85) * rowStep;
       const item = cList.get(m);
       const hp = holmMap[m];
@@ -286,6 +297,9 @@ function buildFig2() {
 
   const grpW = rpw / modelsOrd.length;
   const fmts = ['lon', 'jsonchain', 'json', 'natural'];
+  out.push(`<line x1="${(rpL + 3 * grpW).toFixed(1)}" y1="${rpT - 12}" x2="${(rpL + 3 * grpW).toFixed(1)}" y2="${rpB + 20}" stroke="#94A3B8" stroke-dasharray="3,3" stroke-width="1"/>`);
+  out.push(text(rpL + 1.5 * grpW, rpT - 6, 'Reasoning ON', { size: 9.2, weight: 'bold', fill: '#0F766E', anchor: 'middle' }));
+  out.push(text(rpL + 4.5 * grpW, rpT - 6, 'Reasoning OFF', { size: 9.2, weight: 'bold', fill: '#475569', anchor: 'middle' }));
   modelsOrd.forEach((m, mi) => {
     const gx = rpL + mi * grpW + 6;
     const bw = (grpW - 18) / 4;
@@ -300,7 +314,7 @@ function buildFig2() {
       out.push(`<rect x="${bx.toFixed(1)}" y="${(rpB - hCur).toFixed(1)}" width="${bw.toFixed(1)}" height="${hCur.toFixed(1)}" fill="${FMT_META[f].fill}" stroke="${col}" stroke-width="0.9"/>`);
       // Lineage solid foreground bar (narrower inside or overlapping cleanly)
       out.push(`<rect x="${(bx + 2).toFixed(1)}" y="${(rpB - hLin).toFixed(1)}" width="${(bw - 4).toFixed(1)}" height="${hLin.toFixed(1)}" fill="${col}" opacity="0.92"/>`);
-      if (f === 'lon' && (m === 'deepseek_on' || m === 'luna_on' || m === 'luna_off')) {
+      if (f === 'lon' && (m === 'deepseek_on' || m === 'luna_on' || m === 'deepseek_off' || m === 'luna_off')) {
         out.push(text(bx + bw / 2, rpB - Math.max(hCur, hLin) - 5, c.readerLin.toFixed(2), { size: 8.5, weight: 'bold', fill: col, anchor: 'middle' }));
       }
     });
@@ -383,14 +397,14 @@ function buildFig3() {
   out.push(text(bX + 16, bY + 24, 'B. Verbatim Hazard Survival & Attributed Quote/Relay Alteration Rate', { size: 12.5, weight: 'bold' }));
   out.push(text(bX + 16, bY + 42, 'Top: Lon-hazard ]> V via <[[...]]> vs Prose | Bottom: Altered/forged attributed span rate (lower is better)', { size: 9.4, fill: '#475569' }));
 
-  const modelsB = ['deepseek_on', 'deepseek_off', 'luna_on', 'luna_off', 'haiku_off'];
   const subTopL = bX + 86, subTopR = bX + bW - 22;
   const bwH = subTopR - subTopL;
 
   // Sub-panel B1: Attributed Quote/Relay Alteration Rate (horizontal comparison across 6 cells including haiku_on posthoc note)
   out.push(text(subTopL, bY + 66, 'Attributed Quote / Relay Alteration Rate (Final Hop 30 Note, Lower = Better)', { size: 10.2, weight: 'bold', fill: '#0F172A' }));
   const rowB = 34;
-  const cellsB = ['deepseek_on', 'deepseek_off', 'luna_on', 'luna_off', 'haiku_off', 'haiku_on'];
+  const cellsB = ['deepseek_on', 'luna_on', 'haiku_on', 'deepseek_off', 'luna_off', 'haiku_off'];
+  out.push(`<line x1="${bX + 18}" y1="${bY + 86 + 3 * rowB - 5}" x2="${subTopR}" y2="${bY + 86 + 3 * rowB - 5}" stroke="#CBD5E1" stroke-dasharray="3,3" stroke-width="1"/>`);
   cellsB.forEach((m, i) => {
     const yy = bY + 86 + i * rowB;
     const lonR = tamperMap.get(`${m}|lon`).alteredRate;
@@ -416,7 +430,7 @@ function buildFig3() {
   out.push(`<line x1="${bX + 16}" y1="${sub2Y - 12}" x2="${bX + bW - 16}" y2="${sub2Y - 12}" stroke="#E2E8F0" stroke-width="1"/>`);
   out.push(text(bX + 16, sub2Y + 6, 'Delimiter-Hazard Survival (Lon <[[...]]> Lon-hazard V vs. JSON-hazard V)', { size: 10.2, weight: 'bold', fill: '#0F172A' }));
 
-  const hazModels = ['deepseek_on', 'deepseek_off', 'luna_on', 'luna_off'];
+  const hazModels = ['deepseek_on', 'luna_on', 'deepseek_off', 'luna_off'];
   const hzStep = (bwH + 40) / hazModels.length;
   hazModels.forEach((m, i) => {
     const tLon = tamperMap.get(`${m}|lon`);
@@ -467,6 +481,9 @@ function buildFig4() {
   mukRows.forEach((r, i) => {
     const yy = aY + 66 + i * rowH;
     const isPh = r.posthoc;
+    if (i === 3 || i === 6) {
+      out.push(`<line x1="${aX + 18}" y1="${yy - 10}" x2="${aX + aW - 18}" y2="${yy - 10}" stroke="#CBD5E1" stroke-dasharray="3,3" stroke-width="1"/>`);
+    }
     out.push(text(barL - 8, yy + 16, r.label, { size: 10, weight: 'bold', anchor: 'end', fill: isPh ? '#7C3AED' : '#0F172A' }));
     // 0-9 Credibility scale bar
     out.push(`<rect x="${barL}" y="${yy + 4}" width="${barW}" height="14" fill="#E2E8F0" rx="3"/>`);
@@ -492,7 +509,7 @@ function buildFig4() {
   const bL = bX + 20, bMid = bX + 292;
   // Left sub-box: Agent weights learned from S01..S05
   out.push(text(bL, bY + 48, 'S01–S05 Train Muk Grades (Test S06–S10):', { size: 9.5, weight: 'bold', fill: '#334155' }));
-  const agentList = ['deepseek_on', 'luna_on', 'luna_off', 'deepseek_off', 'haiku_off', 'haiku_on'];
+  const agentList = ['deepseek_on', 'luna_on', 'haiku_on', 'deepseek_off', 'luna_off', 'haiku_off'];
   agentList.forEach((m, i) => {
     const yy = bY + 68 + i * 24;
     const g = eq.agents[m].grade;
@@ -570,11 +587,12 @@ function buildFig5() {
   out.push(text(aX + 16, aY + 24, 'A. Hop-30 State Size (Chars) & Prefix-Cache Hit % (Lon vs. JSON-chain)', { size: 12, weight: 'bold' }));
   out.push(text(aX + 16, aY + 42, 'Gyeol;Lon cuts Hop-30 state size by 31%–40% and activates explicit caching (39%–40%) on GPT-6 Luna.', { size: 9.4, fill: '#475569' }));
 
-  const modelsA = ['deepseek_on', 'deepseek_off', 'luna_on', 'luna_off', 'haiku_on', 'haiku_off'];
+  const modelsA = ['deepseek_on', 'luna_on', 'haiku_on', 'deepseek_off', 'luna_off', 'haiku_off'];
   const cL = aX + 115, cR = aX + aW - 95, cT = aY + 64, cB = aY + aH - 34;
   const cw = cR - cL;
   const maxChars = 32000;
   const rowStep = (cB - cT) / modelsA.length;
+  out.push(`<line x1="${aX + 18}" y1="${(cT + 3 * rowStep).toFixed(1)}" x2="${aX + aW - 18}" y2="${(cT + 3 * rowStep).toFixed(1)}" stroke="#CBD5E1" stroke-dasharray="3,3" stroke-width="1"/>`);
 
   for (const xv of [0, 10000, 20000, 30000]) {
     const xx = cL + (xv / maxChars) * cw;

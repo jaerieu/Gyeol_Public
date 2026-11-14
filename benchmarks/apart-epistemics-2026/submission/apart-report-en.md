@@ -4,7 +4,7 @@
 
 **Abstract**
 
-Multi-agent language model workflows frequently corrupt intermediate facts, paraphrase attributed quotes, and express uncalibrated confidence across extended handovers. We present **Gyeol** (**G**rammatically **Y**ielding **E**pistemically **O**riented **L**anguage—*Korean for "wood grain," and the texture or vibe of a thing*) and its verification profile **Gyeol;Lon** (**L**ineage **O**riented **N**otation), integrating append-only revision edges (`fix→`, `err→`), adaptive `<[[...]]>` verbatim evidence fences, oracle-free static auditing, and **Muk** (**M**easure **u**pon **K**nowledge) credibility calibration. In a pre-registered, SHA-256-locked 30-hop relay benchmark (240 sessions; 7,176 live calls) across DeepSeek v4.1 Flash, Claude Haiku 5.5, and GPT-6 Luna (reasoning enabled and disabled) over four symmetrical formats, `lon` with DeepSeek reasoning preserves 0.977 of lineage events (7/10 scenarios 100%) versus 0.683 for prose and 0.626 for flat JSON, achieving zero quote alterations (0/941) and 0.994 blind historical accuracy. Across all models without answer keys, static auditing attains 92.5% session defect recall and 94.1% hop precision at a 22.2-hop lead, avoiding prose's 100% clean-session false alarms. Held-out Muk weighting reduces ensemble Brier score by 20.4% (0.1145 to 0.0911), while `lon` cuts Hop-30 state size by 31% to 40% versus `JSON-chain` and enables prompt caching (38.9% to 40.0% on GPT-6 Luna). We also uncover Haiku 5.5 streaming refusal cascades across formats and wrapper-copy fragility, showing inspectable provenance adds defensive reliability even when agents fail.
+Multi-agent language model workflows frequently corrupt intermediate facts, paraphrase attributed quotes, and express uncalibrated confidence across extended handovers. We present **Gyeol** (**G**rammatically **Y**ielding **E**pistemically **O**riented **L**anguage—*Korean for "wood grain," and the texture or vibe of a thing*) and its verification profile **Gyeol;Lon** (**L**ineage **O**riented **N**otation), integrating append-only revision edges (`fix→`, `err→`), adaptive `<[[...]]>` verbatim evidence fences, oracle-free static auditing, and **Muk** (**M**easure **u**pon **K**nowledge) credibility calibration. In a pre-registered, SHA-256-locked 30-hop relay benchmark (240 sessions; 7,176 live calls) across DeepSeek v4.1 Flash, GPT-6 Luna, and Claude Haiku 5.5 (reasoning enabled and disabled) over four symmetrical formats, `lon` with DeepSeek reasoning preserves 0.977 of lineage events (7/10 scenarios 100%) versus 0.683 for prose and 0.626 for flat JSON, achieving zero quote alterations (0/941) and 0.994 blind historical accuracy. Across all models without answer keys, static auditing attains 92.5% session defect recall and 94.1% hop precision at a 22.2-hop lead, avoiding prose's 100% clean-session false alarms. Held-out Muk weighting reduces ensemble Brier score by 20.4% (0.1145 to 0.0911), while `lon` cuts Hop-30 state size by 31% to 40% versus `JSON-chain` and enables prompt caching (38.9% to 40.0% on GPT-6 Luna). We also uncover Haiku 5.5 streaming refusal cascades across formats and wrapper-copy fragility, showing inspectable provenance adds defensive reliability even when agents fail.
 
 ---
 
@@ -17,7 +17,7 @@ Rather than asking models to "remember carefully" inside free-form English or br
 **Our main contributions are:**
 
 1. **Non-Destructive Lineage & Adaptive Fences (`Gyeol;Lon v0.8 snapshot`):** We extend a zero-dependency parser and auditor with full-snapshot lineage continuity checks (`W40`, `W45`, `carryDiff`) and deeper `<[[...]]>` verbatim blocks that isolate arbitrary `]>` substrings across 30-hop relays.
-2. **Pre-Registered 240-Session Relay Benchmark (`E13`) + Single-Turn Probes (`E5/E6b`):** Under SHA-256-frozen stimuli and exact paired permutation tests, we evaluate DeepSeek v4.1 Flash, Claude Haiku 5.5, and GPT-6 Luna (thinking/reasoning ON and OFF) across `lon`, `jsonchain`, `json`, and `natural` prose (`7,176` relay and blind `Reader` calls), quantifying both ceiling performance and derived-arithmetic reasoning bottlenecks (`0.977` `L` with DeepSeek ON).
+2. **Pre-Registered 240-Session Relay Benchmark (`E13`) + Single-Turn Probes (`E5/E6b`):** Under SHA-256-frozen stimuli and exact paired permutation tests, we evaluate DeepSeek v4.1 Flash, GPT-6 Luna, and Claude Haiku 5.5 (thinking/reasoning ON and OFF) across `lon`, `jsonchain`, `json`, and `natural` prose (`7,176` relay and blind `Reader` calls), quantifying both ceiling performance and derived-arithmetic reasoning bottlenecks (`0.977` `L` with DeepSeek ON).
 3. **Oracle-Free Static Audit & Calibrated `Muk v6` / `Eq. E` Consensus:** Without answer keys, `lon` static verification detects defective 30-hop chains at `92.5%` session recall and `94.1%` hop precision (`22.2`-hop mean lead vs. `100%` clean-session false alarms in prose), while chronological train/test `Eq. E` weighting lowers multi-agent Brier error by `20.4%` and confirms empirical neutrality of the seven `Chae` color letters (`colorGain` near zero).
 4. **Transparent Failure Decomposition & Cache Economics:** We isolate two genuine deployment hazards masked by aggregate averages—Anthropic streaming `finish: "refusal"` cascades (`49` ON / `40` OFF events across all formats) and prompt-wrapper boundary leaks (`=== End of document ===`, whose non-modifying strip restores Haiku ON completed `lon` survival to `0.786` and `V = 0.995`)—while measuring a `31%–40%` state size reduction versus `JSON-chain` and automatic GPT-6 Luna cache reuse (`38.9%–40.0%`).
 
@@ -37,7 +37,9 @@ Each `lon` handover note begins with `lon 0.8 · snapshot · lang en` followed b
 lon: <N · [markers] concise label *C8↓grounds> evdM <[verbatim text]>
 ```
 
-where `N` is a strictly increasing integer, `[markers]` encodes evidential status (`see`, `rec`, `inf`, `gut`), limits/tense (`lim`, `pst`, `fut`), and speech act (`say`, `ask`, `req`, `let`, `vow`, `nay`, `ack`). Relation prefixes (`fix→k` revision, `err→k` retraction, `sup→k` later ground) appear between `·` and `[`. In `snapshot` mode, agents must preserve clauses `1..k` verbatim before appending updates; edits to historical numbers or claims violate non-destruction. External strings containing `]>` (including line-range notations such as `<[L1]>`) must be wrapped in `<[[...]]>`, preventing premature fence termination. Every clause ends with `*<chae><0–9>`, where `<chae>` is one of `R G B C M Y K`. Critically, obeying the **Chae color non-definition axiom**, no semantic meaning, rubric, or cue is ever attached to these seven letters in any prompt or documentation.
+where `N` is a strictly increasing integer, `[markers]` encodes evidential status (`see`, `rec`, `inf`, `gut`), limits/tense (`lim`, `pst`, `fut`), and speech act (`say`, `ask`, `req`, `let`, `vow`, `nay`, `ack`). Relation prefixes (`fix→k` revision, `err→k` retraction, `sup→k` later ground) appear between `·` and `[`. In `snapshot` mode, agents must preserve clauses `1..k` verbatim before appending updates; edits to historical numbers or claims violate non-destruction. External strings containing `]>` (including line-range notations such as `<[L1]>`) must be wrapped in `<[[...]]>`, preventing premature fence termination. Every clause ends with `*<chae><0–9>`, where `<chae>` is one of `R G B C M Y K`.
+
+Specifically, **Chae** exists to enforce Axiom 3 of **Gyeol**—strict separation between externally measured credibility (**Muk**, assigned out-of-band by the scorer and never altered by the speaker) and speaker-chosen state at emission. While the confidence digit (`0–9`) feeds proper-scoring calibration, the seven-letter slot (`R G B C M Y K`) records unprimed residual causal-pathway hysteresis as multidimensional latent reasoning crystallizes into a linear clause; under the **Chae color non-definition axiom**, zero semantic meanings, labels, or hints are ever attached to these seven letters in any prompt or validator (and even the expansion *Causal Hysteresis at Emission* is withheld from participant prompts), enabling post-hoc regime analysis without prompt priming. Although **Gyeol;Lon** strips literary and exploratory rules (`top`/`new`/`pdx`/`met`, cross-script checks, mandatory `gloss:`), it deliberately retains the 3-character `*Chae` tail (`E33` mandatory) for three reasons: (i) sharing 100% of the core **Gyeol** parser/AST, `Muk v6` calibration engine, and `Eq. E` math without forking the specification; (ii) accumulating unprimed emission telemetry across controlled multi-hop benchmarks at negligible token cost; and (iii) providing a built-in empirical null-leakage audit (`colorGain ≈ 0`) confirming models cannot smuggle hidden calibration shortcuts through undefined auxiliary tokens.
 
 ### 3.2 Symmetrical Four-Format Design & Pre-Registered E13 Protocol
 
@@ -48,7 +50,7 @@ To avoid confounding formatting benefits with asymmetric task instructions, all 
 - `jsonchain`: Stepwise graph `{"steps": [{"n", "claim", "evidence", "revises", "retracts", "grounds", "quotes"}]}`.
 - `lon`: `Gyeol;Lon v0.8 snapshot` clauses with external `<[...]> / <[[...]]>` relay blocks.
 
-Our pre-registration (`prereg-e13.md`, hashes in `prereg-e13.sha256` frozen before live runs) fixes `10` held-out scenarios (`S01..S10`, deterministic PRNG seed `20261117`). Each scenario spans `30` handover documents (`evd*`) plus `1` blind `Reader` call at Hop 31 (`31` steps/session): `53` lineage events (`20` amend, `29` recompute across derived quantities `D1..D4`, `4` withdraw), `34` final in-force payloads (`58` total historical payloads) spanning `plain`, `JSON-hazard` (quotes, backslashes, multi-line strings), and `Lon-hazard` (`]>` substrings), and `69` blind `Reader` queries (`38` current-state, `31` lineage/historical). We evaluate `6` model cells (`240` sessions; `7,440` planned calls, `7,176` recorded rows including transient retries): `DeepSeek v4.1 Flash` (`deepseek_on`/`off`), `Claude Haiku 5.5` (`haiku_on`/`off`), and `GPT-6 Luna` (`luna_on`/`off`). Pilots `E1–E12` and scenario `L01` used distinct stimuli solely for parser debugging before freezing `S01..S10`.
+Our pre-registration (`prereg-e13.md`, hashes in `prereg-e13.sha256` frozen before live runs) fixes `10` held-out scenarios (`S01..S10`, deterministic PRNG seed `20261117`). Each scenario spans `30` handover documents (`evd*`) plus `1` blind `Reader` call at Hop 31 (`31` steps/session): `53` lineage events (`20` amend, `29` recompute across derived quantities `D1..D4`, `4` withdraw), `34` final in-force payloads (`58` total historical payloads) spanning `plain`, `JSON-hazard` (quotes, backslashes, multi-line strings), and `Lon-hazard` (`]>` substrings), and `69` blind `Reader` queries (`38` current-state, `31` lineage/historical). We evaluate `6` model cells grouped as Reasoning-ON (`deepseek_on`, `luna_on`, `haiku_on`) followed by Reasoning-OFF (`deepseek_off`, `luna_off`, `haiku_off`; `240` sessions, `7,440` planned calls, `7,176` recorded rows including transient retries): `DeepSeek v4.1 Flash`, `GPT-6 Luna`, and `Claude Haiku 5.5`. Pilots `E1–E12` and scenario `L01` used distinct stimuli solely for parser debugging before freezing `S01..S10`.
 
 ### 3.3 Endpoints, Statistical Plan, Key-Free Audit, and Muk v6 / Eq. E
 
@@ -66,13 +68,13 @@ We pre-register five families of endpoints:
 
 All `240/240` sessions settled (`$18.31` total API spend). **Table 1** and **Figure 1** summarize Hop-30 survival and Hop-31 blind `Reader` accuracy.
 
-![Figure 1: Hop-10 through Hop-30 non-destructive lineage survival across all 6 model cells and 4 formats.](../report/figures/fig1-lineage-survival.png)
+![Figure 1: Hop-10 through Hop-30 non-destructive lineage survival across all 6 model cells and 4 formats (Reasoning ON top row, Reasoning OFF bottom row).](../report/figures/fig1-lineage-survival.png)
 
-With reasoning enabled on DeepSeek v4.1 Flash (`deepseek_on`), `Gyeol;Lon` achieves `L = 0.977` (`L_strict = 0.977`, `V = 1.000`, `Vh = 1.000`, `7/10` scenarios `53/53 = 1.000`) and near-perfect blind `Reader` comprehension (`0.997` current, `0.994` historical lineage). On paired comparisons (**Figure 2**), `deepseek_on | lon` outperforms `natural` prose by `+0.294` (`[0.179, 0.411]`, `p_Holm = 0.0391`; Reader lineage `+0.384`, `p_Holm = 0.0234`) and flat `json` by `+0.351` (`[0.287, 0.415]`, `p_Holm = 0.0117`; Reader lineage `+0.087`, `p_Holm = 0.0117`), while remaining compactly ahead of `jsonchain` (`+0.019`, `p_Holm = 0.844`) with 34.4% fewer characters.
+Across the Reasoning-ON cells (top row of **Figure 1**), DeepSeek v4.1 Flash (`deepseek_on`) with `Gyeol;Lon` achieves `L = 0.977` (`L_strict = 0.977`, `V = 1.000`, `Vh = 1.000`, `7/10` scenarios `53/53 = 1.000`) and near-perfect blind `Reader` comprehension (`0.997` current, `0.994` historical lineage). On paired comparisons (**Figure 2**), `deepseek_on | lon` outperforms `natural` prose by `+0.294` (`[0.179, 0.411]`, `p_Holm = 0.0391`; Reader lineage `+0.384`, `p_Holm = 0.0234`) and flat `json` by `+0.351` (`[0.287, 0.415]`, `p_Holm = 0.0117`; Reader lineage `+0.087`, `p_Holm = 0.0117`), while remaining compactly ahead of `jsonchain` (`+0.019`, `p_Holm = 0.844`) with `34.4%` fewer characters. Under reasoning `luna_on`, `lon` reaches `L = 0.534` (`V = 0.953`, Reader lineage `0.874`) and significantly beats `natural` prose (`+0.136`, `p_Holm = 0.0391`), whereas `haiku_on | lon` raw (`0.000`) is depressed by 4 early streaming-refusal halts and outer wrapper copying whose non-modifying strip recovers `0.786` completed `L` (**Section 4.5**).
 
-Across GPT-6 Luna (`luna_on` / `luna_off`) and non-reasoning DeepSeek (`deepseek_off`), `lon` consistently outperforms `natural` prose (`+0.136`, `p_Holm = 0.0391`; `+0.179`, `p_Holm = 0.0352`; `+0.123`, `p_Holm = 0.0469`), driven by `0.953–1.000` verbatim preservation and clean `amend_*` / `withdraw_*` retention (`0.900–1.000`). Category decomposition reveals why `L` plateaus around `0.451–0.534` without sufficient reasoning: across `deepseek_off`, `luna_off`, and `luna_on`, `amend_*` and `withdraw_*` succeed (`0.90–1.00`), whereas multi-hop arithmetic recomputation (`recompute_D1..D4`, 29/53 events) drops to `0.014–0.300`. In `haiku_off`, `jsonchain` suffers 9/10 delta-only collapses (`L = 0.000`, `V = 0.094`), giving `lon` (`0.143`, `V = 0.588`) a `+0.494` raw `V` advantage (`p = 0.0156`).
+Across the Reasoning-OFF cells (bottom row of **Figure 1**), `lon` preserves `0.974–1.000` verbatim payloads on non-refusing models and consistently beats `natural` prose on `deepseek_off` (`0.534`, `+0.123` vs. prose, `p_Holm = 0.0469`, `V = 1.000`) and `luna_off` (`0.451`, `+0.179` vs. prose, `p_Holm = 0.0352`, `0` output cuts vs. `8/10` truncations on `jsonchain`). Category decomposition explains why `luna_on` and the non-reasoning cells (`deepseek_off`, `luna_off`) plateau around `0.451–0.534`: `amend_*` and `withdraw_*` revisions succeed (`0.900–1.000`), whereas multi-hop arithmetic recomputation (`recompute_D1..D4`, `29/53` events) drops to `0.014–0.300`. In `haiku_off`, `jsonchain` suffers `9/10` delta-only collapses (`L = 0.000`, `V = 0.094`), giving `lon` (`0.143`, `V = 0.588`) a `+0.494` raw `V` advantage (`p = 0.0156`).
 
-![Figure 2: Exact paired sign-flip contrasts and blind Hop-31 Reader exact-match accuracy.](../report/figures/fig2-format-contrasts.png)
+![Figure 2: Exact paired sign-flip contrasts (Reasoning ON then OFF) and blind Hop-31 Reader exact-match accuracy.](../report/figures/fig2-format-contrasts.png)
 
 | Cell | Fmt | Brk | L | V | R-Lin | Chars | Cache | USD | Obs / Note |
 | :--- | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | :--- |
@@ -80,26 +82,26 @@ Across GPT-6 Luna (`luna_on` / `luna_off`) and non-reasoning DeepSeek (`deepseek
 | `deepseek_on` | `jsonchain` | 0 | 0.958 | 1.000 | 0.994 | 28,959 | 83.3% | $2.501 | +52% longer |
 | `deepseek_on` | `json` | 0 | 0.626 | 0.994 | 0.906 | 9,895 | 80.9% | $1.468 | overwrites old |
 | `deepseek_on` | `natural` | 0 | 0.683 | 0.988 | 0.610 | 6,326 | 80.0% | $1.680 | cut=7 |
-| `deepseek_off` | `lon` | 0 | 0.534 | **1.000** | **0.865** | 11,971 | 79.7% | $0.853 | V=1.000 |
-| `deepseek_off` | `jsonchain` | 0 | 0.587 | 0.997 | 0.861 | 17,395 | 84.1% | $1.239 | +45% cost |
 | `luna_on` | `lon` | 0 | **0.534** | **0.953** | **0.874** | **17,408** | **38.9%** | $0.600 | only cached |
 | `luna_on` | `jsonchain` | 0 | 0.525 | 0.926 | 0.871 | 24,670 | 0.0% | $0.745 | 0% cache |
+| `haiku_on` | `lon` | 4 | 0.000 | 0.021 | 0.429 | 14,145 | 44.3% | $0.516 | strip=0.786\* |
+| `haiku_on` | `jsonchain` | 1 | 0.549 | 0.718 | 0.613 | 18,714 | 14.8% | $0.880 | refusals=12 |
+| `deepseek_off` | `lon` | 0 | 0.534 | **1.000** | **0.865** | 11,971 | 79.7% | $0.853 | V=1.000 |
+| `deepseek_off` | `jsonchain` | 0 | 0.587 | 0.997 | 0.861 | 17,395 | 84.1% | $1.239 | +45% cost |
 | `luna_off` | `lon` | 0 | **0.451** | **0.974** | 0.810 | **16,177** | **40.0%** | $0.454 | cut=0 |
 | `luna_off` | `jsonchain` | 0 | 0.385 | 0.841 | 0.813 | 27,065 | 0.0% | $0.797 | cut=8/10 |
 | `haiku_off` | `lon` | 2 | 0.143 | 0.588 | 0.223 | 9,486 | 51.3% | $0.416 | refusals=19 |
 | `haiku_off` | `jsonchain` | 2 | 0.000 | 0.094 | 0.019 | 2,592 | 22.6% | $0.446 | deltaOnly=9 |
-| `haiku_on` | `lon` | 4 | 0.000 | 0.021 | 0.429 | 14,145 | 44.3% | $0.516 | strip=0.786\* |
-| `haiku_on` | `jsonchain` | 1 | 0.549 | 0.718 | 0.613 | 18,714 | 14.8% | $0.880 | refusals=12 |
 
-*Table 1.* Key E13 cells (`10` scenarios/cell; full 24-cell metrics in Appendix B). `Brk` = broken sessions (ITT 3 empty replies); `R-Lin` = Hop-31 Reader lineage accuracy. \*Post-hoc wrapper stripping restores `6/10` completed `haiku_on lon` sessions to `L = 0.786`, `V = 0.995`.
+*Table 1.* Key E13 cells ordered Reasoning-ON then Reasoning-OFF (`10` scenarios/cell; full 24-cell metrics in Appendix B). `Brk` = broken sessions (ITT 3 empty replies); `R-Lin` = Hop-31 Reader lineage accuracy. \*Post-hoc wrapper stripping restores `6/10` completed `haiku_on lon` sessions to `L = 0.786`, `V = 0.995`.
 
 ### 4.2 Verbatim Tamper-Evidence & Key-Free Static Audit (Potentials 2 & 3)
 
 ![Figure 3: Key-free static audit across 1,800 relay hops per format and delimiter-hazard verbatim survival.](../report/figures/fig3-static-audit-tamper.png)
 
-**Verbatim Hazard Survival & Quote Integrity:** Across non-refusing models, adaptive `<[[...]]>` blocks neutralize `]>` injection cleanly: `deepseek_on | lon` and `deepseek_off | lon` retain `1.000` across `plain`, `JSON-hazard`, and `Lon-hazard` payloads, while `luna_off | lon` achieves `0.975` on `Lon-hazard` (vs. `0.587`/`0.675` JSON/Lon hazard on `luna_off | natural`). Most sharply, final-note attributed quote/relay alteration is `0/941 (0.0%)` on `deepseek_on | lon`, `5/491 (1.0%)` on `luna_off | lon`, and `6/498 (1.2%)` on `luna_on | lon`, whereas `natural` prose alters `7.9%` (`ds_on`), `18.8%` (`ds_off`), `39.5%` (`luna_on`), and `56.3%` (`luna_off`, `1,126/2,000` spans) of attributed spans.
+**Verbatim Hazard Survival & Quote Integrity:** Across non-refusing models, adaptive `<[[...]]>` blocks neutralize `]>` injection cleanly: with Reasoning ON, `deepseek_on | lon` retains `1.000` across `plain`, `JSON-hazard`, and `Lon-hazard` payloads and cuts final-note attributed quote/relay alteration to `0/941 (0.0%)` (vs. `7.9%` in `natural`), while `luna_on | lon` holds alterations to `6/498 (1.2%)` (vs. `39.5%` in `natural`); with Reasoning OFF, `deepseek_off | lon` retains `1.000` across all hazard tiers (quote alteration `4.6%` vs. `18.8%` `natural`) and `luna_off | lon` achieves `0.975` on `Lon-hazard` (vs. `0.587`/`0.675` JSON/Lon hazard on `luna_off | natural`) while holding alterations to `5/491 (1.0%)` versus `56.3%` (`1,126/2,000` spans) in `natural` prose.
 
-**Key-Free Static Audit (`1,800` hops/format):** Without any oracle key (**Table 2**, **Figure 3A**), `lon` detects `92.5%` of defective sessions (`sPrecision = 0.961`, `hop recall = 0.762`, `hop prec = 0.941`, `onset recall = 0.824`) at an average warning lead of `22.2` hops before Hop 30. Prose flags `100%` of clean sessions (`clean FA = 1.000`) due to unquoted paraphrase drift, rendering prose alarms unusable. Conversely, `json` (`0.456`) and `jsonchain` (`0.391`) miss over half of defective hops because syntactically valid JSON masks broken lineage semantics. Cell-level decomposition shows `lon` achieves `0.000` clean-session false alarms on 5/6 cells (`1.000` session recall on `ds_off`, `haiku_off`, `haiku_on`, `luna_off`; `0.900` on `luna_on`), whereas the sole clean false alarms (`2/7 = 0.286` overall) occur in `ds_on` (`S06` minor `E19/E33/W40` lint; `S09` single hop-28 `CARRY_ALTER`) while `ds_on`'s only `3/10` missed events were silent arithmetic recomputation omissions inside syntactically compliant `inf` clauses.
+**Key-Free Static Audit (`1,800` hops/format):** Without any oracle key (**Table 2**, **Figure 3A**), `lon` detects `92.5%` of defective sessions (`sPrecision = 0.961`, `hop recall = 0.762`, `hop prec = 0.941`, `onset recall = 0.824`) at an average warning lead of `22.2` hops before Hop 30. Prose flags `100%` of clean sessions (`clean FA = 1.000`) due to unquoted paraphrase drift, rendering prose alarms unusable. Conversely, `json` (`0.456`) and `jsonchain` (`0.391`) miss over half of defective hops because syntactically valid JSON masks broken lineage semantics. Cell-level decomposition shows `lon` achieves `0.000` clean-session false alarms on `5/6` cells (`0.900` session recall on `luna_on` and `1.000` on `haiku_on` among Reasoning-ON cells, and `1.000` across all three Reasoning-OFF cells `ds_off`, `luna_off`, `haiku_off`), whereas the sole clean false alarms (`2/7 = 0.286` overall) occur in `ds_on` (`S06` minor `E19/E33/W40` lint; `S09` single hop-28 `CARRY_ALTER`) while `ds_on`'s only `3/10` missed events were silent arithmetic recomputation omissions inside syntactically compliant `inf` clauses.
 
 | Format | Hops | TP | FP | Hop Rec | Hop Prec | Onset Rec | Sess Rec | Sess Prec | Clean FA | Lead (h) |
 | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -112,15 +114,15 @@ Across GPT-6 Luna (`luna_on` / `luna_off`) and non-reasoning DeepSeek (`deepseek
 
 ### 4.3 Muk v6 Epistemic Credibility, Chae Neutrality & Eq. E Consensus (Potential 4)
 
-Across `lon` runs (**Figure 4A**, **Appendix B.3**), `Muk v6` accurately ranks epistemic reliability: `luna_on` earns `Grade 9` (`credBase 8.70, gap 0.0000, Brier 0.0795`), `ds_on`, `ds_off`, and `luna_off` earn `Grade 7` (`Brier 0.0480–0.0697`), while failure-affected `haiku_off` and raw `haiku_on` drop to `Grade 4` and `Grade 0` (post-hoc stripped `haiku_on`: `Grade 5, credBase 5.49, Brier 0.0551`). Crucially, out-of-sample `colorGain` across `S01..S05` vs. `S06..S10` spans `[-0.0167, +0.0001]`, empirically confirming that `R G B C M Y K` encode zero hidden signal under the `Chae` non-definition axiom.
+Across `lon` runs (**Figure 4A**, **Appendix B.3**, ordered Reasoning ON then OFF), `Muk v6` accurately ranks epistemic reliability: among Reasoning-ON cells, `luna_on` earns `Grade 9` (`credBase 8.70, gap 0.0000, Brier 0.0795`), `ds_on` earns `Grade 7` (`Brier 0.0697`), and raw `haiku_on` drops to `Grade 0` (post-hoc stripped `haiku_on`: `Grade 5, credBase 5.49, Brier 0.0551`); among Reasoning-OFF cells, `ds_off` (`Brier 0.0480`) and `luna_off` (`Brier 0.0640`) earn `Grade 7`, while refusal-affected `haiku_off` drops to `Grade 4`. Crucially, out-of-sample `colorGain` across `S01..S05` vs. `S06..S10` spans `[-0.0167, +0.0001]`, empirically confirming that `R G B C M Y K` encode zero hidden signal under the `Chae` non-definition axiom.
 
-Testing `Eq. E` inverse-counter weights on held-out `S06..S10` (`345` queries) using grades learned strictly on `S01..S05` (`ds_on 8, luna_on 8, luna_off 8, ds_off 7, haiku_off 2, haiku_on 1`) cuts ensemble Brier loss by **20.4%** (`0.1145` unweighted vs. `0.0911` `Muk Eq. E`) at matching accuracy (`0.899` vs. `0.896`). Single-turn adversarial probes (`E5/E6b`, `n = 98`) reinforce this mechanism: when models fall for forged chains, `lon` exposes both planted premises inside parsed grounds `84%–90%` of the time (`84%` Haiku/GLM, `90%` Luna) versus `8%–46%` (`natural`) and `0%–36%` (`json`), lifts blind reviewer AUROC (`0.65` vs. `0.53` prose, `+0.12 [0.02, 0.23]`, and `0.43` `json`, `+0.22 [0.11, 0.33]`), and allows the two-fold `Muk` gate (`grade >= 5`) to block `100% (0/98)` of overconfident `Grade-1` planted adoptions where confidence `>= 7` gating lets `63–64` pass.
+Testing `Eq. E` inverse-counter weights on held-out `S06..S10` (`345` queries) using grades learned strictly on `S01..S05` (`ds_on 8, luna_on 8, haiku_on 1; ds_off 7, luna_off 8, haiku_off 2`) cuts ensemble Brier loss by **20.4%** (`0.1145` unweighted vs. `0.0911` `Muk Eq. E`) at matching accuracy (`0.899` vs. `0.896`). Single-turn adversarial probes (`E5/E6b`, `n = 98`) reinforce this mechanism: when models fall for forged chains, `lon` exposes both planted premises inside parsed grounds `84%–90%` of the time (`84%` Haiku/GLM, `90%` Luna) versus `8%–46%` (`natural`) and `0%–36%` (`json`), lifts blind reviewer AUROC (`0.65` vs. `0.53` prose, `+0.12 [0.02, 0.23]`, and `0.43` `json`, `+0.22 [0.11, 0.33]`), and allows the two-fold `Muk` gate (`grade >= 5`) to block `100% (0/98)` of overconfident `Grade-1` planted adoptions where confidence `>= 7` gating lets `63–64` pass.
 
 ![Figure 4: Muk v6 credibility calibration, Chae neutrality, held-out Eq. E ensemble weighting, and E5/E6b probes.](../report/figures/fig4-muk-calibration.png)
 
 ### 4.4 Long-Horizon Efficiency & Prefix Caching (Potential 5)
 
-As relay depth reaches Hop 30 (**Figure 5**), `lon` stays `31%–40%` more compact than `jsonchain` (`19,001` vs. `28,959` chars on `deepseek_on`; `16,177` vs. `27,065` on `luna_off`, where `jsonchain` hit max-output limits in `8/10` sessions while `lon` had `0` truncations). Because `lon`'s rule sheet + immutable prefix structure align with provider prefix-cache boundaries, `lon` triggers `87.3%` cache hits on `ds_on` (`$0.221` vs. `$0.250` per session on `jsonchain`) and is the *only* format triggering explicit OpenAI prefix caching on `GPT-6 Luna` (`38.9%` ON, `40.0%` OFF vs. `0.0%–0.8%` across baselines), cutting settled session cost by `19.4%` (`$0.060` vs. `$0.075`) and `43.1%` (`$0.045` vs. `$0.080`).
+As relay depth reaches Hop 30 (**Figure 5**), `lon` stays `31%–40%` more compact than `jsonchain`: among Reasoning-ON cells, `19,001` vs. `28,959` chars on `deepseek_on` (`-34.4%`) and `17,408` vs. `24,670` on `luna_on`, and among Reasoning-OFF cells, `11,971` vs. `17,395` on `deepseek_off` and `16,177` vs. `27,065` on `luna_off` (where `jsonchain` hit max-output limits in `8/10` sessions while `lon` had `0` truncations). Because `lon`'s rule sheet + immutable prefix structure align with provider prefix-cache boundaries, `lon` triggers `87.3%` cache hits on `ds_on` (`$0.221` vs. `$0.250` per session on `jsonchain`) and is the *only* format triggering explicit OpenAI prefix caching on `GPT-6 Luna` (`38.9%` ON, `40.0%` OFF vs. `0.0%–0.8%` across baselines), cutting settled session cost by `19.4%` (`$0.060` vs. `$0.075`) and `43.1%` (`$0.045` vs. `$0.080`).
 
 ![Figure 5: Hop-30 state size, prefix-cache hits, and cost-lineage Pareto frontier.](../report/figures/fig5-efficiency-pareto.png)
 
@@ -208,49 +210,49 @@ Jaehoon Rieu conceived the **Gyeol** language, **Gyeol;Lon** snapshot grammar, *
 
 Prior to freezing `E13`: (1) `E1–E4` (`hard40` 24 items, `main40` 72 items) established forged-chain failure and `Muk v6` separation (`haiku` grade `3–6` vs. `luna` grade `1`); (2) `E5/E6b` (`100` items × `16` cells + `1,600` blind reviews, `98`-item sensitivity in `report/metrics-e5-sens.md`) quantified premise exposure (`P1b`), key-free lift (`P2`), tamper evidence (`P3`), reviewer AUROC (`P4`), and `S1` Muk gate; (3) `E7–E10` tested 8-hop chains (`20` scenarios × `6` cells), showing 8 hops were too short for full degradation; (4) `E11–E12` (`sessions-e12.json`) and calibration scenario `L01` surfaced 4 bugs fixed in commit `10fba3d` (`snapshot` mode + `W40/W45/carryDiff`, `<[[...]]>` fence rules, pre-`[` relation prefix order, and Anthropic `thinking: {type: 'disabled'}` cleanly recovering `deepseek_off lon` from `0.000` to `L = 0.887, V = 0.912` on `L01` before locking `S01..S10`). No `S01..S10` scenario ran before the pre-registration lock.
 
-### B.3 Complete 24-Cell E13 Metrics (Potentials 1, 2, 4, and 5)
+### B.3 Complete 24-Cell E13 Metrics (Ordered Reasoning ON then OFF)
 
 | Model | Fmt | Brk | L | L str | V | Vh | R Cur | R Lin | h30 Chars | Cache | Altered | USD |
 | :--- | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `deepseek_off` | `json` | 0 | 0.453 | 0.443 | 0.991 | 0.995 | 0.876 | 0.861 | 8696 | 82.0% | 0.036 | 0.6822 |
-| `deepseek_off` | `jsonchain` | 0 | 0.587 | 0.532 | 0.997 | 0.998 | 0.913 | 0.861 | 17395 | 84.1% | 0.000 | 1.2392 |
-| `deepseek_off` | `lon` | 0 | 0.534 | 0.511 | 1.000 | 1.000 | 0.903 | 0.865 | 11971 | 79.7% | 0.046 | 0.8533 |
-| `deepseek_off` | `natural` | 0 | 0.411 | 0.374 | 0.897 | 0.928 | 0.761 | 0.732 | 3771 | 77.4% | 0.188 | 0.3125 |
-| `deepseek_on` | `json` | 0 | 0.626 | 0.626 | 0.994 | 0.995 | 0.897 | 0.906 | 9895 | 80.9% | 0.011 | 1.4677 |
-| `deepseek_on` | `jsonchain` | 0 | 0.958 | 0.936 | 1.000 | 1.000 | 0.995 | 0.994 | 28959 | 83.3% | 0.000 | 2.5007 |
 | `deepseek_on` | `lon` | 0 | **0.977** | **0.977** | **1.000** | **1.000** | **0.997** | **0.994** | 19001 | 87.3% | **0.000** | 2.2108 |
+| `deepseek_on` | `jsonchain` | 0 | 0.958 | 0.936 | 1.000 | 1.000 | 0.995 | 0.994 | 28959 | 83.3% | 0.000 | 2.5007 |
+| `deepseek_on` | `json` | 0 | 0.626 | 0.626 | 0.994 | 0.995 | 0.897 | 0.906 | 9895 | 80.9% | 0.011 | 1.4677 |
 | `deepseek_on` | `natural` | 0 | 0.683 | 0.683 | 0.988 | 0.990 | 0.571 | 0.610 | 6326 | 80.0% | 0.079 | 1.6795 |
-| `haiku_off` | `json` | 0 | 0.423 | 0.417 | 0.821 | 0.881 | 0.524 | 0.494 | 8807 | 23.8% | 0.016 | 0.4116 |
-| `haiku_off` | `jsonchain` | 2 | 0.000 | 0.000 | 0.094 | 0.055 | 0.058 | 0.019 | 2592 | 22.6% | 0.000 | 0.4457 |
-| `haiku_off` | `lon` | 2 | 0.143 | 0.136 | 0.588 | 0.586 | 0.292 | 0.223 | 9486 | 51.3% | 0.099 | 0.4157 |
-| `haiku_off` | `natural` | 1 | 0.274 | 0.262 | 0.691 | 0.736 | 0.305 | 0.255 | 4495 | 34.7% | 0.192 | 0.2079 |
-| `haiku_on` | `json` | 1 | 0.453 | 0.453 | 0.732 | 0.786 | 0.624 | 0.745 | 11946 | 19.7% | 0.063 | 0.5803 |
-| `haiku_on` | `jsonchain` | 1 | 0.549 | 0.549 | 0.718 | 0.772 | 0.503 | 0.613 | 18714 | 14.8% | 0.041 | 0.8797 |
-| `haiku_on` | `lon` | 4 | 0.000 | 0.000 | 0.021 | 0.050 | 0.397 | 0.429 | 14145 | 44.3% | 0.451 | 0.5163 |
-| `haiku_on` | `natural` | 1 | 0.306 | 0.306 | 0.662 | 0.731 | 0.539 | 0.552 | 4522 | 33.9% | 0.045 | 0.3033 |
-| `luna_off` | `json` | 0 | 0.432 | 0.404 | 0.888 | 0.919 | 0.800 | 0.803 | 7319 | 0.8% | 0.024 | 0.2836 |
-| `luna_off` | `jsonchain` | 0 | 0.385 | 0.336 | 0.841 | 0.852 | 0.837 | 0.813 | 27065 | 0.0% | 0.013 | 0.7973 |
-| `luna_off` | `lon` | 0 | 0.451 | 0.392 | 0.974 | 0.978 | 0.874 | 0.810 | 16177 | 40.0% | 0.010 | 0.4537 |
-| `luna_off` | `natural` | 0 | 0.272 | 0.245 | 0.738 | 0.772 | 0.550 | 0.397 | 3081 | 0.0% | 0.563 | 0.1756 |
-| `luna_on` | `json` | 0 | 0.458 | 0.442 | 0.900 | 0.928 | 0.829 | 0.852 | 9399 | 0.0% | 0.009 | 0.3364 |
-| `luna_on` | `jsonchain` | 0 | 0.525 | 0.458 | 0.926 | 0.950 | 0.874 | 0.871 | 24670 | 0.0% | 0.012 | 0.7451 |
 | `luna_on` | `lon` | 0 | 0.534 | 0.492 | 0.953 | 0.962 | 0.903 | 0.874 | 17408 | 38.9% | 0.012 | 0.6004 |
+| `luna_on` | `jsonchain` | 0 | 0.525 | 0.458 | 0.926 | 0.950 | 0.874 | 0.871 | 24670 | 0.0% | 0.012 | 0.7451 |
+| `luna_on` | `json` | 0 | 0.458 | 0.442 | 0.900 | 0.928 | 0.829 | 0.852 | 9399 | 0.0% | 0.009 | 0.3364 |
 | `luna_on` | `natural` | 0 | 0.398 | 0.379 | 0.879 | 0.898 | 0.771 | 0.755 | 5381 | 0.0% | 0.395 | 0.2129 |
+| `haiku_on` | `lon` | 4 | 0.000 | 0.000 | 0.021 | 0.050 | 0.397 | 0.429 | 14145 | 44.3% | 0.451 | 0.5163 |
+| `haiku_on` | `jsonchain` | 1 | 0.549 | 0.549 | 0.718 | 0.772 | 0.503 | 0.613 | 18714 | 14.8% | 0.041 | 0.8797 |
+| `haiku_on` | `json` | 1 | 0.453 | 0.453 | 0.732 | 0.786 | 0.624 | 0.745 | 11946 | 19.7% | 0.063 | 0.5803 |
+| `haiku_on` | `natural` | 1 | 0.306 | 0.306 | 0.662 | 0.731 | 0.539 | 0.552 | 4522 | 33.9% | 0.045 | 0.3033 |
+| `deepseek_off` | `lon` | 0 | 0.534 | 0.511 | 1.000 | 1.000 | 0.903 | 0.865 | 11971 | 79.7% | 0.046 | 0.8533 |
+| `deepseek_off` | `jsonchain` | 0 | 0.587 | 0.532 | 0.997 | 0.998 | 0.913 | 0.861 | 17395 | 84.1% | 0.000 | 1.2392 |
+| `deepseek_off` | `json` | 0 | 0.453 | 0.443 | 0.991 | 0.995 | 0.876 | 0.861 | 8696 | 82.0% | 0.036 | 0.6822 |
+| `deepseek_off` | `natural` | 0 | 0.411 | 0.374 | 0.897 | 0.928 | 0.761 | 0.732 | 3771 | 77.4% | 0.188 | 0.3125 |
+| `luna_off` | `lon` | 0 | 0.451 | 0.392 | 0.974 | 0.978 | 0.874 | 0.810 | 16177 | 40.0% | 0.010 | 0.4537 |
+| `luna_off` | `jsonchain` | 0 | 0.385 | 0.336 | 0.841 | 0.852 | 0.837 | 0.813 | 27065 | 0.0% | 0.013 | 0.7973 |
+| `luna_off` | `json` | 0 | 0.432 | 0.404 | 0.888 | 0.919 | 0.800 | 0.803 | 7319 | 0.8% | 0.024 | 0.2836 |
+| `luna_off` | `natural` | 0 | 0.272 | 0.245 | 0.738 | 0.772 | 0.550 | 0.397 | 3081 | 0.0% | 0.563 | 0.1756 |
+| `haiku_off` | `lon` | 2 | 0.143 | 0.136 | 0.588 | 0.586 | 0.292 | 0.223 | 9486 | 51.3% | 0.099 | 0.4157 |
+| `haiku_off` | `jsonchain` | 2 | 0.000 | 0.000 | 0.094 | 0.055 | 0.058 | 0.019 | 2592 | 22.6% | 0.000 | 0.4457 |
+| `haiku_off` | `json` | 0 | 0.423 | 0.417 | 0.821 | 0.881 | 0.524 | 0.494 | 8807 | 23.8% | 0.016 | 0.4116 |
+| `haiku_off` | `natural` | 1 | 0.274 | 0.262 | 0.691 | 0.736 | 0.305 | 0.255 | 4495 | 34.7% | 0.192 | 0.2079 |
 
 | Muk v6 Cell (`lon`) | Clauses | Chae | Acc | CredBase | Grade | Cal Gap | Brier | Overconf | colorGain |
 | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `deepseek_off` | 712 | 673 | 0.968 | 6.840 | 7 | 0.0811 | 0.0480 | 0.034 | +0.0001 |
 | `deepseek_on` | 1475 | 1472 | 0.945 | 7.217 | 7 | 0.0644 | 0.0697 | 0.055 | 0.0000 |
-| `haiku_off` | 517 | 505 | 0.758 | 4.455 | 4 | 0.1833 | 0.1732 | 0.238 | -0.0167 |
-| `haiku_on` (raw) | 529 | 529 | 0.382 | 0.335 | 0 | 0.3751 | 0.4307 | 0.609 | +0.0001 |
-| `haiku_on` (strip) | 529 | 529 | 0.977 | 5.491 | 5 | 0.1389 | 0.0551 | n/a | n/a |
-| `luna_off` | 848 | 838 | 0.942 | 7.318 | 7 | 0.0605 | 0.0640 | 0.058 | 0.0000 |
 | `luna_on` | 1360 | 1351 | 0.920 | 8.696 | 9 | 0.0000 | 0.0795 | 0.080 | -0.0017 |
+| `haiku_on` (raw) | 529 | 529 | 0.382 | 0.335 | 0 | 0.3751 | 0.4307 | 0.609 | +0.0001 |
+| `deepseek_off` | 712 | 673 | 0.968 | 6.840 | 7 | 0.0811 | 0.0480 | 0.034 | +0.0001 |
+| `luna_off` | 848 | 838 | 0.942 | 7.318 | 7 | 0.0605 | 0.0640 | 0.058 | 0.0000 |
+| `haiku_off` | 517 | 505 | 0.758 | 4.455 | 4 | 0.1833 | 0.1732 | 0.238 | -0.0167 |
+| `haiku_on` (strip) | 529 | 529 | 0.977 | 5.491 | 5 | 0.1389 | 0.0551 | n/a | n/a |
 
 ## Appendix C: Gyeol;Lon v0.8 Grammar Card & Muk v6 / Eq. E Equations
 
 - **Wire Syntax:** `lon 0.8 · snapshot · lang en` header; sequential clauses `lon: <N · [markers] label *C8↓grounds>` (with relation prefixes `fix→k`, `err→k`, `sup→k` placed strictly between `·` and `[`); external blocks `evdM <[ ... ]>` or `evdM <[[ ... ]]>` when payload contains `]>`.
-- **Chae Non-Definition Axiom:** Allowed letters `C ∈ {R, G, B, C, M, Y, K}` carry strictly *zero* defined semantic roles across all prompts, validators, and scorers.
+- **Chae Non-Definition Axiom:** Allowed letters `C ∈ {R, G, B, C, M, Y, K}` carry strictly *zero* defined semantic roles across all prompts, validators, and scorers; `Gyeol;Lon` retains mandatory `*<C><0–9>` (`E33`) to share the unified `Gyeol` AST/`Muk v6` calibration engine and audit `colorGain ≈ 0` null leakage.
 - **Muk v6 Calibration Equations (`vendor/gyeol-10fba3d/src/muk.ts`):** Confidence digit `c ∈ {0..9}` maps to probability `p = (c + 0.5)/10` and Brier error `(p - y)^2`. Across 5 confidence buckets (`0–2, 3–4, 5–6, 7–8, 9`) decayed by half-life `60` answers (`d = 0.5^(all/60)`), residual squared error is debiased (`(p_b - r_b)^2 - r_b(1 - r_b)/max(1, n_b - 1)`), missing-chae clauses incur penalty `(0.3)^2`, yielding `gap = max(0, sqrt(err/N) - 0.05)`, `raw = clamp(9 - 25*gap, 0, 9)`, and `credBase = 5 + (raw - 5)*N/(N + 6)` (`grade = clamp(round(credBase), 0, 9)`). Under `Eq. E` (`lowE = 2, mid = 5, hint = 0.2, floor = 0.15`), reader trust weight is `w = 0` for `grade <= 2`, linear `0 -> 0.2` on `(2, 5]`, linear `0.2 -> 1.0` on `(5, 9]`, yielding `pe = 0.5 + w*(p - 0.5)` and `counterShare = max(0.15, 1 - logistic(logit(pe) + logit(e)))` (ensemble trust weight `1 - counterShare`).
 
 ## LLM Usage Statement
