@@ -531,8 +531,8 @@ function buildFig4() {
   out.push(text(bMid, yMuk - 6, `Muk-Weighted Eq. E (acc ${eq.mukAcc.toFixed(3)})`, { size: 9.6, weight: 'bold', fill: '#0F766E' }));
   out.push(`<rect x="${bMid}" y="${yMuk}" width="${(eq.mukBrier / brMax) * brW}" height="24" fill="#0F766E" rx="3"/>`);
   out.push(text(bMid + (eq.mukBrier / brMax) * brW + 6, yMuk + 16, `${eq.mukBrier.toFixed(4)} (−20.4%)`, { size: 10, weight: 'bold', fill: '#0F766E' }));
-  out.push(text(bMid, bY + 195, 'Eq. E suppresses Grade 1–2 noisy agents cleanly', { size: 9.4, fill: '#0F766E' }));
-  out.push(text(bMid, bY + 210, 'without oracle ground-truth labels on S06–S10.', { size: 9.4, fill: '#475569' }));
+  out.push(text(bMid, bY + 195, 'Eq. E soft floor (w>=0.55): 0.0911 (−20.4%, acc 0.896)', { size: 8.8, fill: '#0F766E' }));
+  out.push(text(bMid, bY + 210, 'Hard Muk>=5 gate (4 cells): 0.0511 (−55.4%, acc 0.942)', { size: 8.8, fill: '#475569' }));
 
   // Panel C (Bottom-Right): Single-Turn E5/E6b Forged-Premise Synthesis
   const cX = 622, cY = 294, cW = 574, cH = 242;
@@ -561,13 +561,12 @@ function buildFig4() {
     out.push(`<rect x="${sx}" y="${yy + 19}" width="${Math.max(2, r.jsn * swMax).toFixed(1)}" height="7.5" fill="${FMT_META.json.color}" rx="1"/>`);
     out.push(text(sx + r.jsn * swMax + 5, yy + 26, `JSON ${r.jsn.toFixed(2)}`, { size: 8.3, fill: '#B45309' }));
   });
-  out.push(text(cX + 462, cY + 94, 'S1 Adversarial', { size: 9.8, weight: 'bold', fill: '#0F172A' }));
-  out.push(text(cX + 462, cY + 110, 'Plant Gate:', { size: 9.8, weight: 'bold', fill: '#0F172A' }));
-  out.push(text(cX + 462, cY + 132, 'Conf>=7 gate passes', { size: 9.0, fill: '#DC2626' }));
-  out.push(text(cX + 462, cY + 145, '63–64 Luna plants.', { size: 9.0, fill: '#DC2626' }));
-  out.push(text(cX + 462, cY + 165, 'Muk Grade>=5 gate', { size: 9.0, weight: 'bold', fill: '#0F766E' }));
-  out.push(text(cX + 462, cY + 178, 'blocks 100% (0/98)', { size: 9.0, weight: 'bold', fill: '#0F766E' }));
-  out.push(text(cX + 462, cY + 191, 'Grade-1 plants.', { size: 9.0, weight: 'bold', fill: '#0F766E' }));
+  out.push(text(cX + 442, cY + 92, 'S1 Cell-Level Gate:', { size: 9.4, weight: 'bold', fill: '#0F172A' }));
+  out.push(text(cX + 442, cY + 114, 'Conf>=7 passes 63–64', { size: 8.6, fill: '#DC2626' }));
+  out.push(text(cX + 442, cY + 127, 'Luna forged plants.', { size: 8.6, fill: '#DC2626' }));
+  out.push(text(cX + 442, cY + 148, 'Muk>=5 blocks 100%', { size: 8.6, weight: 'bold', fill: '#0F766E' }));
+  out.push(text(cX + 442, cY + 161, 'G1 plants (100% G1 blk;', { size: 8.6, weight: 'bold', fill: '#0F766E' }));
+  out.push(text(cX + 442, cY + 174, 'Haiku G6: 0/48 false blk).', { size: 8.6, weight: 'bold', fill: '#0F766E' }));
 
   const svgPath = resolve(FIG_DIR, 'fig4-muk-calibration.svg');
   const pngPath = resolve(FIG_DIR, 'fig4-muk-calibration.png');
@@ -585,7 +584,7 @@ function buildFig5() {
   const aX = 24, aY = 52, aW = 580, aH = 454;
   out.push(`<rect x="${aX}" y="${aY}" width="${aW}" height="${aH}" rx="6" fill="#FAFAFA" stroke="#E2E8F0"/>`);
   out.push(text(aX + 16, aY + 24, 'A. Hop-30 State Size (Chars) & Prefix-Cache Hit % (Lon vs. JSON-chain)', { size: 12, weight: 'bold' }));
-  out.push(text(aX + 16, aY + 42, 'Gyeol;Lon cuts Hop-30 state size by 31%–40% and activates explicit caching (39%–40%) on GPT-6 Luna.', { size: 9.4, fill: '#475569' }));
+  out.push(text(aX + 16, aY + 42, 'Lon cuts non-refusal Hop-30 state size by 29%–40% vs JSON-chain & activates Luna caching (39%–40%).', { size: 9.2, fill: '#475569' }));
 
   const modelsA = ['deepseek_on', 'luna_on', 'haiku_on', 'deepseek_off', 'luna_off', 'haiku_off'];
   const cL = aX + 115, cR = aX + aW - 95, cT = aY + 64, cB = aY + aH - 34;
@@ -673,6 +672,11 @@ function buildFig5() {
   out.push(`<circle cx="${hx.toFixed(1)}" cy="${hy.toFixed(1)}" r="5" fill="#FFFFFF" stroke="#7C3AED" stroke-width="2"/>`);
   out.push(text(hx + 7, hy + 3, 'Haiku ON Lon (strip done: 0.786)', { size: 8.6, fill: '#7C3AED' }));
 
+  // Overlay live post-hoc ablation: deepseek_on jsonchain_nogq (n=10, $1.8398, L=0.728)
+  const abX = xP(0.18398), abY = yP(0.728);
+  out.push(`<polygon points="${abX.toFixed(1)},${(abY - 5.2).toFixed(1)} ${(abX + 5.2).toFixed(1)},${abY.toFixed(1)} ${abX.toFixed(1)},${(abY + 5.2).toFixed(1)} ${(abX - 5.2).toFixed(1)},${abY.toFixed(1)}" fill="#FFFFFF" stroke="#2563EB" stroke-width="2"/>`);
+  out.push(text(abX + 8, abY + 3, 'DS ON J-chain −g/q (0.728, $0.184)', { size: 8.4, weight: 'bold', fill: '#1D4ED8' }));
+
   // Key non-overlapping callouts
   const callouts = [
     ['deepseek_on|lon', -10, -8, 'DS ON Lon (0.977, $0.221)', 'end'],
@@ -759,7 +763,7 @@ function buildCover() {
       title: 'Prefix Cache & Compactness',
       col: '#D97706',
       lines: [
-        '• 31%–40% smaller Hop-30 state vs JSON-chain',
+        '• 29%–40% smaller Hop-30 state vs JSON-chain',
         '• Zero token-ceiling cuts on Luna OFF (vs 8/10)',
         '• 87.3% prefix cache hit on DeepSeek ON',
         '• 38.9%–40.0% explicit cache hit on GPT-6 Luna',
