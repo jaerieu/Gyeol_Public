@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-15T06:14:51.437Z",
+  "generatedAt": "2026-11-15T13:59:48.646Z",
   "note": "Post-hoc verification diagnostics over locked E13 logs and pre-registered metrics (prereg files unmodified).",
   "contrasts18": {
     "holmWTL": {
@@ -24,6 +24,13 @@
           "T": 5,
           "L": 1
         }
+      }
+    },
+    "holmAll18WTL": {
+      "total": {
+        "W": 1,
+        "T": 16,
+        "L": 1
       }
     },
     "rawWTL": {
@@ -64,7 +71,9 @@
         "outcomeHolm": "W",
         "outcomeRaw": "W",
         "diffReaderLin": 0.3838709677419355,
-        "pHolmReaderLin": 0.0234375
+        "pHolmReaderLin": 0.0234375,
+        "pHolmAll18": 0.1015625,
+        "outcomeHolm18": "T"
       },
       {
         "baseline": "natural",
@@ -79,7 +88,9 @@
         "outcomeHolm": "W",
         "outcomeRaw": "W",
         "diffReaderLin": 0.1193548387096774,
-        "pHolmReaderLin": 0.1640625
+        "pHolmReaderLin": 0.1640625,
+        "pHolmAll18": 0.1015625,
+        "outcomeHolm18": "T"
       },
       {
         "baseline": "natural",
@@ -94,7 +105,9 @@
         "outcomeHolm": "L",
         "outcomeRaw": "L",
         "diffReaderLin": -0.1225806451612903,
-        "pHolmReaderLin": 1
+        "pHolmReaderLin": 1,
+        "pHolmAll18": 0.171875,
+        "outcomeHolm18": "T"
       },
       {
         "baseline": "natural",
@@ -109,7 +122,9 @@
         "outcomeHolm": "W",
         "outcomeRaw": "W",
         "diffReaderLin": 0.13225806451612904,
-        "pHolmReaderLin": 1
+        "pHolmReaderLin": 1,
+        "pHolmAll18": 0.171875,
+        "outcomeHolm18": "T"
       },
       {
         "baseline": "natural",
@@ -124,7 +139,9 @@
         "outcomeHolm": "W",
         "outcomeRaw": "W",
         "diffReaderLin": 0.4129032258064515,
-        "pHolmReaderLin": 0.05859375
+        "pHolmReaderLin": 0.05859375,
+        "pHolmAll18": 0.08203125,
+        "outcomeHolm18": "T"
       },
       {
         "baseline": "natural",
@@ -139,7 +156,9 @@
         "outcomeHolm": "T",
         "outcomeRaw": "T",
         "diffReaderLin": -0.03225806451612904,
-        "pHolmReaderLin": 1
+        "pHolmReaderLin": 1,
+        "pHolmAll18": 0.806640625,
+        "outcomeHolm18": "T"
       },
       {
         "baseline": "json",
@@ -154,7 +173,9 @@
         "outcomeHolm": "W",
         "outcomeRaw": "W",
         "diffReaderLin": 0.08709677419354839,
-        "pHolmReaderLin": 0.01171875
+        "pHolmReaderLin": 0.01171875,
+        "pHolmAll18": 0.03515625,
+        "outcomeHolm18": "W"
       },
       {
         "baseline": "json",
@@ -169,7 +190,9 @@
         "outcomeHolm": "T",
         "outcomeRaw": "T",
         "diffReaderLin": 0.022580645161290325,
-        "pHolmReaderLin": 1
+        "pHolmReaderLin": 1,
+        "pHolmAll18": 1,
+        "outcomeHolm18": "T"
       },
       {
         "baseline": "json",
@@ -184,7 +207,9 @@
         "outcomeHolm": "L",
         "outcomeRaw": "L",
         "diffReaderLin": -0.3161290322580645,
-        "pHolmReaderLin": 0.234375
+        "pHolmReaderLin": 0.234375,
+        "pHolmAll18": 0.0625,
+        "outcomeHolm18": "T"
       },
       {
         "baseline": "json",
@@ -199,7 +224,9 @@
         "outcomeHolm": "T",
         "outcomeRaw": "T",
         "diffReaderLin": 0.0032258064516129115,
-        "pHolmReaderLin": 1
+        "pHolmReaderLin": 1,
+        "pHolmAll18": 0.5,
+        "outcomeHolm18": "T"
       },
       {
         "baseline": "json",
@@ -214,7 +241,9 @@
         "outcomeHolm": "T",
         "outcomeRaw": "T",
         "diffReaderLin": 0.006451612903225767,
-        "pHolmReaderLin": 1
+        "pHolmReaderLin": 1,
+        "pHolmAll18": 1,
+        "outcomeHolm18": "T"
       },
       {
         "baseline": "json",
@@ -229,7 +258,9 @@
         "outcomeHolm": "L",
         "outcomeRaw": "L",
         "diffReaderLin": -0.2709677419354839,
-        "pHolmReaderLin": 0.1953125
+        "pHolmReaderLin": 0.1953125,
+        "pHolmAll18": 0.03515625,
+        "outcomeHolm18": "L"
       },
       {
         "baseline": "jsonchain",
@@ -244,7 +275,9 @@
         "outcomeHolm": "T",
         "outcomeRaw": "T",
         "diffReaderLin": 0,
-        "pHolmReaderLin": 1
+        "pHolmReaderLin": 1,
+        "pHolmAll18": 1,
+        "outcomeHolm18": "T"
       },
       {
         "baseline": "jsonchain",
@@ -259,7 +292,9 @@
         "outcomeHolm": "T",
         "outcomeRaw": "T",
         "diffReaderLin": 0.0032258064516128893,
-        "pHolmReaderLin": 1
+        "pHolmReaderLin": 1,
+        "pHolmAll18": 1,
+        "outcomeHolm18": "T"
       },
       {
         "baseline": "jsonchain",
@@ -274,7 +309,9 @@
         "outcomeHolm": "L",
         "outcomeRaw": "L",
         "diffReaderLin": -0.18387096774193545,
-        "pHolmReaderLin": 1
+        "pHolmReaderLin": 1,
+        "pHolmAll18": 0.0625,
+        "outcomeHolm18": "T"
       },
       {
         "baseline": "jsonchain",
@@ -289,7 +326,9 @@
         "outcomeHolm": "T",
         "outcomeRaw": "T",
         "diffReaderLin": 0.0032258064516129115,
-        "pHolmReaderLin": 1
+        "pHolmReaderLin": 1,
+        "pHolmAll18": 1,
+        "outcomeHolm18": "T"
       },
       {
         "baseline": "jsonchain",
@@ -304,7 +343,9 @@
         "outcomeHolm": "T",
         "outcomeRaw": "T",
         "diffReaderLin": -0.003225806451612945,
-        "pHolmReaderLin": 1
+        "pHolmReaderLin": 1,
+        "pHolmAll18": 1,
+        "outcomeHolm18": "T"
       },
       {
         "baseline": "jsonchain",
@@ -319,9 +360,25 @@
         "outcomeHolm": "T",
         "outcomeRaw": "W",
         "diffReaderLin": 0.2032258064516129,
-        "pHolmReaderLin": 0.09375
+        "pHolmReaderLin": 0.09375,
+        "pHolmAll18": 0.28125,
+        "outcomeHolm18": "T"
       }
     ]
+  },
+  "callAccounting": {
+    "plannedCalls": 7440,
+    "brokenMidRelaySessions": 12,
+    "unexecutedCalls": 305,
+    "unexecutedRelayCalls": 293,
+    "unexecutedReaderCalls": 12,
+    "retryRowsTotal": 41,
+    "terminalEmptyRefusalRetries": 30,
+    "terminalRelayRetries": 24,
+    "terminalReaderRetries": 6,
+    "recoveredTransientRetries": 11,
+    "totalLoggedRows": 7176,
+    "identityVerified": true
   },
   "eventCategories": [
     {
@@ -597,6 +654,135 @@
       ]
     }
   },
+  "lonThreeTierAudit": {
+    "pooledPreReg": {
+      "tp": 980,
+      "fp": 61,
+      "fn": 306,
+      "tn": 453,
+      "hopPrecision": 0.9414024975984631,
+      "hopRecall": 0.7620528771384136,
+      "sTP": 49,
+      "sFP": 2,
+      "sFN": 4,
+      "sTN": 5,
+      "sRecall": 0.9245283018867925,
+      "sPrecision": 0.9607843137254902,
+      "cleanFaRate": 0.2857142857142857,
+      "cleanFaCI95": [
+        0.03669256617608556,
+        0.7095791362626573
+      ],
+      "falseCleanSessions": [
+        "deepseek_on|S06",
+        "deepseek_on|S09"
+      ]
+    },
+    "tier1Form": {
+      "tp": 652,
+      "fp": 60,
+      "fn": 634,
+      "tn": 454,
+      "hopPrecision": 0.9157303370786517,
+      "hopRecall": 0.5069984447900466,
+      "sTP": 37,
+      "sFP": 1,
+      "sFN": 16,
+      "sTN": 6,
+      "sRecall": 0.6981132075471698,
+      "sPrecision": 0.9736842105263158,
+      "cleanFaRate": 0.14285714285714285,
+      "cleanFaCI95": [
+        0.003610296861900582,
+        0.5787231970431952
+      ],
+      "falseCleanSessions": [
+        "deepseek_on|S06"
+      ]
+    },
+    "tier2Provenance": {
+      "tp": 523,
+      "fp": 52,
+      "fn": 763,
+      "tn": 462,
+      "hopPrecision": 0.9095652173913044,
+      "hopRecall": 0.40668740279937793,
+      "sTP": 33,
+      "sFP": 2,
+      "sFN": 20,
+      "sTN": 5,
+      "sRecall": 0.6226415094339622,
+      "sPrecision": 0.9428571428571428,
+      "cleanFaRate": 0.2857142857142857,
+      "cleanFaCI95": [
+        0.03669256617608556,
+        0.7095791362626573
+      ],
+      "falseCleanSessions": [
+        "deepseek_on|S06",
+        "deepseek_on|S09"
+      ]
+    },
+    "tier3Content": {
+      "tp": 461,
+      "fp": 0,
+      "fn": 825,
+      "tn": 514,
+      "hopPrecision": 1,
+      "hopRecall": 0.3584758942457232,
+      "sTP": 28,
+      "sFP": 0,
+      "sFN": 25,
+      "sTN": 7,
+      "sRecall": 0.5283018867924528,
+      "sPrecision": 1,
+      "cleanFaRate": 0,
+      "cleanFaCI95": [
+        0,
+        0.4096163972250034
+      ],
+      "falseCleanSessions": []
+    },
+    "s09Hop28Examples": [
+      {
+        "clause": "142",
+        "prevLen": 167,
+        "currLen": 159
+      }
+    ]
+  },
+  "formLintCellFeOls": {
+    "hop30OnReaderAll": {
+      "nSessions": 54,
+      "nCells": 6,
+      "df": 47,
+      "nonZeroPredictorSessions": 33,
+      "beta": -0.000008614960494252803,
+      "se": 0.0005425881458968245,
+      "tStat": -0.015877531714249757,
+      "pVal": 0.9873993046304504
+    },
+    "hop30OnReaderLin": {
+      "nSessions": 54,
+      "nCells": 6,
+      "df": 47,
+      "nonZeroPredictorSessions": 33,
+      "beta": 1.3895097571376716e-7,
+      "se": 0.00048624358654656015,
+      "tStat": 0.0002857641304857847,
+      "pVal": 0.9997732027118394
+    },
+    "cum1to30OnReaderAll": {
+      "nSessions": 54,
+      "nCells": 6,
+      "df": 47,
+      "nonZeroPredictorSessions": 37,
+      "beta": -0.00000454127508716483,
+      "se": 0.00023757818803940063,
+      "tStat": -0.019114865403433805,
+      "pVal": 0.9848303907504848
+    }
+  },
   "promptDecomposition": {
     "byFormat": {
       "natural": {
@@ -765,6 +951,253 @@
         "unweightedAcc": 0.8695652173913043,
         "eqEAcc": 0.8695652173913043,
         "mukGe5Acc": 0.927536231884058
+      }
+    ],
+    "multiclassBrier": {
+      "nItems": 345,
+      "unweighted": 0.18454106280193255,
+      "eqE": 0.1425836997674763,
+      "mukGe5": 0.08188405797101449,
+      "readerAccLin": 0.09244406760608624,
+      "readerAccTop4": 0.08188405797101449,
+      "eqEReductionPct": -22.73605797940428,
+      "mukGe5ReductionPct": -55.62827225130895
+    }
+  },
+  "chaeDistribution": {
+    "totalDeduplicatedWithChae": 5360,
+    "totals": {
+      "R": 0,
+      "G": 4316,
+      "B": 1044,
+      "C": 0,
+      "M": 0,
+      "Y": 0,
+      "K": 0
+    },
+    "byCell": {
+      "deepseek_on": {
+        "totalWithChae": 1472,
+        "counts": {
+          "R": 0,
+          "G": 1472,
+          "B": 0,
+          "C": 0,
+          "M": 0,
+          "Y": 0,
+          "K": 0
+        },
+        "pcts": {
+          "R": 0,
+          "G": 100,
+          "B": 0,
+          "C": 0,
+          "M": 0,
+          "Y": 0,
+          "K": 0
+        }
+      },
+      "luna_on": {
+        "totalWithChae": 1351,
+        "counts": {
+          "R": 0,
+          "G": 722,
+          "B": 629,
+          "C": 0,
+          "M": 0,
+          "Y": 0,
+          "K": 0
+        },
+        "pcts": {
+          "R": 0,
+          "G": 53.441894892672096,
+          "B": 46.558105107327904,
+          "C": 0,
+          "M": 0,
+          "Y": 0,
+          "K": 0
+        }
+      },
+      "haiku_on": {
+        "totalWithChae": 529,
+        "counts": {
+          "R": 0,
+          "G": 368,
+          "B": 161,
+          "C": 0,
+          "M": 0,
+          "Y": 0,
+          "K": 0
+        },
+        "pcts": {
+          "R": 0,
+          "G": 69.56521739130434,
+          "B": 30.434782608695652,
+          "C": 0,
+          "M": 0,
+          "Y": 0,
+          "K": 0
+        }
+      },
+      "deepseek_off": {
+        "totalWithChae": 673,
+        "counts": {
+          "R": 0,
+          "G": 673,
+          "B": 0,
+          "C": 0,
+          "M": 0,
+          "Y": 0,
+          "K": 0
+        },
+        "pcts": {
+          "R": 0,
+          "G": 100,
+          "B": 0,
+          "C": 0,
+          "M": 0,
+          "Y": 0,
+          "K": 0
+        }
+      },
+      "luna_off": {
+        "totalWithChae": 830,
+        "counts": {
+          "R": 0,
+          "G": 828,
+          "B": 2,
+          "C": 0,
+          "M": 0,
+          "Y": 0,
+          "K": 0
+        },
+        "pcts": {
+          "R": 0,
+          "G": 99.75903614457832,
+          "B": 0.24096385542168675,
+          "C": 0,
+          "M": 0,
+          "Y": 0,
+          "K": 0
+        }
+      },
+      "haiku_off": {
+        "totalWithChae": 505,
+        "counts": {
+          "R": 0,
+          "G": 253,
+          "B": 252,
+          "C": 0,
+          "M": 0,
+          "Y": 0,
+          "K": 0
+        },
+        "pcts": {
+          "R": 0,
+          "G": 50.0990099009901,
+          "B": 49.9009900990099,
+          "C": 0,
+          "M": 0,
+          "Y": 0,
+          "K": 0
+        }
+      }
+    }
+  },
+  "haikuRefusalBreakdown": {
+    "totalRefusals": 89,
+    "byFormatTotal": {
+      "natural": 21,
+      "json": 8,
+      "jsonchain": 23,
+      "lon": 37
+    },
+    "byModelFormat": {
+      "haiku_on": {
+        "natural": {
+          "total": 12,
+          "empty": 3,
+          "midStream": 9
+        },
+        "json": {
+          "total": 7,
+          "empty": 3,
+          "midStream": 4
+        },
+        "jsonchain": {
+          "total": 12,
+          "empty": 8,
+          "midStream": 4
+        },
+        "lon": {
+          "total": 18,
+          "empty": 15,
+          "midStream": 3
+        }
+      },
+      "haiku_off": {
+        "natural": {
+          "total": 9,
+          "empty": 3,
+          "midStream": 6
+        },
+        "json": {
+          "total": 1,
+          "empty": 0,
+          "midStream": 1
+        },
+        "jsonchain": {
+          "total": 11,
+          "empty": 6,
+          "midStream": 5
+        },
+        "lon": {
+          "total": 19,
+          "empty": 6,
+          "midStream": 13
+        }
+      }
+    },
+    "haikuOnTripleEmptyHalts": [
+      {
+        "scen": "S02",
+        "format": "natural",
+        "hop": 3
+      },
+      {
+        "scen": "S02",
+        "format": "json",
+        "hop": 3
+      },
+      {
+        "scen": "S02",
+        "format": "jsonchain",
+        "hop": 3
+      },
+      {
+        "scen": "S04",
+        "format": "jsonchain",
+        "hop": 31
+      },
+      {
+        "scen": "S02",
+        "format": "lon",
+        "hop": 3
+      },
+      {
+        "scen": "S03",
+        "format": "lon",
+        "hop": 3
+      },
+      {
+        "scen": "S04",
+        "format": "lon",
+        "hop": 3
+      },
+      {
+        "scen": "S10",
+        "format": "lon",
+        "hop": 4
       }
     ]
   }

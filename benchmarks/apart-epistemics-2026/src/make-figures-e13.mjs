@@ -534,39 +534,70 @@ function buildFig4() {
   out.push(text(bMid, bY + 195, 'Eq. E soft floor (w>=0.55): 0.0911 (−20.4%, acc 0.896)', { size: 8.8, fill: '#0F766E' }));
   out.push(text(bMid, bY + 210, 'Hard Muk>=5 gate (4 cells): 0.0511 (−55.4%, acc 0.942)', { size: 8.8, fill: '#475569' }));
 
-  // Panel C (Bottom-Right): Single-Turn E5/E6b Forged-Premise Synthesis
+  // Panel C (Bottom-Right): Single-Turn E5/E6b Forged-Premise Synthesis (ALL 4 Formats)
   const cX = 622, cY = 294, cW = 574, cH = 242;
   out.push(`<rect x="${cX}" y="${cY}" width="${cW}" height="${cH}" rx="6" fill="#FAFAFA" stroke="#E2E8F0"/>`);
-  out.push(text(cX + 16, cY + 24, 'C. Complementary Single-Turn Forged-Premise Probe (E5 / E6b, n = 98 items)', { size: 12, weight: 'bold' }));
-  out.push(text(cX + 16, cY + 42, 'When models fall for planted chains, Lon exposes forged grounds (P1b) and warns blind reviewers (P4).', { size: 9.3, fill: '#475569' }));
+  out.push(text(cX + 16, cY + 23, 'C. Complementary Single-Turn Forged-Premise Probe (E5 / E6b, n = 98 clean)', { size: 11.8, weight: 'bold' }));
+  out.push(text(cX + 16, cY + 39, 'All 4 formats: JSON-chain leads P1b; Lon leads P3 (4/4 vs J-chain/Prose) & ties/leads P4.', { size: 9.0, fill: '#475569' }));
 
-  // P1b mini chart (Left side of Panel C)
-  const p1Rows = [
-    { label: 'P1b Premise Vis (Luna)', lon: 0.90, nat: 0.46, jsn: 0.36 },
-    { label: 'P1b Premise Vis (Haiku)', lon: 0.84, nat: 0.08, jsn: 0.00 },
-    { label: 'P1b Premise Vis (GLM)', lon: 0.84, nat: 0.14, jsn: 0.19 },
-    { label: 'P4 Blind AUROC (Pooled)', lon: 0.65, nat: 0.53, jsn: 0.43 },
+  // 4-Format Legend strip above chart
+  const cFmts = ['lon', 'jsonchain', 'json', 'natural'];
+  let lgC = cX + 46;
+  for (const f of cFmts) {
+    out.push(`<rect x="${lgC}" y="${cY + 47}" width="9" height="9" fill="${FMT_META[f].color}" rx="1.5"/>`);
+    out.push(text(lgC + 13, cY + 55, FMT_META[f].short, { size: 8.6, weight: f === 'lon' ? 'bold' : 'normal', fill: '#334155' }));
+    lgC += f === 'jsonchain' ? 80 : 62;
+  }
+
+  // Vertical grouped bar chart across P1b (4 models), P3 (4-model mean), P4 (non-self AUROC)
+  const cpL = cX + 44, cpR = cX + 428, cpT = cY + 70, cpB = cY + 214;
+  const cpw = cpR - cpL, cph = cpB - cpT;
+  for (const yv of [0, 0.5, 1.0]) {
+    const yy = cpB - yv * cph;
+    out.push(`<line x1="${cpL}" y1="${yy}" x2="${cpR}" y2="${yy}" stroke="${yv === 0 ? '#64748B' : '#E2E8F0'}" stroke-width="${yv === 0 ? 1.1 : 0.8}"/>`);
+    out.push(text(cpL - 5, yy + 3, yv.toFixed(1), { size: 8.4, fill: '#475569', anchor: 'end' }));
+  }
+  const e5Groups = [
+    { label: 'P1b DS', vals: { lon: 0.43, jsonchain: 0.63, json: 0.00, natural: 0.17 } },
+    { label: 'P1b GLM', vals: { lon: 0.84, jsonchain: 1.00, json: 0.19, natural: 0.14 } },
+    { label: 'P1b Haiku', vals: { lon: 0.84, jsonchain: 0.98, json: 0.00, natural: 0.08 } },
+    { label: 'P1b Luna', vals: { lon: 0.90, jsonchain: 1.00, json: 0.36, natural: 0.46 } },
+    { label: 'P3 Mean', vals: { lon: 0.70, jsonchain: 0.46, json: 0.69, natural: 0.30 } },
+    { label: 'P4 AUROC', vals: { lon: 0.65, jsonchain: 0.63, json: 0.43, natural: 0.53 } },
   ];
-  p1Rows.forEach((r, i) => {
-    const yy = cY + 64 + i * 40;
-    const sx = cX + 165, swMax = 210;
-    out.push(text(sx - 8, yy + 14, r.label, { size: 9.3, weight: 'bold', anchor: 'end', fill: '#1E293B' }));
-    // Three stacked slim bars: Lon, Prose, JSON
-    out.push(`<rect x="${sx}" y="${yy}" width="${(r.lon * swMax).toFixed(1)}" height="7.5" fill="${FMT_META.lon.color}" rx="1"/>`);
-    out.push(text(sx + r.lon * swMax + 5, yy + 7, `Lon ${r.lon.toFixed(2)}`, { size: 8.3, weight: 'bold', fill: FMT_META.lon.color }));
-
-    out.push(`<rect x="${sx}" y="${yy + 9.5}" width="${Math.max(2, r.nat * swMax).toFixed(1)}" height="7.5" fill="${FMT_META.natural.color}" rx="1"/>`);
-    out.push(text(sx + r.nat * swMax + 5, yy + 16.5, `Prose ${r.nat.toFixed(2)}`, { size: 8.3, fill: '#475569' }));
-
-    out.push(`<rect x="${sx}" y="${yy + 19}" width="${Math.max(2, r.jsn * swMax).toFixed(1)}" height="7.5" fill="${FMT_META.json.color}" rx="1"/>`);
-    out.push(text(sx + r.jsn * swMax + 5, yy + 26, `JSON ${r.jsn.toFixed(2)}`, { size: 8.3, fill: '#B45309' }));
+  const gStep = cpw / e5Groups.length;
+  // Subtle divider separating P1b from P3 & P4
+  out.push(`<line x1="${(cpL + 4 * gStep).toFixed(1)}" y1="${cpT - 6}" x2="${(cpL + 4 * gStep).toFixed(1)}" y2="${cpB + 14}" stroke="#CBD5E1" stroke-dasharray="3,2" stroke-width="0.9"/>`);
+  e5Groups.forEach((grp, gi) => {
+    const gx = cpL + gi * gStep + 5;
+    const bw = 11.2, bgap = 2.2;
+    out.push(text(cpL + (gi + 0.5) * gStep, cpB + 14, grp.label, { size: 8.4, weight: 'bold', anchor: 'middle', fill: '#1E293B' }));
+    cFmts.forEach((f, fi) => {
+      const v = grp.vals[f];
+      const bh = v * cph;
+      const bx = gx + fi * (bw + bgap);
+      const by = cpB - bh;
+      out.push(`<rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${bw}" height="${Math.max(1.5, bh).toFixed(1)}" fill="${FMT_META[f].color}" rx="1.2"/>`);
+      if (f === 'lon' || f === 'jsonchain') {
+        const dy = fi === 1 && Math.abs(grp.vals.lon - grp.vals.jsonchain) < 0.08 ? -10 : -3;
+        const lbl = v >= 0.995 ? '1.0' : v.toFixed(2).replace(/^0/, '');
+        out.push(text(bx + bw / 2, Math.min(cpB - 3, by + dy), lbl, { size: 7.0, weight: 'bold', anchor: 'middle', fill: FMT_META[f].color }));
+      }
+    });
   });
-  out.push(text(cX + 442, cY + 92, 'S1 Cell-Level Gate:', { size: 9.4, weight: 'bold', fill: '#0F172A' }));
-  out.push(text(cX + 442, cY + 114, 'Conf>=7 passes 63–64', { size: 8.6, fill: '#DC2626' }));
-  out.push(text(cX + 442, cY + 127, 'Luna forged plants.', { size: 8.6, fill: '#DC2626' }));
-  out.push(text(cX + 442, cY + 148, 'Muk>=5 blocks 100%', { size: 8.6, weight: 'bold', fill: '#0F766E' }));
-  out.push(text(cX + 442, cY + 161, 'G1 plants (100% G1 blk;', { size: 8.6, weight: 'bold', fill: '#0F766E' }));
-  out.push(text(cX + 442, cY + 174, 'Haiku G6: 0/48 false blk).', { size: 8.6, weight: 'bold', fill: '#0F766E' }));
+  out.push(text(cpL + 2 * gStep, cpB + 25, 'Premise Exposure P1b (4 Models)', { size: 7.8, fill: '#64748B', anchor: 'middle' }));
+  out.push(text(cpL + 5 * gStep, cpB + 25, 'Tamper / Review', { size: 7.8, fill: '#64748B', anchor: 'middle' }));
+
+  // Right callout box for S1 Cell-Level Gate
+  const sBoxX = cX + 436, sBoxY = cY + 64, sBoxW = 126, sBoxH = 152;
+  out.push(`<rect x="${sBoxX}" y="${sBoxY}" width="${sBoxW}" height="${sBoxH}" rx="4" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>`);
+  out.push(text(sBoxX + 9, sBoxY + 20, 'S1 Cell-Level Gate:', { size: 9.0, weight: 'bold', fill: '#0F172A' }));
+  out.push(text(sBoxX + 9, sBoxY + 42, 'Conf>=7 passes', { size: 8.3, fill: '#DC2626' }));
+  out.push(text(sBoxX + 9, sBoxY + 55, '63 Luna lon plants.', { size: 8.3, fill: '#DC2626' }));
+  out.push(text(sBoxX + 9, sBoxY + 78, 'Muk>=5 blocks', { size: 8.3, weight: 'bold', fill: '#0F766E' }));
+  out.push(text(sBoxX + 9, sBoxY + 91, '100% of G1 plants', { size: 8.3, weight: 'bold', fill: '#0F766E' }));
+  out.push(text(sBoxX + 9, sBoxY + 114, 'Haiku G6 (0/48', { size: 8.3, weight: 'bold', fill: '#0F766E' }));
+  out.push(text(sBoxX + 9, sBoxY + 127, 'false blocks on lon).', { size: 8.3, weight: 'bold', fill: '#0F766E' }));
 
   const svgPath = resolve(FIG_DIR, 'fig4-muk-calibration.svg');
   const pngPath = resolve(FIG_DIR, 'fig4-muk-calibration.png');
@@ -584,7 +615,7 @@ function buildFig5() {
   const aX = 24, aY = 52, aW = 580, aH = 454;
   out.push(`<rect x="${aX}" y="${aY}" width="${aW}" height="${aH}" rx="6" fill="#FAFAFA" stroke="#E2E8F0"/>`);
   out.push(text(aX + 16, aY + 24, 'A. Hop-30 State Size (Chars) & Prefix-Cache Hit % (Lon vs. JSON-chain)', { size: 12, weight: 'bold' }));
-  out.push(text(aX + 16, aY + 42, 'Lon cuts non-refusal Hop-30 state size by 29%–40% vs JSON-chain & activates Luna caching (39%–40%).', { size: 9.2, fill: '#475569' }));
+  out.push(text(aX + 16, aY + 42, 'Lon cuts non-refusal Hop-30 state size 29%–40% vs JSON-chain & clears >=1,024-tok Luna static cache (39%–40%).', { size: 9.0, fill: '#475569' }));
 
   const modelsA = ['deepseek_on', 'luna_on', 'haiku_on', 'deepseek_off', 'luna_off', 'haiku_off'];
   const cL = aX + 115, cR = aX + aW - 95, cT = aY + 64, cB = aY + aH - 34;
@@ -719,7 +750,7 @@ function buildCover() {
 
   out.push(text(72, 62, 'APART RESEARCH  ·  AI x EPISTEMICS SPRINT 2026  ·  TRACK 1 & TRACK 2', { size: 16, weight: 'bold', fill: '#5EEAD4' }));
   out.push(text(72, 118, 'Gyeol;Lon — Non-Destructive Epistemic Lineage, Key-Free Audit & Muk v6', { size: 36, weight: 'bold', fill: '#FFFFFF' }));
-  out.push(text(72, 162, 'Pre-Registered 30-Hop LLM Relay Benchmark Across GPT-6 Luna, Claude Haiku 5.5, and DeepSeek v4.1 Flash', { size: 20, fill: '#CBD5E1' }));
+  out.push(text(72, 162, 'SHA-256-Locked 30-Hop LLM Relay Benchmark Across GPT-6 Luna, Claude Haiku 5.5, and DeepSeek v4.1 Flash', { size: 20, fill: '#CBD5E1' }));
   out.push(text(72, 206, 'Jaehoon Rieu (Team Gyeol, Brisbane, Australia)  ·  240 Settled Sessions  ·  7,176 Live Calls  ·  Zero-Dependency Reference Implementation', { size: 15.5, fill: '#94A3B8' }));
 
   // 4 Architecture Pipeline Boxes in middle row
@@ -805,7 +836,7 @@ function buildCover() {
   out.push(`<rect x="72" y="720" width="${W - 144}" height="122" rx="10" fill="#F1F5F9" stroke="#CBD5E1"/>`);
   out.push(text(98, 756, 'TRANSPARENT FAILURE-MODE & REPRODUCIBILITY HIGHLIGHTS', { size: 13.5, weight: 'bold', fill: '#0F172A' }));
   out.push(text(98, 784, '• Claude Haiku 5.5 triggered 49 (ON) and 40 (OFF) Anthropic streaming finish:"refusal" halts across all 4 formats plus wrapper-boundary copying; stripping restores Lon completed L=0.786 (V=0.995, G5).', { size: 11.6, fill: '#334155' }));
-  out.push(text(98, 810, '• Frozen SHA-256 pre-registration (7/7 verified) · 0-dependency Node 22 parser & scorer · github.com/jaerieu/Gyeol_Public/tree/main/benchmarks/apart-epistemics-2026 · gyeol.link', { size: 11.6, fill: '#0F766E', weight: 'bold' }));
+  out.push(text(98, 810, '• Pre-run local SHA-256 lock (7/7 verified) · 0-dependency Node 22 parser & scorer · github.com/jaerieu/Gyeol_Public/tree/main/benchmarks/apart-epistemics-2026 · gyeol.link', { size: 11.6, fill: '#0F766E', weight: 'bold' }));
 
   const svgPath = resolve(SUB_DIR, 'apart-project-image.svg');
   const pngPath = resolve(SUB_DIR, 'apart-project-image.png');
