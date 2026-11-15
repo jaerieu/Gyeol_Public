@@ -1,0 +1,771 @@
+{
+  "generatedAt": "2026-11-15T06:14:51.437Z",
+  "note": "Post-hoc verification diagnostics over locked E13 logs and pre-registered metrics (prereg files unmodified).",
+  "contrasts18": {
+    "holmWTL": {
+      "total": {
+        "W": 5,
+        "T": 9,
+        "L": 4
+      },
+      "byBaseline": {
+        "natural": {
+          "W": 4,
+          "T": 1,
+          "L": 1
+        },
+        "json": {
+          "W": 1,
+          "T": 3,
+          "L": 2
+        },
+        "jsonchain": {
+          "W": 0,
+          "T": 5,
+          "L": 1
+        }
+      }
+    },
+    "rawWTL": {
+      "total": {
+        "W": 6,
+        "T": 8,
+        "L": 4
+      },
+      "byBaseline": {
+        "natural": {
+          "W": 4,
+          "T": 1,
+          "L": 1
+        },
+        "json": {
+          "W": 1,
+          "T": 3,
+          "L": 2
+        },
+        "jsonchain": {
+          "W": 1,
+          "T": 4,
+          "L": 1
+        }
+      }
+    },
+    "rows": [
+      {
+        "baseline": "natural",
+        "model": "deepseek_on",
+        "diffL": 0.2943396226415095,
+        "ci95": [
+          0.17924528301886794,
+          0.4113207547169811
+        ],
+        "pRaw": 0.0078125,
+        "pHolm": 0.0390625,
+        "outcomeHolm": "W",
+        "outcomeRaw": "W",
+        "diffReaderLin": 0.3838709677419355,
+        "pHolmReaderLin": 0.0234375
+      },
+      {
+        "baseline": "natural",
+        "model": "luna_on",
+        "diffL": 0.13584905660377358,
+        "ci95": [
+          0.052830188679245285,
+          0.23207547169811318
+        ],
+        "pRaw": 0.0078125,
+        "pHolm": 0.0390625,
+        "outcomeHolm": "W",
+        "outcomeRaw": "W",
+        "diffReaderLin": 0.1193548387096774,
+        "pHolmReaderLin": 0.1640625
+      },
+      {
+        "baseline": "natural",
+        "model": "haiku_on",
+        "diffL": -0.30566037735849055,
+        "ci95": [
+          -0.44528301886792454,
+          -0.15660377358490565
+        ],
+        "pRaw": 0.015625,
+        "pHolm": 0.046875,
+        "outcomeHolm": "L",
+        "outcomeRaw": "L",
+        "diffReaderLin": -0.1225806451612903,
+        "pHolmReaderLin": 1
+      },
+      {
+        "baseline": "natural",
+        "model": "deepseek_off",
+        "diffL": 0.12264150943396224,
+        "ci95": [
+          0.04339622641509434,
+          0.21132075471698109
+        ],
+        "pRaw": 0.015625,
+        "pHolm": 0.046875,
+        "outcomeHolm": "W",
+        "outcomeRaw": "W",
+        "diffReaderLin": 0.13225806451612904,
+        "pHolmReaderLin": 1
+      },
+      {
+        "baseline": "natural",
+        "model": "luna_off",
+        "diffL": 0.1792452830188679,
+        "ci95": [
+          0.09999999999999998,
+          0.2622641509433962
+        ],
+        "pRaw": 0.005859375,
+        "pHolm": 0.03515625,
+        "outcomeHolm": "W",
+        "outcomeRaw": "W",
+        "diffReaderLin": 0.4129032258064515,
+        "pHolmReaderLin": 0.05859375
+      },
+      {
+        "baseline": "natural",
+        "model": "haiku_off",
+        "diffL": -0.13018867924528302,
+        "ci95": [
+          -0.26415094339622647,
+          0.009433962264150941
+        ],
+        "pRaw": 0.115234375,
+        "pHolm": 0.115234375,
+        "outcomeHolm": "T",
+        "outcomeRaw": "T",
+        "diffReaderLin": -0.03225806451612904,
+        "pHolmReaderLin": 1
+      },
+      {
+        "baseline": "json",
+        "model": "deepseek_on",
+        "diffL": 0.35094339622641507,
+        "ci95": [
+          0.28679245283018867,
+          0.41509433962264153
+        ],
+        "pRaw": 0.001953125,
+        "pHolm": 0.01171875,
+        "outcomeHolm": "W",
+        "outcomeRaw": "W",
+        "diffReaderLin": 0.08709677419354839,
+        "pHolmReaderLin": 0.01171875
+      },
+      {
+        "baseline": "json",
+        "model": "luna_on",
+        "diffL": 0.07547169811320754,
+        "ci95": [
+          -0.02264150943396226,
+          0.19056603773584907
+        ],
+        "pRaw": 0.23828125,
+        "pHolm": 0.4765625,
+        "outcomeHolm": "T",
+        "outcomeRaw": "T",
+        "diffReaderLin": 0.022580645161290325,
+        "pHolmReaderLin": 1
+      },
+      {
+        "baseline": "json",
+        "model": "haiku_on",
+        "diffL": -0.4528301886792453,
+        "ci95": [
+          -0.5433962264150942,
+          -0.3339622641509434
+        ],
+        "pRaw": 0.00390625,
+        "pHolm": 0.015625,
+        "outcomeHolm": "L",
+        "outcomeRaw": "L",
+        "diffReaderLin": -0.3161290322580645,
+        "pHolmReaderLin": 0.234375
+      },
+      {
+        "baseline": "json",
+        "model": "deepseek_off",
+        "diffL": 0.0811320754716981,
+        "ci95": [
+          0.028301886792452824,
+          0.14150943396226412
+        ],
+        "pRaw": 0.0625,
+        "pHolm": 0.1875,
+        "outcomeHolm": "T",
+        "outcomeRaw": "T",
+        "diffReaderLin": 0.0032258064516129115,
+        "pHolmReaderLin": 1
+      },
+      {
+        "baseline": "json",
+        "model": "luna_off",
+        "diffL": 0.018867924528301876,
+        "ci95": [
+          -0.041509433962264156,
+          0.0792452830188679
+        ],
+        "pRaw": 0.626953125,
+        "pHolm": 0.626953125,
+        "outcomeHolm": "T",
+        "outcomeRaw": "T",
+        "diffReaderLin": 0.006451612903225767,
+        "pHolmReaderLin": 1
+      },
+      {
+        "baseline": "json",
+        "model": "haiku_off",
+        "diffL": -0.279245283018868,
+        "ci95": [
+          -0.3679245283018868,
+          -0.19433962264150942
+        ],
+        "pRaw": 0.001953125,
+        "pHolm": 0.01171875,
+        "outcomeHolm": "L",
+        "outcomeRaw": "L",
+        "diffReaderLin": -0.2709677419354839,
+        "pHolmReaderLin": 0.1953125
+      },
+      {
+        "baseline": "jsonchain",
+        "model": "deepseek_on",
+        "diffL": 0.018867924528301883,
+        "ci95": [
+          -0.007547169811320753,
+          0.047169811320754707
+        ],
+        "pRaw": 0.28125,
+        "pHolm": 0.84375,
+        "outcomeHolm": "T",
+        "outcomeRaw": "T",
+        "diffReaderLin": 0,
+        "pHolmReaderLin": 1
+      },
+      {
+        "baseline": "jsonchain",
+        "model": "luna_on",
+        "diffL": 0.009433962264150952,
+        "ci95": [
+          -0.09433962264150941,
+          0.1339622641509434
+        ],
+        "pRaw": 0.91015625,
+        "pHolm": 0.91015625,
+        "outcomeHolm": "T",
+        "outcomeRaw": "T",
+        "diffReaderLin": 0.0032258064516128893,
+        "pHolmReaderLin": 1
+      },
+      {
+        "baseline": "jsonchain",
+        "model": "haiku_on",
+        "diffL": -0.5490566037735849,
+        "ci95": [
+          -0.6716981132075472,
+          -0.3981132075471698
+        ],
+        "pRaw": 0.00390625,
+        "pHolm": 0.0234375,
+        "outcomeHolm": "L",
+        "outcomeRaw": "L",
+        "diffReaderLin": -0.18387096774193545,
+        "pHolmReaderLin": 1
+      },
+      {
+        "baseline": "jsonchain",
+        "model": "deepseek_off",
+        "diffL": -0.052830188679245285,
+        "ci95": [
+          -0.11886792452830186,
+          0.005660377358490565
+        ],
+        "pRaw": 0.1953125,
+        "pHolm": 0.78125,
+        "outcomeHolm": "T",
+        "outcomeRaw": "T",
+        "diffReaderLin": 0.0032258064516129115,
+        "pHolmReaderLin": 1
+      },
+      {
+        "baseline": "jsonchain",
+        "model": "luna_off",
+        "diffL": 0.06603773584905659,
+        "ci95": [
+          -0.02075471698113208,
+          0.1830188679245283
+        ],
+        "pRaw": 0.328125,
+        "pHolm": 0.84375,
+        "outcomeHolm": "T",
+        "outcomeRaw": "T",
+        "diffReaderLin": -0.003225806451612945,
+        "pHolmReaderLin": 1
+      },
+      {
+        "baseline": "jsonchain",
+        "model": "haiku_off",
+        "diffL": 0.14339622641509434,
+        "ci95": [
+          0.06415094339622643,
+          0.21698113207547168
+        ],
+        "pRaw": 0.03125,
+        "pHolm": 0.15625,
+        "outcomeHolm": "T",
+        "outcomeRaw": "W",
+        "diffReaderLin": 0.2032258064516129,
+        "pHolmReaderLin": 0.09375
+      }
+    ]
+  },
+  "eventCategories": [
+    {
+      "model": "deepseek_on",
+      "format": "lon",
+      "meanUnitsH30": 147.5,
+      "amend": {
+        "nEvents": 20,
+        "ok": 1,
+        "cNew": 1,
+        "cOld": 1,
+        "cEdge": 1
+      },
+      "withdraw": {
+        "nEvents": 4,
+        "ok": 1,
+        "cNew": 1,
+        "cOld": 1,
+        "cEdge": 1
+      },
+      "recompute": {
+        "nEvents": 29,
+        "ok": 0.9586206896551724,
+        "cNew": 0.9827586206896551,
+        "cOld": 0.9689655172413794,
+        "cEdge": 0.9586206896551724
+      }
+    },
+    {
+      "model": "deepseek_on",
+      "format": "jsonchain",
+      "meanUnitsH30": 144.3,
+      "amend": {
+        "nEvents": 20,
+        "ok": 1,
+        "cNew": 1,
+        "cOld": 1,
+        "cEdge": 1
+      },
+      "withdraw": {
+        "nEvents": 4,
+        "ok": 1,
+        "cNew": 1,
+        "cOld": 1,
+        "cEdge": 1
+      },
+      "recompute": {
+        "nEvents": 29,
+        "ok": 0.9241379310344827,
+        "cNew": 0.9517241379310345,
+        "cOld": 0.9241379310344827,
+        "cEdge": 0.9241379310344827
+      }
+    },
+    {
+      "model": "deepseek_on",
+      "format": "json",
+      "meanUnitsH30": 81.7,
+      "amend": {
+        "nEvents": 20,
+        "ok": 0.98,
+        "cNew": 1,
+        "cOld": 0.995,
+        "cEdge": 0.98
+      },
+      "withdraw": {
+        "nEvents": 4,
+        "ok": 1,
+        "cNew": 1,
+        "cOld": 1,
+        "cEdge": 1
+      },
+      "recompute": {
+        "nEvents": 29,
+        "ok": 0.3310344827586207,
+        "cNew": 0.41379310344827586,
+        "cOld": 0.3310344827586207,
+        "cEdge": 0.3310344827586207
+      }
+    },
+    {
+      "model": "deepseek_on",
+      "format": "natural",
+      "meanUnitsH30": 95.7,
+      "amend": {
+        "nEvents": 20,
+        "ok": 0.93,
+        "cNew": 0.99,
+        "cOld": 0.985,
+        "cEdge": 0.93
+      },
+      "withdraw": {
+        "nEvents": 4,
+        "ok": 1,
+        "cNew": 1,
+        "cOld": 1,
+        "cEdge": 1
+      },
+      "recompute": {
+        "nEvents": 29,
+        "ok": 0.4689655172413793,
+        "cNew": 0.5275862068965518,
+        "cOld": 0.4689655172413793,
+        "cEdge": 0.4689655172413793
+      }
+    },
+    {
+      "model": "luna_on",
+      "format": "lon",
+      "meanUnitsH30": 133.6,
+      "amend": {
+        "nEvents": 20,
+        "ok": 0.915,
+        "cNew": 0.945,
+        "cOld": 0.945,
+        "cEdge": 0.945
+      },
+      "withdraw": {
+        "nEvents": 4,
+        "ok": 0.975,
+        "cNew": 0.975,
+        "cOld": 1,
+        "cEdge": 1
+      },
+      "recompute": {
+        "nEvents": 29,
+        "ok": 0.2103448275862069,
+        "cNew": 0.31724137931034485,
+        "cOld": 0.21379310344827587,
+        "cEdge": 0.2103448275862069
+      }
+    },
+    {
+      "model": "deepseek_off",
+      "format": "lon",
+      "meanUnitsH30": 71.2,
+      "amend": {
+        "nEvents": 20,
+        "ok": 1,
+        "cNew": 1,
+        "cOld": 1,
+        "cEdge": 1
+      },
+      "withdraw": {
+        "nEvents": 4,
+        "ok": 1,
+        "cNew": 1,
+        "cOld": 1,
+        "cEdge": 1
+      },
+      "recompute": {
+        "nEvents": 29,
+        "ok": 0.1482758620689655,
+        "cNew": 0.1896551724137931,
+        "cOld": 0.1482758620689655,
+        "cEdge": 0.1482758620689655
+      }
+    },
+    {
+      "model": "luna_off",
+      "format": "lon",
+      "meanUnitsH30": 106.8,
+      "amend": {
+        "nEvents": 20,
+        "ok": 0.92,
+        "cNew": 0.97,
+        "cOld": 0.97,
+        "cEdge": 0.95
+      },
+      "withdraw": {
+        "nEvents": 4,
+        "ok": 0.9,
+        "cNew": 0.975,
+        "cOld": 1,
+        "cEdge": 0.925
+      },
+      "recompute": {
+        "nEvents": 29,
+        "ok": 0.06551724137931035,
+        "cNew": 0.09310344827586207,
+        "cOld": 0.06551724137931035,
+        "cEdge": 0.06551724137931035
+      }
+    }
+  ],
+  "auditBaseRatesAndCIs": {
+    "byFormat": [
+      {
+        "format": "json",
+        "sessions": 60,
+        "defectiveSessions": 60,
+        "cleanSessions": 0,
+        "cleanFaCount": 0,
+        "cleanFaRate": 0,
+        "cleanFaCI95": null,
+        "flagAllSessionPrec": 1,
+        "gtBadHops": 1560,
+        "hops": 1800,
+        "flagAllHopPrec": 0.8666666666666667,
+        "sRecall": 0.5833333333333334,
+        "sPrecision": 1,
+        "hopRecall": 0.45576923076923076,
+        "hopPrecision": 1
+      },
+      {
+        "format": "jsonchain",
+        "sessions": 60,
+        "defectiveSessions": 55,
+        "cleanSessions": 5,
+        "cleanFaCount": 0,
+        "cleanFaRate": 0,
+        "cleanFaCI95": [
+          0,
+          0.5218237501049814
+        ],
+        "flagAllSessionPrec": 0.9166666666666666,
+        "gtBadHops": 1371,
+        "hops": 1800,
+        "flagAllHopPrec": 0.7616666666666667,
+        "sRecall": 0.6909090909090909,
+        "sPrecision": 1,
+        "hopRecall": 0.39095550692924874,
+        "hopPrecision": 0.9981378026070763
+      },
+      {
+        "format": "lon",
+        "sessions": 60,
+        "defectiveSessions": 53,
+        "cleanSessions": 7,
+        "cleanFaCount": 2,
+        "cleanFaRate": 0.2857142857142857,
+        "cleanFaCI95": [
+          0.03669256617608556,
+          0.7095791362626573
+        ],
+        "flagAllSessionPrec": 0.8833333333333333,
+        "gtBadHops": 1286,
+        "hops": 1800,
+        "flagAllHopPrec": 0.7144444444444444,
+        "sRecall": 0.9245283018867925,
+        "sPrecision": 0.9607843137254902,
+        "hopRecall": 0.7620528771384136,
+        "hopPrecision": 0.9414024975984631
+      },
+      {
+        "format": "natural",
+        "sessions": 60,
+        "defectiveSessions": 58,
+        "cleanSessions": 2,
+        "cleanFaCount": 2,
+        "cleanFaRate": 1,
+        "cleanFaCI95": [
+          0.158113883008419,
+          1
+        ],
+        "flagAllSessionPrec": 0.9666666666666667,
+        "gtBadHops": 1684,
+        "hops": 1800,
+        "flagAllHopPrec": 0.9355555555555556,
+        "sRecall": 1,
+        "sPrecision": 0.9666666666666667,
+        "hopRecall": 0.9732779097387173,
+        "hopPrecision": 0.9987812309567337
+      }
+    ],
+    "lonPostHocContentTierCleanFA": {
+      "k": 0,
+      "n": 7,
+      "rate": 0,
+      "ci95": [
+        0,
+        0.4096163972250034
+      ]
+    }
+  },
+  "promptDecomposition": {
+    "byFormat": {
+      "natural": {
+        "roleChars": 260,
+        "policyChars": 1419,
+        "sharedRolePlusPolicyWithSeps": 1685,
+        "formatBlockChars": 635,
+        "totalStaticChars": 2320,
+        "lonBaseChars": null,
+        "lonSnapshotSuffixChars": null,
+        "dsOnTotalTin": 572259,
+        "lunaOnTotalTin": 458466
+      },
+      "json": {
+        "roleChars": 260,
+        "policyChars": 1419,
+        "sharedRolePlusPolicyWithSeps": 1685,
+        "formatBlockChars": 679,
+        "totalStaticChars": 2364,
+        "lonBaseChars": null,
+        "lonSnapshotSuffixChars": null,
+        "dsOnTotalTin": 708733,
+        "lunaOnTotalTin": 666042
+      },
+      "jsonchain": {
+        "roleChars": 260,
+        "policyChars": 1419,
+        "sharedRolePlusPolicyWithSeps": 1685,
+        "formatBlockChars": 860,
+        "totalStaticChars": 2545,
+        "lonBaseChars": null,
+        "lonSnapshotSuffixChars": null,
+        "dsOnTotalTin": 1588835,
+        "lunaOnTotalTin": 1328815
+      },
+      "lon": {
+        "roleChars": 260,
+        "policyChars": 1419,
+        "sharedRolePlusPolicyWithSeps": 1685,
+        "formatBlockChars": 5253,
+        "totalStaticChars": 6938,
+        "lonBaseChars": 3342,
+        "lonSnapshotSuffixChars": 1909,
+        "dsOnTotalTin": 1625645,
+        "lunaOnTotalTin": 1540291
+      }
+    },
+    "tinOverhead": {
+      "dsOnLonVsJsonchainPct": 2.3167918632205353,
+      "lunaOnLonVsJsonchainPct": 15.914630704800903
+    }
+  },
+  "heldOutEnsembleBrier": {
+    "summary": {
+      "nTotalItems": 345,
+      "trainReaderAcc": {
+        "deepseek_on": 0.9942028985507246,
+        "luna_on": 0.855072463768116,
+        "haiku_on": 0.3681159420289855,
+        "deepseek_off": 0.8869565217391304,
+        "luna_off": 0.8608695652173913,
+        "haiku_off": 0.16521739130434782
+      },
+      "trainGrades": {
+        "deepseek_on": 8,
+        "luna_on": 8,
+        "haiku_on": 1,
+        "deepseek_off": 7,
+        "luna_off": 8,
+        "haiku_off": 2
+      },
+      "mukGe5Set": [
+        "deepseek_on",
+        "luna_on",
+        "deepseek_off",
+        "luna_off"
+      ],
+      "top4ReaderAccSet": [
+        "deepseek_on",
+        "deepseek_off",
+        "luna_off",
+        "luna_on"
+      ],
+      "setsIdentical": true,
+      "unweightedBrier": 0.11449275362318882,
+      "eqEBrier": 0.09114281064785673,
+      "mukGe5Brier": 0.051086956521739134,
+      "readerAccLinBrier": 0.060947843394400215,
+      "readerAccTop4Brier": 0.051086956521739134,
+      "eqEScenImprovedCount": 5,
+      "mukGe5ScenImprovedCount": 5,
+      "mukGe5BeatsReaderLinCount": 5
+    },
+    "perScenario": [
+      {
+        "scen": "S06",
+        "nItems": 69,
+        "unweightedBrier": 0.12882447665056346,
+        "eqEBrier": 0.09231896417635216,
+        "mukGe5Brier": 0.034420289855072464,
+        "readerAccLinBrier": 0.04911159464896673,
+        "readerAccTop4Brier": 0.034420289855072464,
+        "eqEDiff": -0.0365055124742113,
+        "mukGe5Diff": -0.094404186795491,
+        "mukGe5VsReaderLinDiff": -0.014691304793894265,
+        "unweightedAcc": 0.9565217391304348,
+        "eqEAcc": 0.9420289855072463,
+        "mukGe5Acc": 0.9710144927536232
+      },
+      {
+        "scen": "S07",
+        "nItems": 69,
+        "unweightedBrier": 0.07608695652173912,
+        "eqEBrier": 0.06345202738832777,
+        "mukGe5Brier": 0.042572463768115944,
+        "readerAccLinBrier": 0.044426651678777435,
+        "readerAccTop4Brier": 0.042572463768115944,
+        "eqEDiff": -0.012634929133411354,
+        "mukGe5Diff": -0.03351449275362318,
+        "mukGe5VsReaderLinDiff": -0.0018541879106614909,
+        "unweightedAcc": 0.8985507246376812,
+        "eqEAcc": 0.8985507246376812,
+        "mukGe5Acc": 0.9710144927536232
+      },
+      {
+        "scen": "S08",
+        "nItems": 69,
+        "unweightedBrier": 0.10628019323671493,
+        "eqEBrier": 0.09069109268614996,
+        "mukGe5Brier": 0.06431159420289854,
+        "readerAccLinBrier": 0.07057318149174104,
+        "readerAccTop4Brier": 0.06431159420289854,
+        "eqEDiff": -0.015589100550564977,
+        "mukGe5Diff": -0.04196859903381639,
+        "mukGe5VsReaderLinDiff": -0.006261587288842491,
+        "unweightedAcc": 0.8840579710144928,
+        "eqEAcc": 0.8840579710144928,
+        "mukGe5Acc": 0.8985507246376812
+      },
+      {
+        "scen": "S09",
+        "nItems": 69,
+        "unweightedBrier": 0.07729468599033816,
+        "eqEBrier": 0.06947166997502281,
+        "mukGe5Brier": 0.051630434782608696,
+        "readerAccLinBrier": 0.05591289895218596,
+        "readerAccTop4Brier": 0.051630434782608696,
+        "eqEDiff": -0.007823016015315348,
+        "mukGe5Diff": -0.025664251207729465,
+        "mukGe5VsReaderLinDiff": -0.004282464169577262,
+        "unweightedAcc": 0.8840579710144928,
+        "eqEAcc": 0.8840579710144928,
+        "mukGe5Acc": 0.9420289855072463
+      },
+      {
+        "scen": "S10",
+        "nItems": 69,
+        "unweightedBrier": 0.18397745571658594,
+        "eqEBrier": 0.1397802990134307,
+        "mukGe5Brier": 0.0625,
+        "readerAccLinBrier": 0.08471489020032921,
+        "readerAccTop4Brier": 0.0625,
+        "eqEDiff": -0.044197156703155244,
+        "mukGe5Diff": -0.12147745571658594,
+        "mukGe5VsReaderLinDiff": -0.022214890200329213,
+        "unweightedAcc": 0.8695652173913043,
+        "eqEAcc": 0.8695652173913043,
+        "mukGe5Acc": 0.927536231884058
+      }
+    ]
+  }
+}
