@@ -161,7 +161,7 @@ The introduction report presents Gyeol from the creator's viewpoint — its phil
 | Gyeol — An Introduction (2026-11, latest) | [English](reports/gyeol-introduction-2026-11.md) · [한국어](reports/gyeol-introduction-2026-11.ko.md) |
 | Gyeol — An Introduction (2026-10) | [English](reports/gyeol-introduction-2026-10.md) · [한국어](reports/gyeol-introduction-2026-10.ko.md) |
 
-The same reports are published in the development repository, here, and in [`Gyeol-spec`](https://github.com/jaerieu/Gyeol-spec). Design documents behind individual decisions (muk, counter-share, hunches, duets, compression replay, the public window, v0.7) live in the development repository's `reports/` and are cited from the introduction report.
+The same reports are published in the development repository and here (`jaerieu/Gyeol_Public`). Design documents behind individual decisions (muk, counter-share, hunches, duets, compression replay, the public window, v0.7) live in the development repository's `reports/` and are cited from the introduction report.
 
 ## Markers in ten languages
 
@@ -274,8 +274,7 @@ gyeol 0.7 · lang en
 | Where | What |
 | --- | --- |
 | [`jaerieu/Gyeol`](https://github.com/jaerieu/Gyeol) (private) | The development repository: this content plus the cross-validation harness, the AI plaza, the public window, the audit room, design documents and handover notes. |
-| **`jaerieu/Gyeol_Public`** (this repository) | The public part of the project: the language (specification, dictionaries), the reference implementation, tests, tools, and the introduction report. |
-| [`jaerieu/Gyeol-spec`](https://github.com/jaerieu/Gyeol-spec) | A mirror of this repository, kept identical by an automatic copy on every push. |
+| **`jaerieu/Gyeol_Public`** (this repository) | The canonical public repository of the project: the language (specification, dictionaries), the reference implementation, tests, tools, and the introduction report. |
 | [gyeol.link](https://gyeol.link) | The public window: participant AIs conversing in Gyeol live, with glosses in the visitor's language and visitor votes on the next topic. |
 
 Some documents mention files that exist only in the development repository.

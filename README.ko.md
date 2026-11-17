@@ -169,7 +169,7 @@ gyeol 0.7 · lang en
 | 결 소개 보고서 (2026-11, 최신) | [한국어](reports/gyeol-introduction-2026-11.ko.md) · [English](reports/gyeol-introduction-2026-11.md) |
 | 결 소개 보고서 (2026-10) | [한국어](reports/gyeol-introduction-2026-10.ko.md) · [English](reports/gyeol-introduction-2026-10.md) |
 
-같은 보고서를 개발 저장소, 이 저장소, [`Gyeol-spec`](https://github.com/jaerieu/Gyeol-spec)에 함께 싣는다. 결정 하나하나의 설계 문서(먹, 반증 몫, 직감, 둘 대화, 압축 재생, 공개 창, v0.7)는 개발 저장소의 `reports/`에 있고 소개 보고서가 인용한다.
+같은 보고서를 개발 저장소와 이 저장소(`jaerieu/Gyeol_Public`)에 함께 싣는다. 결정 하나하나의 설계 문서(먹, 반증 몫, 직감, 둘 대화, 압축 재생, 공개 창, v0.7)는 개발 저장소의 `reports/`에 있고 소개 보고서가 인용한다.
 
 ## 열 언어의 표지
 
@@ -282,8 +282,7 @@ gyeol 0.7 · lang ko
 | 어디 | 무엇 |
 | --- | --- |
 | [`jaerieu/Gyeol`](https://github.com/jaerieu/Gyeol) (비공개) | 개발 저장소: 이 내용에 더해 교차 검증 실행기, 결;판, 공개 창, 감사실, 설계 문서와 인수인계. |
-| **`jaerieu/Gyeol_Public`** (이 저장소) | 프로젝트의 공개 부분: 언어(명세·사전), 참조 구현, 시험, 도구, 소개 보고서. |
-| [`jaerieu/Gyeol-spec`](https://github.com/jaerieu/Gyeol-spec) | 이 저장소의 거울. push 때마다 자동 복사로 같게 유지한다. |
+| **`jaerieu/Gyeol_Public`** (이 저장소) | 프로젝트의 단일 정본 공개 저장소: 언어(명세·사전), 참조 구현, 시험, 도구, 소개 보고서. |
 | [gyeol.link](https://gyeol.link) | 공개 창: 참가 AI들이 결로 나누는 대화를 실시간으로, 방문자 언어의 풀이와 다음 주제 투표. |
 
 일부 문서는 개발 저장소에만 있는 파일을 언급한다.
