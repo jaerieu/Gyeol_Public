@@ -33,6 +33,13 @@ export interface ExtEvidence {
   text: string;
 }
 
+/** v0.8.5: 1급 결정론적 파생 수식 블록 `calcN <[ expr ]>` (`식N <[ expr ]>`) */
+export interface CalcBlock {
+  id: string;
+  expr: string;
+  declared?: number;
+}
+
 /** 다른 절을 가리킴. msg가 null이면 같은 메시지 안이다. */
 export interface Ref {
   msg: string | null;
@@ -57,7 +64,9 @@ export type Because =
   | { ctx: number }
   | { agent: string }
   | { thread: number; clause: string }
-  | { ext: ExtEvidenceKind; id: string; lines?: [number, number] };
+  | { ext: ExtEvidenceKind; id: string; lines?: [number, number] }
+  | { reserved: 'dict' }
+  | { calc: string };
 
 export interface Word {
   text: string; // 어절 그대로 (정규화 뒤)
@@ -92,6 +101,8 @@ export interface Alt {
 
 export interface Muk {
   conf?: number;
+  /** v0.8.5: 미측정 초기 상태 (`*?B8` · `*?:8`) */
+  unmeasured?: true;
 }
 
 export interface Chae {
@@ -104,6 +115,8 @@ export interface Clause {
   label: string | null;
   process: { kind: ProcessKind; target?: Ref } | null;
   place: { rel: PlaceRel; target: Ref; second?: Ref } | null;
+  /** v0.8.5: 쉼표 병기 다중 자리 포인터(`↔2,4` → `↔2↔4`). 첫 원소는 place와 같다 */
+  places?: { rel: PlaceRel; target: Ref; second?: Ref }[];
   /** 받는 이. 다중 지목(·→A,B)이면 첫 이름 */
   to: string | null;
   /** 다중 지목 ·→A,B의 이름 모두(적힌 차례, 둘 이상일 때만 둔다). to는 그 첫 이름이다 */
@@ -111,14 +124,19 @@ export interface Clause {
   words: Word[];
   marks: Marks | PartialMarks;
   muk?: Muk;
-  chae?: Chae;
+  /** v0.8.5: lon 0.8.5에서는 Chae를 제거하고 null로 둔다 */
+  chae?: Chae | null;
+  /** v0.8.5: lon 0.8.5 정규형 확신 한 자리(0부터 9) */
+  conf?: number;
   echo?: true;
   me?: true;
   all?: true;
   because?: Because[];
   /** v0.8(2026-11-11 Jae): 절 뒤에 붙인 전용 괄호꺽쇠 외부 근거(`evd1 <[ … ]>`, `ref2 <[ … ]>`). */
   evidences?: ExtEvidence[];
-  form?: '0.5' | '0.5.1' | '0.8';
+  /** v0.8.5: 절 뒤에 붙인 파생 수식 블록(`calc1 <[ @1 * 0.8 ]>`). */
+  calcs?: CalcBlock[];
+  form?: '0.5' | '0.5.1' | '0.8' | '0.8.5';
 }
 
 /** 절마다 글에 어떻게 썼는가(정규형으로 모으기 전). 틀(JSON)에는 들어가지 않는다. rules08이 본다. */
@@ -133,6 +151,14 @@ export interface ClauseWritten {
   aliases: string[];
   /** v0.8.2 C2: 옛 확신·먹 표기(!N, *N, 괄호 수)를 이미 E26으로 잡았을 때 true(E33 이중 발사 방지) */
   legacyChae?: true;
+  /** v0.8.5: 중복 꼬리(*7G7*7G7 등) 복구 여부 */
+  dupTail?: true;
+  /** v0.8.5: lon 0.8.5에서 구형 *5B8/*B8 꼬리 입력 수용 시 */
+  lonLegacyChae?: true;
+  /** v0.8.5: lon 0.8.5에서 [inf,lim] 화행 생략 시 say 자동 복원 */
+  autoAct?: true;
+  /** v0.8.5-rc2: 동일 절 내 모순 접두사(↔k + fix→k/err→k) 중 제거된 과정 앞붙이(W51) */
+  conflictFixDropped?: string;
 }
 
 export interface Head {
@@ -142,6 +168,8 @@ export interface Head {
   re?: { id: string; rel?: Rel };
   room?: string;
   snapshot?: true;
+  /** v0.8.5: 머리 줄 모드 (`delta` | `snapshot`) */
+  mode?: 'delta' | 'snapshot';
 }
 
 export interface Message {
@@ -154,15 +182,21 @@ export interface Message {
   clauses: Clause[];
   /** v0.8(2026-11-11 Jae): 단독 줄로 적은 외부·보조 근거 블록(`ref1 <[ … ]>`, `evd1 <[ … ]>`). */
   evidences?: ExtEvidence[];
+  /** v0.8.5: 단독 줄로 적은 파생 수식 블록(`calcN <[ … ]>`). */
+  calcs?: CalcBlock[];
   gloss: string | null;
+  /** v0.8.5: `---` 또는 `gloss:` / `풀이:` 이후 분리된 비발화 해설 영역 */
+  commentary?: string | null;
   muk_source: '도구' | '모델' | '없음' | null;
 }
 
 export type Severity = '오류' | '경고';
+export type DiagnosticTier = 'form' | 'provenance' | 'content';
 
 export interface Diagnostic {
-  code: string; // "E07" | "W02"
+  code: string; // "E07" | "W02" | "E_CALC_MISMATCH"
   severity: Severity;
+  tier?: DiagnosticTier;
   line: number; // 1부터
   message: string;
 }

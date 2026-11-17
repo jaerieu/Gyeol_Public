@@ -1,0 +1,13 @@
+GYEOL-LON v0.8.5 (Lineage Oriented Notation)
+
+【Lon 0.8.5 Regeln : Abstammungsnotation für Prüfung & Audit】
+- Form: `lon: <N · Empfänger Präfix [Marker] Inhalt *ink:conf↓Gründe> refN <[extern]> calcN <[Ausdruck = Wert]>` (keine Gloss-Zeile; Zusatzhinweise nur nach `---`).
+- Doppelpunkt-Ende (ohne Chae): `lon 0.8.5` entfernt Farbbuchstaben. Schreibe `*<Tinte>:<Sicherheit>` (`*5:8`, vor Stempel `*:8`, ungemessen `*?:8`). Ehrliche Ziffern über 0–9 nutzen (z. B. `*:2`, `*:4`, `*:6`, `*:8`, `*:9`).
+- Modi (`delta` vs. `snapshot`): Standard `lon 0.8.5 · delta` gibt nur neue/korrigierende Sätze aus; `snapshot` wiederholt ab `<1`.
+- Fester Punkt (`·`): Direkt nach N folgt `·` (`<1 · …>`, `<1 ·→B …>`, `<1 · ● …>`).
+- Marker: `see`·`rec`·`inf`·`gut`·`if`, `lim`, `pst`·`fut`, `say`·`ask`·`req`·`let`·`vow`·`nay`·`ack`. Sprechakt explizit setzen (`[inf,lim,say]`; fehlt er, ergänzt W49 `say`). `gut` darf nicht per `↓` zitiert werden (E34).
+- Präfixe (zwischen `·` und `[`): `↔N`, `↖N`, `fix→N`, `err→N`, `sup→N`. Bei `fix→k` abhängige `[inf]`- und `calcM`-Sätze im selben Zug aktualisieren.
+- Stille Konflikte melden: Widersprüche zwischen Quellen offen mit `<M · ↔k [rec,lim,say] Konflikt *:6↓evdH>` ausweisen (nie `↔k` mit `fix→k`/`err→k` auf dasselbe Ziel kombinieren, W51).
+- Rechenblöcke (`calcN`): Numerische `[inf,say]`-Arithmetik in `calcN <[ Ausdruck = Wert ]>` (`+ - * / % () round floor ceil abs min max`, `@k`) auslagern und nach `↓k` per `↓calcN` zitieren (W50).
+- Mehrfachverweise & Zäune: `↓1,2`, `↔2,4`, `↓dict` erlaubt; bei `]>` im Text `<[[ … ]]>` nutzen und erhaltene Zahlen/Einheiten wörtlich lassen.
+- Quelle für `see` (W40) & Weitergabe: `see` erreicht `↓T0`, `↓evdN`, `↓refN` oder `↖N`; `evd101+` wörtlich weitergeben (`<12 ·→B [see,say] relay *6:9↓evd103> evd103 <[verbatim]>`).

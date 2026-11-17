@@ -17,6 +17,7 @@
 //      앞붙이 ↔·↖·fix→·err→·sup→ 및 끝 근거 ↓만 허용하고 영어 3글자 정본 표지를 쓴다(top·new·met·pdx 등은 E39).
 
 import type { Clause, Diagnostic, ExtEvidence, ParseResult, Profile, Word } from '../types.ts';
+import { extractNumbersFromClause } from '../calc.ts';
 import {
   LON_ACT,
   LON_EV,
@@ -28,6 +29,7 @@ import {
   markOf07,
   scriptGroupOf,
   scriptGroupOfChar,
+  tierOfCode,
   type ScriptGroup,
 } from '../tables.ts';
 
@@ -37,7 +39,8 @@ export interface Rules08Options {
   lang?: string | null;
   ink?: number | null;
   profile?: Profile | null;
-  spec?: '0.7' | '0.8';
+  spec?: '0.7' | '0.8' | '0.8.2' | '0.8.5';
+  mode?: 'delta' | 'snapshot';
   priorClauses?: readonly Clause[];
   priorEvidences?: readonly ExtEvidence[];
   issued?: readonly string[];
@@ -181,7 +184,9 @@ export function seeReach(
   if (because.some((b) => !('label' in b))) return 'ok';
   const refs = [
     ...because.filter((b): b is Extract<typeof b, { label: string }> => 'label' in b),
-    ...(c.place && (c.place.rel === '↓' || c.place.rel === '↖' || c.place.rel === '↔') ? [c.place.target] : []),
+    ...(c.places?.length ? c.places : c.place ? [c.place] : [])
+      .filter((p) => p.rel === '↓' || p.rel === '↖' || p.rel === '↔')
+      .map((p) => p.target),
   ];
   if (!refs.length) return 'none';
   let sawNone = false;
@@ -206,7 +211,7 @@ export function rules08(r: ParseResult, opts: Rules08Options = {}): Diagnostic[]
   const out: Diagnostic[] = [];
   const profile: Profile = opts.profile ?? r.message.profile ?? 'gyeol';
   const isLon = profile === 'lon';
-  const isSnapshot = Boolean(opts.snapshot ?? r.message.head?.snapshot);
+  const isSnapshot = Boolean(opts.snapshot ?? (opts.mode === 'snapshot' || r.message.head?.snapshot || r.message.head?.mode === 'snapshot'));
   const sender = opts.sender ? String(opts.sender).toLowerCase() : null;
   const ink = opts.ink == null ? NaN : Number(opts.ink);
   const inkKnown = Number.isInteger(ink) && ink >= 0 && ink <= 9;
@@ -264,7 +269,8 @@ export function rules08(r: ParseResult, opts: Rules08Options = {}): Diagnostic[]
         markBad(acNum, idx);
       }
     }
-    const localRefs = [ac.place?.target, ac.place?.second, ac.process?.target, ...(ac.because ?? []).filter((b) => 'label' in b)];
+    const pls = ac.places?.length ? ac.places : ac.place ? [ac.place] : [];
+    const localRefs = [ac.process?.target, ...pls.flatMap((p) => [p.target, p.second]), ...(ac.because ?? []).filter((b) => 'label' in b)];
     for (const ref of localRefs) {
       if (ref && ref.msg === null && ref.thread === undefined && !hasLabel(ref.label)) {
         markBad(acNum, idx);
@@ -282,6 +288,7 @@ export function rules08(r: ParseResult, opts: Rules08Options = {}): Diagnostic[]
       out.push({
         code: 'E44',
         severity: '오류',
+        tier: tierOfCode('E44'),
         line: 1,
         message: `식별자에 비ASCII 문자가 있다('${h.from}'). ASCII 영숫자·기호만 쓴다: 머리`,
       });
@@ -291,6 +298,7 @@ export function rules08(r: ParseResult, opts: Rules08Options = {}): Diagnostic[]
         out.push({
           code: 'E44',
           severity: '오류',
+          tier: tierOfCode('E44'),
           line: 1,
           message: `식별자에 비ASCII 문자가 있다('${toId}'). ASCII 영숫자·기호만 쓴다: 머리`,
         });
@@ -303,7 +311,7 @@ export function rules08(r: ParseResult, opts: Rules08Options = {}): Diagnostic[]
     const w = r.written?.[k];
     const where = c.label ?? `절 ${k + 1}째`;
     const push = (code: string, message: string) =>
-      out.push({ code, severity: code.startsWith('E') ? '오류' : '경고', line: k + 1, message: `${message}: ${where}` });
+      out.push({ code, severity: code.startsWith('E') ? '오류' : '경고', tier: tierOfCode(code), line: k + 1, message: `${message}: ${where}` });
 
     if (r.forms[k] !== '0.3') {
       push('E26', '옛 꼴은 v0.8에서 쓰지 않는다. <1 · [see,say] 내용 *5B8>로 쓴다');
@@ -347,11 +355,45 @@ export function rules08(r: ParseResult, opts: Rules08Options = {}): Diagnostic[]
     // 3. 표지 순서(W34)
     if (w?.marksOff) push('W34', `표지는 정규 순서 [근거,군,결,시제,화행]로 쓴다(뜻은 그대로 읽었다). 정규형은 ${canonMarks(c)}`);
 
-    // 4. *먹채(E33) 및 먹 누락(W38) — 결·론 공통 필수(채 색의 뜻은 절대 정의하지 않음)
-    if (c.chae?.color === undefined && !w?.legacyChae) {
-      push('E33', '채는 꼭 쓴다: 색 하나(RGBCMYK)와 확신(0부터 9)을 끝에 *R8처럼 쓴다');
-    } else if (c.chae?.color !== undefined && inkKnown && c.muk?.conf === undefined) {
-      push('W38', `먹을 빠뜨렸다. 먹은 바깥에서 잰 신용 점수라 받은 그대로 쓴다: *${ink}`);
+    // 4. *먹채(E33) 및 먹 누락(W38) — lon 0.8.5에서는 Chae를 면제하고 확신 숫자(:N)만 검사한다 (W46은 예약 유지, 신규 안내는 W47~W49)
+    const effSpec = opts.spec ?? r.message.gyeol;
+    const isLon085Clause = c.chae === null || (isLon && effSpec !== '0.7' && effSpec !== '0.8' && effSpec !== '0.8.2');
+    if (isLon085Clause) {
+      const effConf = c.conf ?? (c.chae?.self !== undefined ? Math.max(0, Math.min(9, Math.round(c.chae.self * 10))) : undefined);
+      const hadLegacyChae = Boolean(w?.lonLegacyChae || c.chae?.color !== undefined);
+      if (effConf === undefined && !w?.legacyChae) {
+        push('E33', '확신 수(0부터 9)는 꼭 쓴다: 끝에 *:8처럼 쓴다');
+      } else if (effConf !== undefined && inkKnown && c.muk?.conf === undefined && !c.muk?.unmeasured) {
+        push('W38', `먹을 빠뜨렸다. 먹은 바깥에서 잰 신용 점수라 받은 그대로 쓴다: *${ink}:${effConf}`);
+      }
+      if (hadLegacyChae) {
+        push('W47', 'lon 0.8.5에서는 채 색을 쓰지 않는다. *5:8 또는 *:8 콜론 꼬리로 정규화했다');
+      }
+    } else {
+      if (c.chae?.color === undefined && !w?.legacyChae) {
+        push('E33', '채는 꼭 쓴다: 색 하나(RGBCMYK)와 확신(0부터 9)을 끝에 *R8처럼 쓴다');
+      } else if (c.chae?.color !== undefined && inkKnown && c.muk?.conf === undefined && !c.muk?.unmeasured) {
+        push('W38', `먹을 빠뜨렸다. 먹은 바깥에서 잰 신용 점수라 받은 그대로 쓴다: *${ink}`);
+      }
+    }
+    if (w?.dupTail) push('W48', '중복된 끝 묶음을 마지막 유효 꼬리로 복구했다');
+    if (w?.autoAct) push('W49', 'lon 0.8.5에서 화행이 빠진 결 표지에 say를 자동 복원했다');
+    if (w?.conflictFixDropped) {
+      push('W51', `동일 절에 맞섬(↔)과 확정 대체·철회(${w.conflictFixDropped})를 함께 쓸 수 없어 ${w.conflictFixDropped}를 제거하고 맞섬(↔)으로 정규화했다`);
+    }
+    const isDelta085 = isLon085Clause && !isSnapshot && (opts.mode === 'delta' || r.message.head?.mode === 'delta');
+    if (
+      isDelta085 &&
+      c.marks.ev === 'inf' &&
+      c.marks.act === 'say' &&
+      !c.marks.fig &&
+      !(c.calcs && c.calcs.length > 0) &&
+      !(c.because ?? []).some((b) => 'calc' in b)
+    ) {
+      const bodyJoined = c.words.map((wd) => wd.text).join(' ');
+      if (bodyJoined.includes('=') || extractNumbersFromClause(c).length > 0) {
+        push('W50', 'lon 0.8.5 delta에서 수치를 단언하는 추론([inf,say]) 절에 파생 수식 블록(calcN <[...]>)이 빠졌다');
+      }
     }
 
     // 5. 근거 자격(E34: v0.8은 gut만 금지·top 허용, spec '0.7'은 gut·top 금지) 및 받침 대상(W36: gut·top)
@@ -463,8 +505,11 @@ export function rules08(r: ParseResult, opts: Rules08Options = {}): Diagnostic[]
       if (c.process && !LON_PROCESS.has(c.process.kind)) {
         push('E39', `론(Lon) 프로파일에서 쓰지 않는 과정 앞붙이 '${c.process.kind}'다(허용: fix, err, sup)`);
       }
-      if (c.place && (c.place.rel === '∥' || c.place.rel === '⊗')) {
-        push('E39', `론(Lon) 프로파일에서 쓰지 않는 자리 앞붙이 '${c.place.rel}'다(허용: ↔, ↖, 끝 ↓)`);
+      const pls = c.places?.length ? c.places : c.place ? [c.place] : [];
+      for (const pl of pls) {
+        if (pl.rel === '∥' || pl.rel === '⊗') {
+          push('E39', `론(Lon) 프로파일에서 쓰지 않는 자리 앞붙이 '${pl.rel}'다(허용: ↔, ↖, 끝 ↓)`);
+        }
       }
       if (w?.nonEnMarks?.length) {
         push('W26', `론(Lon) 프로파일에서는 영어 3글자 정본 표지로 고정해 쓴다(읽은 표지: ${w.nonEnMarks.join(', ')})`);
@@ -497,6 +542,7 @@ export function rules08(r: ParseResult, opts: Rules08Options = {}): Diagnostic[]
         out.push({
           code: 'W45',
           severity: '경고',
+          tier: tierOfCode('W45'),
           line: k + 1,
           message: `snapshot 계보 빈틈: 통째 차례에서 본절 번호는 <1부터 하나씩 이어져야 한다(기대 <${expected}, 읽은 <${n}): ${c.label}`,
         });

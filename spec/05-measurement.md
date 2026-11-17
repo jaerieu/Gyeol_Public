@@ -93,3 +93,15 @@
 
 - Farquhar 외 2024, [Detecting hallucinations in large language models using semantic entropy](https://www.nature.com/articles/s41586-024-07421-0), Nature 630
 - McCabe 외 2025, [Estimating Semantic Alphabet Size for LLM Uncertainty Quantification](https://arxiv.org/html/2509.14478v2)
+- Gneiting 및 Raftery 2007, Strictly Proper Scoring Rules, Prediction, and Estimation, JASA 102(477)
+- Kish 1965, Survey Sampling (유효 표본수 $n_{\text{eff}} = (\sum w_i)^2 / \sum w_i^2$)
+
+## 5.8 먹 v0.8.5 보정·합의 엔진
+
+2026-11-17 실험 검증 단계(`Muk 0.8.5`, `src/muk.ts`)에서 다음 다섯 가지를 정식 반영한다.
+
+- **Kish 유효 표본수($n_{\text{eff}}$) 감쇠**: 반감기(`halfLifeAnswers = 60`) 감쇠 버킷에서 가중치 합 $W_b = \sum w_i$ 와 제곱합 $W_{2,b} = \sum w_i^2$ 을 함께 누적하여 $n_{\text{eff},b} = W_b^2 / W_{2,b}$ 로 소표본 이항 분산 차감항 $r_b(1 - r_b)/\max(1, n_{\text{eff},b} - 1)$ 을 계산한다.
+- **정직성 최적점 보존형 비대칭 과신 벌점**: 과대확신($\bar{p}_b > \bar{r}_b$)은 기울기 `alphaOver = 1.0` 을 유지하고, 신중한 과소확신($\bar{p}_b < \bar{r}_b$)은 표본이 충분히 클 때 `alphaUnder = 0.18` 로 수렴하되 소표본 전략적 과소보고를 막기 위해 유효 표본 적응 기울기 $\alpha_{\text{under}}(n_{\text{eff}}) = 1 - (1 - 0.18)\frac{n_{\text{eff}}}{n_{\text{eff}} + 20}$ (`adaptK = 20`)을 적용한다.
+- **미측정 초기 상태(`?` / `unmeasured`) 분리**: 기록 수에 따라 `status: 'unmeasured' | 'provisional' | 'calibrated'`(`N = 0`, `1 <= N < 12`, `N >= 12`)를 구분하며, 와이어 문법 `*?B8`(`gyeol`) · `*?:8`(`lon`)를 정식 지원한다.
+- **대화 반론 몫(`counterShare`)과 합의 가중치(`consensusWeight`) 이원화**: 대화용 `counterShare` 는 유지하고, 다중 에이전트 검증 합의·라우팅용 `consensusWeight` 와 로그 오즈 합의기 `poolConsensus` 를 추가해 불량 보정 등급(등급 `2` 이하)을 급격히 감쇠시킨다.
+- **연속 확신도(`expectedConf`) 및 `lon` 채(`Chae`) 면제**: 선택적 연속 확신도 훅 `expectedConf` 를 지원하며, `lon 0.8.5`(`chae: null`)에서는 색 부재 벌점을 면제하고 확신 숫자 누락 시에만 벌점을 부과한다.

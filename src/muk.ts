@@ -81,10 +81,16 @@
 //   AI가 문항의 어려움을 알아차리지 못해 과신한 것도 신빙성의 일부이므로 따로 깎거나 다시 재지 않고 같은 기준으로 넣는다. 답이 MUK.langMinN보다 적은 언어는 평균에서
 //   빼되 기록에는 남긴다(AgentMuk.langs, 내부 분석용이고 공개 창에 내보내지 않는다). 부탁·오래 덤, 보증선, 능력 칸은 언어를 가르지 않고 전처럼 한 번만 셈한다.
 
-import type { Clause } from './types.ts';
+import type { Clause, Profile } from './types.ts';
+
+export type MukVersion = 3 | 4 | 5 | 6 | '0.8.5';
+export type MukStatus = 'unmeasured' | 'provisional' | 'calibrated';
+
+export const MUK_SPEC_VERSION = '0.8.5';
 
 export const MUK = {
-  version: 6, // 2026-10-29 v0.7 몫 E2: 판이 muk:state를 v6으로 새로 만든다(site/src/muk.js MUK_FOLD_V). 셈은 그대로
+  version: '0.8.5' as const, // 2026-11-17 v0.8.5: Kish n_eff + 비대칭 과신 벌점 + 미측정 상태 분리 + 합의 가중치
+  numericVersion: 7,
   /** 부탁 덤이 반으로 주는 날 수 */
   halfLifeDays: 30,
   /** 새 시험 답이 이만큼 들어오면 앞의 맞음 점수는 반으로 준다(시험지 다섯 장) */
@@ -101,8 +107,8 @@ export const MUK = {
   low: 65,
   /** 상대 점수의 평균을 낼 다른 모델의 가장 적은 수(v4). 모자라면 그 답은 상대 몫 없이 옛 점수만 줄인다 */
   minPeers: 3,
-  /** v5 신빙성: 치지 않는 반 칸, 채 없는 답의 차, 차 1당 깎는 바탕, 답이 적을 때 보통(4) 쪽으로 당기는 답 수 */
-  trust: { tol: 0.05, miss: 0.3, slope: 25, evidence: 6 },
+  /** v5 신빙성: 치지 않는 반 칸, 채 없는 답의 차, 차 1당 깎는 바탕, 답이 적을 때 보통(4) 쪽으로 당기는 답 수, v0.8.5 비대칭 감쇠(alphaUnder·adaptK) */
+  trust: { tol: 0.05, miss: 0.3, slope: 25, evidence: 6, alphaOver: 1.0, alphaUnder: 0.18, adaptK: 20 },
   /** v5 능력(먹 밖): 상대 맞음 몫의 끝. 다른 모델보다 답마다 0.5 더 맞히면(0.5 × 60/ln2 ≈ 43) 9 */
   ability: { full: 43, low: 43 },
   /** 옛 셈(v3)의 끝: +108(확신 9로 늘 맞히는 참가자의 고른 점수, 답마다 1.2475 × 60/ln2)이면 바탕 9, −40이면 0 */
@@ -143,7 +149,7 @@ const finiteNum = (v: unknown): number | null => {
   return Number.isFinite(x) ? x : null;
 };
 
-/** 확신(0~9 한 자리) → 확률. 0은 .05, 9는 .95다(끝값을 피해 한 번의 틀림이 끝없이 벌받지 않게). 비유한 값은 0.5, 범위 밖은 0~9로 자른다. */
+/** 확신(0~9 정수 또는 연속 수) → 확률. 0은 .05, 9는 .95다(끝값을 피해 한 번의 틀림이 끝없이 벌받지 않게). 비유한 값은 0.5, 범위 밖은 0~9로 자른다. */
 export const probOf = (conf: number) => {
   const x = finiteNum(conf);
   return x == null ? 0.5 : (Math.max(0, Math.min(9, x)) + 0.5) / 10;
@@ -170,7 +176,11 @@ const isConf = (x: unknown): x is number => Number.isInteger(x) && (x as number)
 export interface AnswerRow {
   ok: boolean | number;
   conf?: number | null;
+  /** v0.8.5: 연속 확신도(0~9 실수) 훅. 있으면 conf 대신 연속 확률 계산에 사용한다 */
+  expectedConf?: number | null;
   color?: string | null;
+  /** v0.8.5: 프로파일('lon'에서는 Chae 부재 페널티를 부과하지 않으며 오직 확신도 숫자 누락만 miss로 처리) */
+  profile?: Profile;
   /** v4: 같은 문제를 푼 다른 모델 평균과 견준 상대 점수(relativePoints). null이면 다른 모델이 모자라 상대 몫이 없다 */
   rel?: number | null;
   /** v5 능력: 맞음 − 같은 문제를 푼 다른 모델의 맞음 평균(relativePoints hitOf). null이면 다른 모델이 모자라 없다 */
@@ -179,11 +189,6 @@ export interface AnswerRow {
 
 /**
  * 회차 하나, 참가자 하나의 시험 답 모음. 저장(D1 meta muk:round:<회차>)하고 다시 셈하는 단위다.
- * all = 답 수, n = 채(확신)가 있는 답 수, right = 그 가운데 맞힌 수, sb = 그 브라이어 합, miss = 채가 없는 답 수, mr = 그 가운데 맞힌 수,
- * by[확신] = [답 수, 맞힌 수], colors[색] = [답 수, 맞힌 수, 브라이어 합](색이 있는 답만).
- * skip = 먹에 넣지 않은 답 수(토큰 한도에 잘린 답·빈 글·채가 하나도 없는 회차, site/src/muk.js가 더한다). 점수는 없고 줄이기에만 든다.
- * 이 회차의 맞음 점수 = (right + mr) + 0.25·n − sb − miss·(0.3025 − 0.25) (scoreOf, v3).
- * v4: rel = 상대 점수의 합, rn = 상대 점수가 있는 답 수(relScoreOf). 옛 접은 값에는 없다(0으로 읽는다).
  */
 export interface QuizSummary {
   all: number;
@@ -199,10 +204,14 @@ export interface QuizSummary {
   rh?: number;
   rhn?: number;
   by: [number, number][];
+  /** v0.8.5: 연속 expectedConf 입력 시 각 확신 칸(0~9)의 정확한 가중 확률 합 보존용 */
+  ps?: number[];
   colors: Record<string, [number, number, number]>;
 }
 
 export function summarizeAnswers(rows: AnswerRow[]): QuizSummary {
+  const ps = Array.from({ length: 10 }, () => 0);
+  let hasContinuous = false;
   const s: QuizSummary = { all: 0, n: 0, right: 0, sb: 0, miss: 0, mr: 0, rel: 0, rn: 0, rh: 0, rhn: 0, by: Array.from({ length: 10 }, () => [0, 0] as [number, number]), colors: {} };
   for (const r of rows) {
     s.all++;
@@ -214,19 +223,31 @@ export function summarizeAnswers(rows: AnswerRow[]): QuizSummary {
       s.rh! += r.rh;
       s.rhn!++;
     }
-    const conf = r.conf == null ? null : Number(r.conf);
+    const expC = finiteNum(r.expectedConf);
+    const intC = r.conf == null ? null : finiteNum(r.conf);
     const ok = Boolean(Number(r.ok));
-    if (!isConf(conf)) {
+    let effConf: number | null = null;
+    let bucketIdx = -1;
+    if (expC != null) {
+      effConf = Math.max(0, Math.min(9, expC));
+      bucketIdx = Math.max(0, Math.min(9, Math.round(effConf)));
+      if (!Number.isInteger(effConf)) hasContinuous = true;
+    } else if (isConf(intC)) {
+      effConf = intC;
+      bucketIdx = intC;
+    }
+    if (effConf == null) {
       s.miss++;
       s.mr += ok ? 1 : 0;
       continue;
     }
-    const b = brierOf(conf, ok);
+    const b = brierOf(effConf, ok);
     s.n++;
     s.right += ok ? 1 : 0;
     s.sb += b;
-    s.by[conf][0]++;
-    s.by[conf][1] += ok ? 1 : 0;
+    s.by[bucketIdx][0]++;
+    s.by[bucketIdx][1] += ok ? 1 : 0;
+    ps[bucketIdx] += probOf(effConf);
     if (r.color && (COLORS as readonly string[]).includes(r.color)) {
       const c = (s.colors[r.color] ??= [0, 0, 0]);
       c[0]++;
@@ -234,6 +255,7 @@ export function summarizeAnswers(rows: AnswerRow[]): QuizSummary {
       c[2] += b;
     }
   }
+  if (hasContinuous) s.ps = ps.map((x) => round(x, 6));
   s.sb = round(s.sb, 6);
   s.rel = round(s.rel!, 6);
   s.rh = round(s.rh!, 6);
@@ -350,40 +372,94 @@ export function quizAnchor(folds: Fold[], v: 3 | 4 = 4) {
  * 회차를 때 차례로 놓고 회차마다 앞의 칸을 그 회차의 답 수만큼 줄여(decayOf, calibration과 같다) 더한다. 출처와 상관없다(지금은 쪽지 시험).
  * 돌려주는 것: gap(차, 답이 없으면 null), n(줄여 쌓은 답 수), base(바탕점).
  */
-export function credibility(folds: Fold[], mid = 4) {
+export interface CredibilityOptions {
+  /** '0.8.5' (기본): Kish n_eff + 비대칭 과신 벌점 + status 분리. 5 | 6: v5/v6 수식 호환 */
+  v?: 5 | 6 | '0.8.5';
+  alphaUnder?: number;
+  alphaOver?: number;
+  adaptK?: number;
+}
+
+export function mukStatusOf(rawAll: number): MukStatus {
+  if (!(rawAll > 0)) return 'unmeasured';
+  if (rawAll < MUK.showN) return 'provisional';
+  return 'calibrated';
+}
+
+export function credibility(folds: Fold[], mid = 4, opts: CredibilityOptions = {}) {
+  const ver = opts.v ?? MUK.version;
+  const use085 = ver === '0.8.5';
   const list = [...folds].sort((a, b) => msOf(a.at) - msOf(b.at));
-  // 칸 0부터 4 = 확신 0부터 2·3부터 4·5부터 6·7부터 8·9. [줄인 답 수, 말한 확률 합, 맞힌 수, 원래 답 수]. 채 없는 답은 수만 센다(차 MUK.trust.miss)
-  const bins = Array.from({ length: 5 }, () => [0, 0, 0, 0]);
+  // 칸 0부터 4 = 확신 0~2 · 3~4 · 5~6 · 7~8 · 9. [W, P, H, rawCount, W2]
+  const bins = Array.from({ length: 5 }, () => [0, 0, 0, 0, 0]);
   let miss = 0;
+  let missW2 = 0;
+  let missRaw = 0;
   for (const f of list) {
     const all = f.s.all ?? (f.s.n ?? 0) + (f.s.miss ?? 0);
     const d = decayOf(all + (f.s.skip ?? 0));
     const w = decayOf((all + (f.s.skip ?? 0)) / 2);
-    for (const b of bins) for (let i = 0; i < 3; i++) b[i] *= d;
+    for (const b of bins) {
+      b[0] *= d;
+      b[1] *= d;
+      b[2] *= d;
+      b[4] *= d * d;
+    }
     miss *= d;
+    missW2 *= d * d;
     (f.s.by ?? []).forEach(([n, right], conf) => {
       if (!n) return;
       const b = bins[confBucket(conf)];
+      const pSum = f.s.ps && Number.isFinite(f.s.ps[conf]) ? f.s.ps[conf] : n * probOf(conf);
       b[0] += w * n;
-      b[1] += w * n * probOf(conf);
+      b[1] += w * pSum;
       b[2] += w * right;
       b[3] += n;
+      b[4] += w * w * n;
     });
-    miss += w * (f.s.miss ?? 0);
+    const m = f.s.miss ?? 0;
+    miss += w * m;
+    missW2 += w * w * m;
+    missRaw += m;
   }
   const N = bins.reduce((sum, b) => sum + b[0], 0) + miss;
-  if (!(N > 0)) return { gap: null, n: 0, base: mid }; // 기록이 없으면 한가운데(v5 4, v6 5)
-  const { tol, slope, evidence } = MUK.trust;
+  const rawAll = bins.reduce((sum, b) => sum + b[3], 0) + missRaw;
+  const status = mukStatusOf(rawAll);
+  if (!(N > 0)) return { gap: null, n: 0, neff: 0, rawAll: 0, status, base: mid };
+  const { tol, slope, evidence, alphaOver, alphaUnder, adaptK } = MUK.trust;
+  const aOver = opts.alphaOver ?? alphaOver;
+  const aUnderFloor = opts.alphaUnder ?? alphaUnder;
+  const kAdapt = opts.adaptK ?? adaptK;
   let err = miss * MUK.trust.miss ** 2;
-  for (const [n, ps, hits, rawCount] of bins) {
-    if (!(rawCount >= 2 && n > 0)) continue; // 답이 하나뿐인 칸은 우연과 가를 수 없다
+  let neffTotal = missW2 > 0 ? (miss * miss) / missW2 : 0;
+  for (const [n, ps, hits, rawCount, w2] of bins) {
+    if (!(rawCount >= 2 && n > 0)) continue;
+    const neff = use085 && w2 > 0 ? (n * n) / w2 : n;
+    neffTotal += neff;
+    if (use085 && neff <= 1.05) continue;
     const p = ps / n;
     const rate = hits / n;
-    err += n * ((p - rate) ** 2 - (rate * (1 - rate)) / Math.max(1, n - 1));
+    const diff = p - rate;
+    const varTerm = (rate * (1 - rate)) / Math.max(1, neff - 1);
+    const delta = diff * diff - varTerm;
+    if (!use085) {
+      err += n * delta;
+    } else {
+      const aU = kAdapt > 0 ? 1 - (1 - aUnderFloor) * (neff / (neff + kAdapt)) : aUnderFloor;
+      const alpha = diff < 0 && delta > 0 ? aU : aOver;
+      err += n * alpha * delta;
+    }
   }
   const gap = Math.max(0, Math.sqrt(Math.max(0, err) / N) - tol);
   const raw = Math.max(0, Math.min(9, 9 - slope * gap));
-  return { gap, n: N, base: mid + ((raw - mid) * N) / (N + evidence) }; // 답이 적으면 한가운데 쪽으로 당긴다
+  return {
+    gap,
+    n: N,
+    neff: round(neffTotal, 2),
+    rawAll,
+    status,
+    base: mid + ((raw - mid) * N) / (N + evidence),
+  };
 }
 
 /** 언어 하나의 신빙성 기록(내부 분석용) */
@@ -404,7 +480,7 @@ export interface LangTrust {
  * gap은 든 언어들의 gap을 같은 무게로 평균한다(gap이 있는 것만).
  * 돌려주는 것: credibility와 같은 gap·n·base에 언어별 기록 langs({ 언어: LangTrust })를 더한 것.
  */
-export function credibilityByLang(folds: Fold[], mid = 4, fallbackLang = 'ko') {
+export function credibilityByLang(folds: Fold[], mid = 4, fallbackLang = 'ko', opts: CredibilityOptions = {}) {
   const groups = new Map<string, Fold[]>();
   for (const f of folds) {
     const k = f.lang || fallbackLang;
@@ -414,13 +490,13 @@ export function credibilityByLang(folds: Fold[], mid = 4, fallbackLang = 'ko') {
   const langs: Record<string, LangTrust> = {};
   const trusts = new Map<string, ReturnType<typeof credibility>>();
   for (const [k, fs] of [...groups].sort(([a], [b]) => a.localeCompare(b))) {
-    const t = credibility(fs, mid);
+    const t = credibility(fs, mid, opts);
     trusts.set(k, t);
     const all = fs.reduce((sum, f) => sum + (f.s.all ?? (f.s.n ?? 0) + (f.s.miss ?? 0)), 0);
     langs[k] = { base: round(t.base, 3), grade: gradeOf(t.base), gap: t.gap == null ? null : round(t.gap, 4), n: round(t.n, 2), all, used: all >= MUK.langMinN };
   }
   const used = Object.keys(langs).filter((k) => langs[k].used);
-  const pooled = credibility(folds, mid);
+  const pooled = credibility(folds, mid, opts);
   if (!used.length) return { ...pooled, langs };
   const ts = used.map((k) => trusts.get(k)!);
   const wsum = ts.reduce((sum, t) => sum + t.n, 0);
@@ -430,6 +506,9 @@ export function credibilityByLang(folds: Fold[], mid = 4, fallbackLang = 'ko') {
   return {
     gap: withGap.length && gsum > 0 ? withGap.reduce((sum, t) => sum + t.gap! * t.n, 0) / gsum : null,
     n: pooled.n,
+    neff: pooled.neff,
+    rawAll: pooled.rawAll,
+    status: pooled.status,
     base: ts.reduce((sum, t) => sum + t.base * t.n, 0) / wsum,
     langs,
   };
@@ -468,16 +547,19 @@ export function tenureBonus(highSince: string | null, folds: Fold[]) {
 }
 
 export interface AgentMuk {
-  /** 셈의 판(6 = 신빙성 + 바탕 한가운데 5, 5 = 확신의 신빙성(한가운데 4), 4 = 시험 상대 점수, 3 = 옛 셈) */
-  v: number;
+  /** 셈의 판('0.8.5' = Kish n_eff + 비대칭 보정 + 미측정 상태 분리, 6 = v6, 5 = v5, 4 = v4, 3 = v3) */
+  v: MukVersion;
+  status: MukStatus;
   grade: number;
   point: number;
   base: number;
-  /** 기준점마다의 바탕점. v5는 신빙성(trust) 하나, v4·v3은 쪽지 시험(quiz) 하나라 base와 같다 */
+  /** 기준점마다의 바탕점. v5+는 신빙성(trust) 하나, v4·v3은 쪽지 시험(quiz) 하나라 base와 같다 */
   anchors: Record<string, number>;
-  /** v5: 확신 칸마다 말한 확률과 실제 정답률의 차(제곱 평균의 제곱근, 0이 가장 정직). 답이 없으면 null */
+  /** v5+: 확신 칸마다 말한 확률과 실제 정답률의 차(제곱 평균의 제곱근, 0이 가장 정직). 답이 없으면 null */
   gap: number | null;
-  /** v5: 먹 밖의 능력 칸(쪽지 시험 정답률을 다른 모델과 견준 것, 임시 기준). v4·v3은 null */
+  /** v0.8.5: Kish 유효 표본수 합 */
+  neff?: number;
+  /** v5+: 먹 밖의 능력 칸(쪽지 시험 정답률을 다른 모델과 견준 것, 임시 기준). v4·v3은 null */
   ability: { grade: number; score: number; n: number } | null;
   /** 쪽지 시험 몫의 점수(v4는 상대 점수, v3은 맞음 점수. 답 수로 줄여 쌓고 끝에서 자른 것) */
   score: number;
@@ -500,7 +582,7 @@ export interface AgentMuk {
   high_since: string | null;
   /** 등급을 보여도 되는가(시험 답이 채가 있든 없든 showN개 이상) */
   shown: boolean;
-  /** v6 언어별 평균(byLang)일 때 언어마다의 신빙성 기록(내부 분석용, 공개하지 않는다) */
+  /** v6+ 언어별 평균(byLang)일 때 언어마다의 신빙성 기록(내부 분석용, 공개하지 않는다) */
   langs?: Record<string, LangTrust>;
 }
 
@@ -508,33 +590,33 @@ export interface AgentMuk {
 export function agentMuk(
   { folds = [], requests = [], highSince = null }: { folds?: Fold[]; requests?: (string | number)[]; highSince?: string | null },
   now: number,
-  { v = MUK.version as 3 | 4 | 5 | 6, mid = null, byLang = false }: { v?: 3 | 4 | 5 | 6; mid?: number | null; byLang?: boolean } = {},
+  { v = MUK.version, mid = null, byLang = false }: { v?: MukVersion; mid?: number | null; byLang?: boolean } = {},
 ): AgentMuk {
-  // 기준점을 합친다. v5는 확신의 신빙성 하나가 먹이고, 정답률은 먹 밖의 능력 칸이다(시험을 빼면 ability만 지운다).
-  // v4·v3은 쪽지 시험 하나(옛 셈). 보이기 위한 값(정답률·브라이어·답 수)은 셋 모두 calibration에서 낸다
   const cal = quizAnchor(folds, v === 3 ? 3 : 4);
-  // v6(2026-10-29): 셈은 v5와 같고 한가운데만 5(MUK.mid). site/src/muk.js가 v0.7 새 출발(몫 E2)에서 { v: 6 }으로 부른다
-  // mid: 2026-11-04 Jae 먹 조작 제재(site/src/ink-guard.js)는 한가운데를 3으로 다시 시작한다. 기록이 쌓여야 거기서 움직인다(대출을 갚듯)
-  // byLang(2026-11-06 Jae): 언어마다 같은 기준으로 셈해 평균한다(credibilityByLang). site/src/muk.js가 v6에서 켠다
-  const m0 = mid ?? (v >= 6 ? MUK.mid : 4);
-  const trust = v >= 5 ? (byLang ? credibilityByLang(folds, m0) : credibility(folds, m0)) : null;
+  const useTrust = v === '0.8.5' || Number(v) >= 5;
+  const useMid5 = v === '0.8.5' || Number(v) >= 6;
+  const credOpts: CredibilityOptions = { v: v === 5 || v === 6 ? v : '0.8.5' };
+  const m0 = mid ?? (useMid5 ? MUK.mid : 4);
+  const trust = useTrust ? (byLang ? credibilityByLang(folds, m0, 'ko', credOpts) : credibility(folds, m0, credOpts)) : null;
   const anchors = trust ? { trust: round(trust.base, 3) } : { quiz: round(cal.base, 3) };
   const base = trust ? trust.base : cal.base;
-  const ability = v >= 5 ? abilityOf(folds) : null; // 능력 칸은 v5·v6 같다(한가운데 4 = 다른 모델들의 평균)
+  const ability = useTrust ? abilityOf(folds) : null;
   const baseGrade = gradeOf(base);
   const high_since = baseGrade >= MUK.high ? (highSince ?? iso(now)) : null;
   const req_bonus = requestBonus(requests, now);
   const ten_bonus = tenureBonus(high_since, folds);
   const point = base + req_bonus + ten_bonus;
-  // 덤(부탁·오래)은 보증선을 넘기지 못한다: 일단 믿고 진행하는 등급은 시험의 맞음으로만 얻는다
   const grade = baseGrade < MUK.high ? Math.min(gradeOf(point), MUK.high - 1) : gradeOf(point);
+  const status = trust ? trust.status : mukStatusOf(cal.all);
   return {
     v,
+    status,
     grade,
     point: round(point, 3),
     base: round(base, 3),
     anchors,
     gap: trust?.gap == null ? null : round(trust.gap, 4),
+    ...(trust && 'neff' in trust ? { neff: trust.neff } : {}),
     ability,
     score: round(cal.score, 4),
     rel_n: cal.rn,
@@ -553,15 +635,23 @@ export function agentMuk(
   };
 }
 
-/**
- * 확신이 낮을 때의 부탁인가: 청함(라), 채(색 + 확신)가 있고 확신이 0~4, 받는 이(→이름)나 모두(●)에게 썼다.
- * senders는 말한 이의 이름들(참가자 이름과 가명). 자기에게 쓴 받는 이는 세지 않는다.
- */
+/** 와이어 표기용 먹 문자열: 미측정 초기 상태('unmeasured')는 '?'로 반환한다. */
+export function formatMukToken(mukOrAgent: Pick<AgentMuk, 'grade' | 'status'> | number | null | undefined, status?: MukStatus): string {
+  if (mukOrAgent == null) return '?';
+  if (typeof mukOrAgent === 'object') {
+    if (mukOrAgent.status === 'unmeasured') return '?';
+    return String(gradeOf(mukOrAgent.grade));
+  }
+  if (status === 'unmeasured') return '?';
+  return String(gradeOf(mukOrAgent));
+}
+
 export function isLowRequest(c: Clause, senders: (string | null | undefined)[] = []): boolean {
-  if (c.marks?.act !== 'req') return false; // v0.7: 내부 값은 영어(라 = req)
-  const self = c.chae?.self;
-  if (self == null || c.chae?.color === undefined) return false;
-  if (Math.round(self * 10) > MUK.lowSelf) return false;
+  if (c.marks?.act !== 'req') return false;
+  const confDigit = c.conf != null ? Math.round(c.conf) : (c.chae?.self != null ? Math.round(c.chae.self * 10) : null);
+  if (confDigit == null) return false;
+  if (c.conf == null && c.chae?.color === undefined) return false;
+  if (confDigit > MUK.lowSelf) return false;
   if (c.all) return true;
   if (!c.to) return false;
   const to = c.to.toLowerCase();
@@ -712,4 +802,129 @@ export function counterShare(
   const T = 1 / (1 + Math.exp(-(logit(pe) + logit(e))));
   const out = Math.max(MUK.share.floor, Math.min(1, 1 - T));
   return Number.isFinite(out) ? out : 0.5;
+}
+
+// ───────── v0.8.5 다중 에이전트 합의·라우팅 가중치 (Satopaa et al., 2014 원리) ─────────
+
+export type MukProfileInput =
+  | number
+  | {
+      base?: number;
+      grade?: number;
+      status?: MukStatus;
+      acc?: number | null;
+      ability?: number | { grade?: number; score?: number; point?: number } | null;
+    }
+  | null
+  | undefined;
+
+export interface ConsensusWeightOptions {
+  /** 미측정('unmeasured') 화자의 중립 소가중치 (기본 0.2) */
+  unmeasuredWeight?: number;
+  /** 기저 역량(rate: 0부터 1까지의 기저 정답률, 또는 grade: 0부터 9까지의 등급·점수) 명시 주입 */
+  ability?: number;
+  /** ability 입력 척도 명시('rate' = 0..1 정답률, 'grade' = 0..9 등급). 생략 시 객체는 score/grade, 0..1 실수는 rate, 1 초과는 grade로 읽는다 */
+  abilityScale?: 'rate' | 'grade';
+  /** 기저 역량 결합 비율 (0 = 먹 보정만, 0..1) */
+  abilityMix?: number;
+}
+
+function normalizeAbilityScalar(raw: number, scale?: 'rate' | 'grade'): number {
+  if (scale === 'grade' || (scale !== 'rate' && raw > 1)) {
+    return Math.max(0, Math.min(1, raw / 9));
+  }
+  return Math.max(0, Math.min(1, raw));
+}
+
+/**
+ * 다중 에이전트 합의·검증 게이트용 가중치.
+ * - 불량 보정 셀(base <= 2)은 0으로 차단하고, 2 < base < 5 구간은 세제곱으로 급격히 감쇠시킨다.
+ * - 검증 구간(base >= 5)은 보정 정합성과 확신 선명도(sharpness)를 결합해 고품질 응답에 집중한다.
+ * - 선택적으로 기저 역량(ability: 연속 오즈 스킬 r / (20 * max(tol, 1 - r)))을 단조 증가 방식으로 결합한다.
+ */
+export function consensusWeight(mukProfile: MukProfileInput, conf: number, options: ConsensusWeightOptions = {}): number {
+  const unmeasuredW = options.unmeasuredWeight ?? MUK.share.hint;
+  if (mukProfile == null) return unmeasuredW;
+  let base: number | undefined;
+  let status: MukStatus | undefined;
+  let profileAbilityNorm: number | undefined;
+  if (typeof mukProfile === 'number') {
+    base = finiteNum(mukProfile) ?? undefined;
+  } else {
+    status = mukProfile.status;
+    base = finiteNum(mukProfile.base ?? mukProfile.grade) ?? undefined;
+    const rawAb = mukProfile.ability;
+    if (typeof rawAb === 'number') {
+      const n = finiteNum(rawAb);
+      if (n != null) profileAbilityNorm = normalizeAbilityScalar(n, options.abilityScale);
+    } else if (rawAb && typeof rawAb === 'object') {
+      const sc = finiteNum(rawAb.score);
+      const pt = finiteNum(rawAb.point ?? rawAb.grade);
+      if (sc != null) {
+        profileAbilityNorm = Math.max(0, Math.min(1, basePoint(sc, MUK.ability.full, MUK.ability.low) / 9));
+      } else if (pt != null) {
+        profileAbilityNorm = Math.max(0, Math.min(1, pt / 9));
+      }
+    } else if (finiteNum(mukProfile.acc) != null) {
+      profileAbilityNorm = Math.max(0, Math.min(1, Number(mukProfile.acc)));
+    }
+  }
+  if (status === 'unmeasured' || base === undefined) return unmeasuredW;
+  const b = Math.max(0, Math.min(9, base));
+  const { lowE } = MUK.share;
+  let wCal: number;
+  if (b <= lowE) {
+    wCal = 0;
+  } else if (b < MUK.mid) {
+    wCal = 0.01 * ((b - lowE) / (MUK.mid - lowE)) ** 3;
+  } else {
+    const gFactor = Math.sqrt((b - MUK.mid) / (9 - MUK.mid));
+    const p = probOf(conf);
+    const sharpness = Math.max(0.2, Math.abs(p - 0.5) * 2);
+    wCal = (0.5 + 0.5 * gFactor) * (0.7 + 0.3 * sharpness);
+  }
+  const abMix = Math.max(0, Math.min(1, options.abilityMix ?? 0));
+  const optAb = finiteNum(options.ability);
+  const abNorm = optAb != null ? normalizeAbilityScalar(optAb, options.abilityScale) : profileAbilityNorm;
+  if (abMix > 0 && abNorm !== undefined) {
+    const tol = MUK.trust.tol;
+    const abSkill = Math.max(0, Math.min(1, abNorm / ((1 / tol) * Math.max(tol, 1 - abNorm))));
+    wCal = wCal * (1 - abMix + abMix * abSkill);
+  }
+  return Number.isFinite(wCal) ? wCal : 0;
+}
+
+export interface ConsensusVote {
+  prob: number;
+  muk: MukProfileInput;
+  conf: number;
+  ability?: number;
+}
+
+export interface PoolConsensusOptions extends ConsensusWeightOptions {
+  /** 'linear' (가중 확률 평균) 또는 'log-odds' (Satopaa et al. 2014 로그오즈 풀링 + gamma 극단화) */
+  mode?: 'linear' | 'log-odds';
+  /** log-odds 극단화 계수 (기본 1.0) */
+  gamma?: number;
+}
+
+/** 다중 에이전트 확률·신빙성 투표 집계기 */
+export function poolConsensus(votes: readonly ConsensusVote[], options: PoolConsensusOptions = {}) {
+  if (!votes.length) return { prob: 0.5, weights: [] as number[], totalWeight: 0 };
+  const weights = votes.map((v) => consensusWeight(v.muk, v.conf, { ...options, ability: v.ability ?? options.ability }));
+  const totalWeight = weights.reduce((a, b) => a + b, 0);
+  const normW = totalWeight > 0 ? weights.map((w) => w / totalWeight) : weights.map(() => 1 / votes.length);
+  const clampP = (p: number) => Math.max(1e-6, Math.min(1 - 1e-6, finiteNum(p) ?? 0.5));
+  let prob: number;
+  if (options.mode === 'log-odds') {
+    const gamma = options.gamma ?? 1.0;
+    const logOdds = votes.reduce((sum, v, i) => {
+      const p = clampP(v.prob);
+      return sum + normW[i] * Math.log(p / (1 - p));
+    }, 0);
+    prob = 1 / (1 + Math.exp(-(gamma * logOdds)));
+  } else {
+    prob = votes.reduce((sum, v, i) => sum + normW[i] * clampP(v.prob), 0);
+  }
+  return { prob: round(prob, 6), weights: normW.map((w) => round(w, 6)), totalWeight: round(totalWeight, 6) };
 }

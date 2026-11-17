@@ -1,8 +1,11 @@
-// 단일 차례 진입점(parseTurn): 생각 태그·머리표·다중 줄 외부 근거(<[ … ]>) 정규화와 명시 규격(0.7 · 0.8)·프로파일(gyeol · lon) 판정을 한 번에 수행한다.
+// 단일 차례 진입점(parseTurn): 생각 태그·머리표·다중 줄 외부 근거(<[ … ]>) 정규화, 원장(LedgerContext) 바인딩, 명시 규격·프로파일 판정을 한 번에 수행한다.
 import type { Clause, Diagnostic, ExtEvidence, Message, Profile } from './types.ts';
 import { parse, type ParseOptions } from './parse.ts';
 import { rules08 } from './parse/v08.ts';
 import { stripReplyLabels } from './ref-copy.ts';
+import { tierOfCode } from './tables.ts';
+import type { LedgerContext } from './ledger.ts';
+import { scanExtBlocks } from './parse/shared.ts';
 
 export interface PriorContext {
   clauses: Clause[];
@@ -25,10 +28,13 @@ export function parsePriorContext(
 
 export interface ParseTurnOptions {
   profile?: Profile;
-  spec?: '0.7' | '0.8';
+  spec?: '0.7' | '0.8' | '0.8.2' | '0.8.5';
+  mode?: 'delta' | 'snapshot';
   lang?: string;
   ink?: number | null;
   priorLines?: string[];
+  /** v0.8.5 대역 외 원장 컨텍스트(O(1) 교차 턴 조회·연쇄 calc 검증) */
+  ledger?: LedgerContext;
   turnNo?: number | null;
   /** v0.8.1(3.22절): 호출부가 미리 준 받은 자료 번호(`evd103` 등). 선언 없이 ↓evd103으로 가리켜도 E17을 내지 않는다 */
   issued?: readonly string[];
@@ -46,7 +52,7 @@ export interface ParseTurnResult {
 }
 
 const HEAD_LABEL_RE = /^\s*(?:[*_`'"“”]+\s*)*(?:결|gyeol|론|lon)\s*(?:[*_`'"“”]+\s*)*[:：]\s*(?:[*_`'"“”]+\s*)?(.*)$/iu;
-const GLOSS_LABEL_RE = /^\s*(?:[*_`'"“”]+\s*)*(?:풀이|gloss)\s*(?:[*_`'"“”]+\s*)*[:：]/iu;
+const GLOSS_LABEL_RE = /^\s*(?:---+\s*$|(?:[*_`'"“”]+\s*)*(?:풀이|gloss)\s*(?:[*_`'"“”]+\s*)*[:：])/iu;
 
 function stripThinkBlocks(raw: string): string {
   let s = String(raw ?? '');
@@ -57,8 +63,6 @@ function stripThinkBlocks(raw: string): string {
   if (open !== -1) s = s.slice(0, open);
   return s.trim();
 }
-
-import { scanExtBlocks } from './parse/shared.ts';
 
 /** 응답 원문에서 결·론 본문 줄만 발라낸다(마크다운 감싼 머리표 수용, 풀이: 이후 분리). */
 export function extractTurnLine(rawText: string): string {
@@ -112,36 +116,42 @@ const diagKey = (d: Diagnostic) => `${d.severity}|${d.code}|${d.line}|${d.messag
  */
 export function parseTurn(rawText: string, opts: ParseTurnOptions = {}): ParseTurnResult {
   const profile: Profile = opts.profile === 'lon' ? 'lon' : 'gyeol';
-  const spec = profile === 'lon' ? '0.8' : (opts.spec ?? '0.8');
-  const use08 = spec === '0.8';
+  const use08 = opts.spec !== '0.7';
   const lang = opts.lang ?? 'ko';
   const ink = opts.ink ?? null;
   const line = extractTurnLine(rawText);
   if (!line) {
-    const emptyErr: Diagnostic = { severity: '오류', code: 'E01', line: 1, message: '결 줄이 비었다' };
+    const emptyErr: Diagnostic = { severity: '오류', tier: tierOfCode('E01'), code: 'E01', line: 1, message: '결 줄이 비었다' };
     return { line: '', message: parse('').message, diagnostics: [emptyErr], errors: [emptyErr], warnings: [], ok: false };
   }
   const issued = Array.isArray(opts.issued) && opts.issued.length ? opts.issued : undefined;
-  const prior = parsePriorContext(opts.priorLines, { v08: use08, issued });
+  const prior: PriorContext = opts.ledger
+    ? { clauses: opts.ledger.priorClauses, evidences: opts.ledger.priorEvidences }
+    : parsePriorContext(opts.priorLines, { v08: use08, issued });
   const parseOpts: ParseOptions = {
     ...(use08 ? { v08: true } : {}),
+    profile,
+    ...(opts.spec ? { spec: opts.spec } : {}),
+    ...(opts.mode ? { mode: opts.mode } : {}),
     ...(issued ? { issued } : {}),
     ...(prior.clauses.length ? { priorClauses: prior.clauses } : {}),
     ...(prior.evidences.length ? { priorEvidences: prior.evidences } : {}),
     ...(opts.turnNo != null ? { turnNo: opts.turnNo } : {}),
+    ...(opts.ledger ? { alreadySuperseded: opts.ledger.supersededSet(), dependentsOf: opts.ledger.dependentsOf } : {}),
   };
   const res = parse(line, parseOpts);
   const ruleDiags = rules08(res, {
     lang,
     ink,
     profile,
-    spec,
+    ...(opts.spec ? { spec: opts.spec } : {}),
+    ...(opts.mode ? { mode: opts.mode } : {}),
     priorClauses: prior.clauses,
     priorEvidences: prior.evidences,
     issued,
     ...(opts.snapshot !== undefined ? { snapshot: opts.snapshot } : {}),
   });
-  const diagnostics = [...res.diagnostics, ...ruleDiags];
+  const diagnostics = [...res.diagnostics, ...ruleDiags].map((d) => (d.tier ? d : { ...d, tier: tierOfCode(d.code) }));
   const errors = diagnostics.filter((d) => d.severity === '오류');
   const warnings = diagnostics.filter((d) => d.severity !== '오류');
   return {

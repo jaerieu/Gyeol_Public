@@ -3,8 +3,8 @@
 // 두 줄꼴에서 뜻이 같은 것만 여기 둔다. 뜻이 다른 것(가리킴을 번호만 써도 되는지, 둘째 →이름을 덮는지)은 PrefixRules로 받는다.
 // 2026-10-15(v0.5): 새 꼴 줄의 내용은 어느 언어의 낱말이든 받는다(parseWord의 anyScript). 옛 꼴은 그대로 읽는다.
 
-import type { Clause, ClauseWritten, Diagnostic, PlaceRel, ProcessKind, Ref, Word } from '../types.ts';
-import { PROCESS_ALIASES, PROCESS_ALIAS_RE } from '../tables.ts';
+import type { Clause, ClauseWritten, Diagnostic, PlaceRel, ProcessKind, Profile, Ref, Word } from '../types.ts';
+import { PROCESS_ALIASES, PROCESS_ALIAS_RE, tierOfCode } from '../tables.ts';
 import { HANGUL, stripTrailingPunct } from '../text.ts';
 
 export class Ctx {
@@ -12,6 +12,10 @@ export class Ctx {
   line = 0;
   /** v0.8(2026-11-11 Jae): 머리 줄이 0.8이거나 parse(..., { v08: true })로 부를 때 true. 옛 E15를 끄고 <절N · ● …>를 허용한다. */
   v08 = false;
+  /** v0.8.5: 현행 0.8.5 규칙 활성화 여부 (본문 격리, 미측정 *?, lon 콜론 꼬리, calcN) */
+  is085 = true;
+  /** 현재 메시지 프로파일 ('gyeol' | 'lon') */
+  profile: Profile = 'gyeol';
   /** v0.3 줄꼴로 쓴 절. 가리킴 확인(절N·점N)과 W05에서 옛 꼴과 다르게 다룬다. */
   newForm = new WeakSet<Clause>();
   /** v0.5: 새 꼴 절마다 글에 쓴 꼴(자신의 자리, '네', 별칭). ParseResult.written으로 나가 rules05가 본다. */
@@ -19,10 +23,10 @@ export class Ctx {
   /** 언급(백틱으로 싼 글)의 원문. 줄을 읽는 동안 자리표로 가려 두고 진단 글에서는 되살린다(maskMentions). */
   mentions: string[] = [];
   err(code: string, message: string) {
-    this.diags.push({ code, severity: '오류', line: this.line, message: unmaskMentions(message, this.mentions) });
+    this.diags.push({ code, severity: '오류', tier: tierOfCode(code), line: this.line, message: unmaskMentions(message, this.mentions) });
   }
   warn(code: string, message: string) {
-    this.diags.push({ code, severity: '경고', line: this.line, message: unmaskMentions(message, this.mentions) });
+    this.diags.push({ code, severity: '경고', tier: tierOfCode(code), line: this.line, message: unmaskMentions(message, this.mentions) });
   }
 }
 
@@ -63,11 +67,13 @@ export function unmaskMentions(s: string, spans: string[]): string {
  * 언급을 품은 내용 어절(`sup→`, `↔`로, (`*R3`)). 언급 밖의 글자는 parseWord052처럼 본다(언급 밖의 → 는 여전히 E19).
  * 어절은 쓴 그대로 남기고 어근·꼬리는 나누지 않는다(언급은 낱말이 아니라 글자 그대로다).
  */
-export function parseMentionWord(raw: string, ctx: Ctx): Word | null {
+export function parseMentionWord(raw: string, ctx: Ctx, allowArrows = false): Word | null {
   const outside = raw.replace(MENTION_PH, ' ').split(' ').filter((p) => p !== '');
   const probe = new Ctx();
   probe.v08 = ctx.v08;
-  for (const p of outside) parseWord052(p, probe);
+  probe.is085 = ctx.is085;
+  probe.profile = ctx.profile;
+  for (const p of outside) parseWord052(p, probe, allowArrows);
   const bad = probe.diags.find((d) => d.severity === '오류');
   if (bad) {
     ctx.err(bad.code, unmaskMentions(bad.message, ctx.mentions));
@@ -145,6 +151,8 @@ export function parseWord(raw: string, ctx: Ctx, anyScript = false): Word | null
 /** 내용에 쓰지 않는 문법 기호: 꺾쇠·대괄호와 그 비슷한 꼴, 끝 묶음 *, 앞붙이 화살표, 옛 자신·먹의 |, 모두에게 ●, v0.6 양립 안 됨 ⊗(2026-10-24) */
 export const RESERVED_IN_CONTENT = '<>〈〉＜＞⟨⟩《》‹›[]［］【】〔〕*＊→↓↔∥↖⇒⇣⇄‖|｜●⬤⚫⊗';
 const RESERVED_SET = new Set(Array.from(RESERVED_IN_CONTENT));
+/** v0.8.5 격리된 본문 스팬에서는 화살표 어구(fix→하루참, ↔로, sup→gut, A→B)를 허용하고 구조 구분자만 차단한다 */
+const RESERVED_BODY_SET = new Set(Array.from('<>〈〉＜＞⟨⟩《》‹›[]［］【】〔〕*＊|｜●⬤⚫⊗'));
 /** 점의 가운뎃점 꼴(v03.ts DOT_CHARS와 같다). 내용에서는 낱말 사이(떨림·불면)에만 쓴다 */
 const DOT_SET = new Set(Array.from('·•・ㆍ∙⋅‧'));
 const LNM = /[\p{L}\p{M}\p{N}]/u;
@@ -161,21 +169,19 @@ function stripEdges(s: string): string {
 }
 
 /**
- * 0.5.1 꼴 절의 내용 어절 하나(v0.5.2). 쓴 글(text)은 그대로 두고, 어근·꼬리는 부호를 뗀 글에서 나눈다:
- * '"door"가' = door + 가, '24%가' = 24% + 가, '있지만,' = 한글 어절. 부호만인 어절(+, =, —)은 어근이 없다.
- * 막는 것: 문법 기호(RESERVED_IN_CONTENT), 그림 문자, 낱말 사이가 아닌 가운뎃점. E15는 부호로 나뉜 글자 덩이마다 본다(雪이·雨는 받는다).
+ * 0.5.1 / 0.8 / 0.8.5 꼴 절의 내용 어절 하나.
+ * allowArrows가 true(격리된 본문 스팬)면 본문 속 화살표 어구(fix→하루참, ↔로, sup→gut)의 E19 오탐을 차단한다.
  */
-export function parseWord052(raw: string, ctx: Ctx): Word | null {
+export function parseWord052(raw: string, ctx: Ctx, allowArrows = false): Word | null {
   const cs = Array.from(raw);
-  // v0.8.2 재검토(2026-11-13 Jae): 이모지(그림 문자)는 대화 내용으로 받는다. 문법 기호(● ⬤ ⚫ 등)만 막는다.
-  const bad = cs.find((c, i) => RESERVED_SET.has(c) || (DOT_SET.has(c) && (i === 0 || i === cs.length - 1 || DOT_SET.has(cs[i - 1]) || DOT_SET.has(cs[i + 1]))));
+  const resSet = allowArrows ? RESERVED_BODY_SET : RESERVED_SET;
+  const bad = cs.find((c, i) => resSet.has(c) || (DOT_SET.has(c) && (i === 0 || i === cs.length - 1 || DOT_SET.has(cs[i - 1]) || DOT_SET.has(cs[i + 1]))));
   if (bad !== undefined) {
-    const why = DOT_SET.has(bad) ? '가운뎃점은 낱말 사이에만 쓴다(떨림·불면)' : `'${bad}'는 문법 기호라 내용에 쓰지 않는다(< > [ ] * → ↓ ↔ ∥ ↖ ⊗ | ●)`;
+    const why = DOT_SET.has(bad) ? '가운뎃점은 낱말 사이에만 쓴다(떨림·불면)' : `'${bad}'는 문법 기호라 내용에 쓰지 않는다(< > [ ] * | ● ⊗)`;
     ctx.err('E19', `어절을 읽을 수 없다: '${raw}'. ${why}`);
     return null;
   }
   if (!cs.some((c) => LNM.test(c))) return { text: raw };
-  // 끝의 닫는 부호를 빼고 한글 꼬리를 나눈다. 꼬리 앞(어근)에 한글 아닌 글자·숫자가 있을 때만 꼬리다
   let end = cs.length;
   while (end > 0 && !LNM.test(cs[end - 1])) end--;
   let k = end;
@@ -291,16 +297,14 @@ export interface ExtBlockSpan {
   closed: boolean;
   legacy: boolean;
   rawOpener: string;
-  tag: { ext: 'evd' | 'ref'; id: string; tagStart: number } | null;
+  tag: { ext: 'evd' | 'ref' | 'calc'; id: string; tagStart: number } | null;
 }
 
 const WS_CHAR_RE = /\s/u;
 const isExtDigit = (c: string | undefined): boolean => c !== undefined && ((c >= '0' && c <= '9') || (c >= '０' && c <= '９'));
 
 /**
- * 여는 기호 바로 앞의 이름표(`증1`·`근2`·`evd1.2`·`ref3:`)를 뒤에서 앞으로 읽는다.
- * 정규식 `(?:^|\s)((?:증|근|evd|ref)(D+(?:\.D+)?))\s*[:：]?\s*$`를 `s.slice(prevEnd, openerIdx)`에 건 것과 같되,
- * 구간 전체를 다시 훑지 않고 이름표 길이만큼만 본다(v0.8.2 재검토: 여는 기호가 많은 긴 줄에서 길이의 제곱이던 것을 고침).
+ * 여는 기호 바로 앞의 이름표(`증1`·`근2`·`식1`·`evd1.2`·`ref3:`·`calc1`)를 뒤에서 앞으로 읽는다.
  */
 function parsePrecedingExtTag(s: string, prevEnd: number, openerIdx: number): ExtBlockSpan['tag'] {
   let j = openerIdx;
@@ -313,12 +317,15 @@ function parsePrecedingExtTag(s: string, prevEnd: number, openerIdx: number): Ex
   while (j > prevEnd && (isExtDigit(s[j - 1]) || s[j - 1] === '.')) j--;
   const num = s.slice(j, numEnd);
   if (!/^[0-9０-９]+(?:\.[0-9０-９]+)?$/u.test(num)) return null;
-  let kind: 'evd' | 'ref';
+  let kind: 'evd' | 'ref' | 'calc';
   let tagStart: number;
   const w1 = s[j - 1];
-  if (j - 1 >= prevEnd && (w1 === '증' || w1 === '근')) {
-    kind = w1 === '증' ? 'evd' : 'ref';
+  if (j - 1 >= prevEnd && (w1 === '증' || w1 === '근' || w1 === '식')) {
+    kind = w1 === '증' ? 'evd' : w1 === '근' ? 'ref' : 'calc';
     tagStart = j - 1;
+  } else if (j - 4 >= prevEnd && s.slice(j - 4, j).toLowerCase() === 'calc') {
+    kind = 'calc';
+    tagStart = j - 4;
   } else if (j - 3 >= prevEnd) {
     const w3 = s.slice(j - 3, j).toLowerCase();
     if (w3 !== 'evd' && w3 !== 'ref') return null;
@@ -372,9 +379,13 @@ export function scanExtBlocks(s: string): ExtBlockSpan[] {
       if (depth === 1) {
         while (
           closeIdx !== -1 &&
-          !/^(?:$|[\s<＜]|(?:증|근|evd|ref)[0-9０-９])/iu.test(s.slice(closeIdx + 2, closeIdx + 16))
+          !/^(?:$|[\s<＜]|(?:증|근|식|evd|ref|calc)[0-9０-９])/iu.test(s.slice(closeIdx + 2, closeIdx + 18))
         ) {
           closeIdx = s.indexOf(closer, closeIdx + 2);
+        }
+      } else {
+        while (closeIdx !== -1 && closeIdx > innerStart && s[closeIdx - 1] === ']') {
+          closeIdx = s.indexOf(closer, closeIdx + 1);
         }
       }
       if (closeIdx !== -1) {

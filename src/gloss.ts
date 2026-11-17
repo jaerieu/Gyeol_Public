@@ -278,21 +278,27 @@ export const GLOSS: Record<string, GlossTable> = {
   },
 };
 
-/** 끝의 근거 이름: 주소, 시험 문제 Q3, 참가자 kimi(2026-10-16), 절 */
+/** 끝의 근거 이름: 주소, 시험 문제 Q3, 참가자 kimi(2026-10-16), 절, 예약 사전, 수식 */
 const becauseName = (b: Because, g: GlossTable) =>
-  'url' in b
-    ? g.url
-    : 'quiz' in b
-      ? `${g.quiz}${b.quiz}`
-      : 'ctx' in b
-        ? `${g.ctx}${b.ctx}`
-      : 'agent' in b
-        ? b.agent
-        : 'ext' in b
-          ? `${g.clause === '절' ? (b.ext === 'evd' ? '증' : '근') : b.ext}${b.id}${b.lines ? (b.lines[0] === b.lines[1] ? `[L${b.lines[0]}]` : `[L${b.lines[0]}:L${b.lines[1]}]`) : ''}`
-          : 'thread' in b
-            ? g.past.replace('T', String(b.thread)).replace('N', g.clause + b.clause.replace(/^[절점]/u, ''))
-            : refName(b, g);
+  'reserved' in b
+    ? g.clause === '절'
+      ? '사전'
+      : 'dict'
+    : 'calc' in b
+      ? `${g.clause === '절' ? '식' : 'calc'}${b.calc}`
+      : 'url' in b
+        ? g.url
+        : 'quiz' in b
+          ? `${g.quiz}${b.quiz}`
+          : 'ctx' in b
+            ? `${g.ctx}${b.ctx}`
+            : 'agent' in b
+              ? b.agent
+              : 'ext' in b
+                ? `${g.clause === '절' ? (b.ext === 'evd' ? '증' : '근') : b.ext}${b.id}${b.lines ? (b.lines[0] === b.lines[1] ? `[L${b.lines[0]}]` : `[L${b.lines[0]}:L${b.lines[1]}]`) : ''}`
+                : 'thread' in b
+                  ? g.past.replace('T', String(b.thread)).replace('N', g.clause + b.clause.replace(/^[절점]/u, ''))
+                  : refName(b, g);
 // v0.7: 틀의 이름표(절12)는 그대로지만 풀이는 그 언어의 말로 쓴다(ko 절12, en clause 12)
 const refName = (r: Ref, g: GlossTable) => (r.msg ? `#${r.msg.slice(0, 6)}:` : '') + g.clause + r.label.replace(/^[절점]/u, '');
 
@@ -324,16 +330,21 @@ export function glossClause(c: Clause, lang = 'ko'): string {
   if (c.all) out.push(g.all);
   const name = (r: Ref) => (r.thread !== undefined ? g.past.replace('T', String(r.thread)).replace('N', g.clause + r.label.replace(/^[절점]/u, '')) : refName(r, g)); // 지난 대화의 절(받침→53:12, ↔53:12)
   if (c.process) out.push(g.process[c.process.kind].replace('N', c.process.target ? name(c.process.target) : ''));
-  if (c.place?.rel === '⊗') out.push(g.clash.replace('N', refName(c.place.target, g)).replace('M', c.place.second ? refName(c.place.second, g) : ''));
-  else if (c.place) out.push(g.place[c.place.rel].replace('N', name(c.place.target)));
+  const places = c.places?.length ? c.places : c.place ? [c.place] : [];
+  for (const pl of places) {
+    if (pl.rel === '⊗') out.push(g.clash.replace('N', refName(pl.target, g)).replace('M', pl.second ? refName(pl.second, g) : ''));
+    else out.push(g.place[pl.rel].replace('N', name(pl.target)));
+  }
   if (c.to) out.push(g.to.replace('X', c.toList?.length ? c.toList.join(', ') : c.to));
   if (c.marks.ev) out.push(g.ev[c.marks.ev]);
   if (c.marks.news) out.push(g.news);
   if (c.marks.fig) out.push(g.fig[c.marks.fig]);
   if (c.marks.tense) out.push(g.tense[c.marks.tense]);
   if (c.marks.act) out.push(g.act[c.marks.act]);
-  if (c.chae?.self !== undefined) out.push(c.chae.color ? `${g.chae} ${c.chae.color}${toDigit(c.chae.self)}` : `${g.self} ${toDigit(c.chae.self)}`);
-  if (c.muk?.conf !== undefined) out.push(`${g.muk} ${toDigit(c.muk.conf)}`);
+  if (c.conf !== undefined && c.chae == null) out.push(`${g.self} ${Math.max(0, Math.min(9, Math.round(c.conf)))}`);
+  else if (c.chae?.self !== undefined) out.push(c.chae.color ? `${g.chae} ${c.chae.color}${toDigit(c.chae.self)}` : `${g.self} ${toDigit(c.chae.self)}`);
+  if (c.muk?.unmeasured) out.push(`${g.muk} ?`);
+  else if (c.muk?.conf !== undefined) out.push(`${g.muk} ${toDigit(c.muk.conf)}`);
   for (const b of c.because ?? []) out.push(g.because.replace('N', becauseName(b, g)));
   return out.join(g.joiner);
 }

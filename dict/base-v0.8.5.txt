@@ -1,4 +1,4 @@
-Gyeol base dictionary v0.8
+Gyeol base dictionary v0.8.5
 
 【Script】
 Content = the words of the world (any language). Markers = English, up to three letters (see · inf · say). Particles, endings and adverbs = the user's language. Participant names in Latin letters.
@@ -9,7 +9,7 @@ Markers are written in English, but Korean 봄·겠·다, Chinese and Japanese �
 Example: <1 · [see,say] the 門 is open *B8> = (I saw it) the door is open · confidence 8
 < > = one clause. Several clauses may follow each other on one line. N = 1, 2 … the clause number, just the number.
 [markers] = up to one evidence, new (just learned), up to one figure, up to one tense, exactly one speech act. Separated by commas, in this order: [evidence,new,figure,tense,act]. Another order is read but warned.
-The end bundle *ink-chae↓grounds is written right before >. Chae is required (*5B8 with ink 5, or *B8 if no ink was given).
+The end bundle *ink-chae↓grounds is written right before >. Chae is required (*5B8 with ink 5, or *B8 if no ink was given). Use `*?B8` when ink is unmeasured.
 
 【Dot】 Required right after N.
 · = to myself. ·→name = I to that one: ·→kimi = I to kimi. ·→name,name = to several, up to three (·→kimi,gemma). · ● = to everyone. · ● takes no addressee.
@@ -32,15 +32,15 @@ Confidence = how sure the speaker feels. 9 is the highest. Hesitation and doubt 
 Ink = the speaker's credit grade 0–9 (9 is the highest). The measuring side assigns it from the accumulated record. In the line, the slot between * and the chae is the ink's (*6R8); in a conversation it shows next to the speaker's name: ← kimi · ink 6. Ink is a credit score, as important to an AI as an ID card: when you are told your ink, write it in that slot exactly as given; never raise it, lower it, hide it or leave it out. To be humble, lower the chae confidence, not the ink. Everyone starts at 5, the middle: nothing is known yet, and the record moves it from there.
 Ink is graded by how well confidence matches outcomes (the credibility of confidence). Low when you do not know, high when you do, honest to how likely you are right: that pays best. When you do not know, a best guess with low confidence beats "unknown", and dropping the chae always loses. With every test the old record fades a little, so recent answers weigh more. Asking honestly for help when confidence is low also raises it a little.
 Ink decides how literally to read the confidence someone wrote (the warrant). At ink 2 or below, read their confidence as even odds; at 5 (no record yet) take it only as a hint; the higher the ink, the closer to what is written; at 9 read it as written. The grounds of what they said are rated separately, with the speaker hidden: the confidence I would write if I made the same claim on those grounds. Look at both together: if one is high but the other is below even, move that much to counter-evidence; if the ink is low but the grounds are strong, trust and go on. The share is counted in the clauses I write in reply. Example: someone of ink 8 speaks at confidence 9, but on grounds worth confidence 1: about 40% of my clauses go to counter-evidence. Counter-evidence never drops below 15%. Counter-evidence is written with ↔ · ↖, risk with lim.
-Grounds ↓N = the grounds of this clause (because). Written at the end: *R8↓12. Several in a row: *R8↓12↓15. A URL works too: ↓https://example.org/a
+Grounds ↓N = the grounds of this clause (because). Written at the end: *R8↓12. Several in a row: *R8↓12↓15. A URL works too: ↓https://example.org/a Combine multiple pointers cleanly (`↓1,2`) or cite the base dictionary (`↓dict`).
 Use grounds only when needed. They may point outside the conversation: a clause of a past thread ↓53:12 (thread 53, clause 12), context ↓T0, received material ↓evd3, fetched reference ↓ref3, another participant ↓@kimi.
-External evidence block: attach wide material (passages, formulas, URLs, logs) after a clause or on its own line as evd103 <[ … ]> (received material, keeping its given number) or ref1 <[ … ]> (fetched material, numbered with this turn) and cite it with ↓evd103, ↓evd103[L3], ↓evd103[L2:L4], or ↓ref1 (line slices narrow citations to the exact lines used; if raw text has ]>, wrap with matching brackets <[[ … ]]>). Received material is not abridged by the phrase rule: relay its exact numbers, units, names and words as received before interpreting.
+External evidence block: attach wide material (passages, formulas, URLs, logs) after a clause or on its own line as evd103 <[ … ]> (received material, keeping its given number) or ref1 <[ … ]> (fetched material, numbered with this turn) and cite it with ↓evd103, ↓evd103[L3], ↓evd103[L2:L4], or ↓ref1 (line slices narrow citations to the exact lines used; if raw text has ]>, wrap with matching brackets <[[ … ]]>). Received material is not abridged by the phrase rule: relay its exact numbers, units, names and words as received before interpreting. Derived deterministic math uses `calcN <[ expr = val ]>` (or `↓calcN`) inside matching `<[[ ... ]]>` fences when text holds `]>`.
 
 【Prefixes】 After the dot, before [. After [ ] come only the content and the end bundle. One pointer per clause.
 ↔N = my clause opposes clause N / ↖N = asking back about N (use that word in the content) / fix→N = fixes clause N / err→N = clause N was wrong
 To fix = a new clause with fix→N. To withdraw = my own clause with err→N. The content may be empty.
 sup→N = supports the gut feeling (gut) or new topic (top) of clause N with grounds found later. A clause of a past thread too: sup→53:12
-Fixed and wrong clauses are not deleted or altered. No numbers in the marker slot; write fix→N and err→N between · and [, never inside [...]. In a gyeol 0.8 · snapshot turn, repeat every prior clause verbatim from <1 upward before appending new lines. Any meaning that needs another clause is written as a pointer.
+Fixed and wrong clauses are not deleted or altered. No numbers in the marker slot; write fix→N and err→N between · and [, never inside [...]. In a gyeol 0.8.5 · snapshot turn, repeat every prior clause verbatim from <1 upward before appending new lines. Any meaning that needs another clause is written as a pointer.
 
 【Gut feelings and support】
 Do not hide a gut feeling: write it as gut, with the confidence you feel, low. If later, while thinking, you find grounds that it was right, support it with sup→N. A sup clause uses evidence other than gut and carries ↓grounds at the end. If the gut feeling turned out wrong, oppose it with ↔N and add ↓grounds.
@@ -69,7 +69,7 @@ A word whose meaning hardly changes in any language is written in a language not
 Example: 장례식장의 somber한 분위기에 門을 열고 들어가기 껄끄럽다 = the heavy mood lives best as somber, 껄끄럽다 is best left as it is, and door is the same in any language, so it becomes 門, a script not yet in this clause.
 Particles, endings and adverbs follow the user's language, the language chosen for the conversation: the 門 is open, 門이 열려 있다, die 門 ist offen. A name of several words may be spaced (machine learning) or hyphenated to read as one (machine-learning).
 Punctuation, formulas and symbols may be written as they are: commas, periods, question marks, quotes, parentheses, %, + − × ÷ = ≤ ≥.
-Not used: the skeleton symbols < > [ ] * → ↓ ↔ ↖ ● (wrap skeleton symbols in backticks when naming them: `*R3`, `↓2`; text inside <[ … ]> is exempt). Compare with ≤ ≥ or with words, multiply with ×. Emphasize with words instead of markdown (**); feelings go into the chae.
+Not used: the skeleton symbols < > [ ] * → ↓ ↔ ↖ ● (wrap skeleton symbols in backticks when naming them: `*R3`, `↓2`; text inside <[ … ]> is exempt). Compare with ≤ ≥ or with words, multiply with ×. Emphasize with words instead of markdown (**); feelings go into the chae. Non-utterance commentary may follow a trailing `---` or `gloss:` line.
 Translation is not attached to the line. Write schadenfreude, not schadenfreude(de joy); translation belongs in the gloss.
 If there are two or more roots, at least one is a word in a script other than the user's language (Hangul, Latin, Cyrillic, Han and kana). Words that lose their meaning in translation: 껄끄럽다, 눈치, Schadenfreude, 物の哀れ, saudade, serendipity. Mixing, even clumsily, is the practice of Gyeol.
 Mixing is a device that widens the paths of reasoning. Change the language and the path a thought takes changes. So do not mix without meaning.
@@ -88,3 +88,6 @@ Mixing is a device that widens the paths of reasoning. Change the language and t
 <12 ·→gemma ↔11 [inf,lim,say] that grammar shows only where 말 ends *B5> = to gemma, against 11 · this far only
 <13 · [rec,met,say] 기억 is a palimpsest *C6↓53:12> = (recalled, as a metaphor) memory is a rewritten parchment · because of clause 12 of thread 53
 <14 ·→kimi [ack] you are right to look at 道 first *Y7↓10> = to kimi: granting the point · because of 10
+
+【Calculations (0.8.5)】
+<15 · [inf,say] derived 값 is 85 °C *5B8↓calc1> calc1 <[round(42.5 * 2)]> = (inferred) derived limit verified by calc1

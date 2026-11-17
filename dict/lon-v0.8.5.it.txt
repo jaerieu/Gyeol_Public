@@ -1,0 +1,13 @@
+GYEOL-LON v0.8.5 (Lineage Oriented Notation)
+
+【Regole Lon 0.8.5 : Notazione di lignaggio per verifica e audit】
+- Forma: `lon: <N · dest prefisso [marcatori] contenuto *ink:conf↓basi> refN <[est]> calcN <[espr = val]>` (niente riga gloss; commenti solo dopo `---`).
+- Coda con due punti (senza Chae): `lon 0.8.5` rimuove il colore. Termina con `*<ink>:<conf>` (`*5:8`, prima del timbro `*:8`, non misurato `*?:8`). Usa cifre oneste 0–9 (es. `*:2`, `*:4`, `*:6`, `*:8`, `*:9`).
+- Modalità (`delta` / `snapshot`): `lon 0.8.5 · delta` (predefinito) emette solo nuove clausole/revisioni; `snapshot` ripete da `<1`.
+- Punto fisso (`·`): Scrivi `·` subito dopo N (`<1 · …>`, `<1 ·→B …>`, `<1 · ● …>`).
+- Marcatori: `see`·`rec`·`inf`·`gut`·`if`, `lim`, `pst`·`fut`, `say`·`ask`·`req`·`let`·`vow`·`nay`·`ack`. Indica l'atto (`[inf,lim,say]`; W49 ripristina `say` se omesso). `gut` non può essere citato con `↓` (E34).
+- Prefissi (tra `·` e `[`): `↔N`, `↖N`, `fix→N`, `err→N`, `sup→N`. Con `fix→k`, aggiorna anche `[inf]` e `calcM` dipendenti nello stesso turno.
+- Conflitti silenziosi: Segnala le discrepanze con `<M · ↔k [rec,lim,say] conflitto *:6↓evdH>` (mai unire `↔k` e `fix→k`/`err→k` sullo stesso bersaglio, W51).
+- Calcoli (`calcN`): Su `[inf,say]` numeriche isola l'aritmetica in `calcN <[ espr = val ]>` (`+ - * / % () round floor ceil abs min max`, `@k`) citando `↓calcN` dopo `↓k` (W50).
+- Puntatori e recinzioni: Supportati `↓1,2`, `↔2,4`, `↓dict`; usa `<[[ … ]]>` se il testo contiene `]>` e lascia intatti numeri/unità ricevuti.
+- Fonte di `see` (W40) e inoltro: `see` deve raggiungere `↓T0`, `↓evdN`, `↓refN` o `↖N`; inoltra `evd101+` alla lettera (`<12 ·→B [see,say] relay *6:9↓evd103> evd103 <[verbatim]>`).

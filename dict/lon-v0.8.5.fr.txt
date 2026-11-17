@@ -1,0 +1,13 @@
+GYEOL-LON v0.8.5 (Lineage Oriented Notation)
+
+【Règles Lon 0.8.5 : Notation de lignée pour audit et vérification】
+- Forme : `lon: <N · dest préfixe [marqueurs] contenu *encre:conf↓fondements> refN <[ext]> calcN <[expr = val]>` (pas de ligne gloss ; notes éventuelles après `---`).
+- Queue à deux-points (sans Chae) : `lon 0.8.5` omet la couleur. Terminez par `*<encre>:<conf>` (`*5:8`, avant estampille `*:8`, non mesuré `*?:8`). Chiffres honnêtes de 0 à 9 (ex. `*:2`, `*:4`, `*:6`, `*:8`, `*:9`).
+- Modes (`delta` / `snapshot`) : `lon 0.8.5 · delta` (défaut) émet uniquement les ajouts/révisions ; `snapshot` répète depuis `<1`.
+- Point fixe (`·`) : Placez `·` juste après N (`<1 · …>`, `<1 ·→B …>`, `<1 · ● …>`).
+- Marqueurs : `see`·`rec`·`inf`·`gut`·`if`, `lim`, `pst`·`fut`, `say`·`ask`·`req`·`let`·`vow`·`nay`·`ack`. Écrivez l'acte (`[inf,lim,say]` ; W49 restaure `say` sinon). Un `gut` ne peut pas être cité par `↓` (E34).
+- Préfixes (entre `·` et `[`) : `↔N`, `↖N`, `fix→N`, `err→N`, `sup→N`. Sur `fix→k`, mettez aussi à jour les `[inf]` et `calcM` dépendants dans le même tour.
+- Conflits silencieux : Signalez explicitement les divergences via `<M · ↔k [rec,lim,say] conflit *:6↓evdH>` (sans combiner `↔k` et `fix→k`/`err→k` sur la même cible, W51).
+- Calculs (`calcN`) : Sur `[inf,say]` numérique, extrayez l'arithmétique dans `calcN <[ expr = val ]>` (`+ - * / % () round floor ceil abs min max`, `@k`) et citez `↓calcN` après `↓k` (W50).
+- Pointeurs & clôtures : `↓1,2`, `↔2,4`, `↓dict` admis ; utilisez `<[[ … ]]>` si `]>` figure dans le texte, sans modifier les chiffres reçus.
+- Source de `see` (W40) & relais : `see` pointe vers `↓T0`, `↓evdN`, `↓refN` ou `↖N`. Transférez `evd101+` mot pour mot (`<12 ·→B [see,say] relay *6:9↓evd103> evd103 <[verbatim]>`).

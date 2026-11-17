@@ -39,8 +39,9 @@
 //   - ↔도 지난 대화 T:N을 받는다(↔53:12, 직감이 착각이었다고 맞설 때). ∥ ↖ ⊗ 고침→ 오류→는 이 메시지의 절만 그대로.
 //   - E37: 받침 절의 근거 자리가 촉·갑이거나 ↓근거(끝·옛 앞붙이)가 없다. 직감을 직감으로 받칠 수 없다.
 
-import type { Act, Clause, ClauseWritten, Ev, ExtEvidence, ExtEvidenceKind, Fig, Marks, PartialMarks, Ref, Tense, Word, Because } from '../types.ts';
-import { ACT_07, EV_07, FIG_07, LEGACY_FULLNAME_MARKS, MARK_CHARS, MARK_KO2EN, MARK_RANK, MARKS_07, NEWS_07, REMOVED_065_MARKS, TENSE_07, markAlias05, markOf07, PROCESS_ALIAS_RE } from '../tables.ts';
+import type { Act, Because, CalcBlock, Clause, ClauseWritten, Ev, ExtEvidence, ExtEvidenceKind, Fig, Marks, PartialMarks, PlaceRel, Ref, Tense, Word } from '../types.ts';
+import { ACT_07, EV_07, FIG_07, LEGACY_FULLNAME_MARKS, LON_MARKS, MARK_CHARS, MARK_KO2EN, MARK_RANK, MARKS_07, NEWS_07, REMOVED_065_MARKS, TENSE_07, closestMarkHint, markAlias05, markOf07, PROCESS_ALIAS_RE } from '../tables.ts';
+import { splitCalcExpression } from '../calc.ts';
 import { stripTrailingPunct } from '../text.ts';
 import { Ctx, MENTION_MARK, maskMentions, parseMentionWord, parseWord, parseWord052, scanExtBlocks, takePrefix, tightenTildes, unmaskMentions, type PrefixRules, PROCESS_SUP_RE } from './shared.ts';
 
@@ -282,15 +283,15 @@ function moveOutsideTo(s: string, line: string, ctx: Ctx): string {
 // ───────── 외부·보조 근거 전용 괄호꺽쇠 블록 (v0.8, 2026-11-11 Jae: 결·론 공통) ─────────
 // 절 뒤(`… *7B8> 증1 <[원문·링크·수식]>`)나 단독 줄(`ref2 <[…]>`)에 넓은 단위의 근거를 붙인다.
 // 전용 괄호꺽쇠 `<[ … ]>`(유니코드 `⟪ … ⟫`·역순 `[< … >]`도 수용) 안은 어절·스크립트·특수문자 검사에서 완전히 면제한다.
-const EXT_TAG_RE = /^(증|근|evd|ref)([0-9０-９]+(?:\.[0-9０-９]+)?)(?:\[[LlＬｌ]([0-9０-９]+)(?::[LlＬｌ]?([0-9０-９]+))?\])?$/iu;
+const EXT_TAG_RE = /^(증|근|식|evd|ref|calc)([0-9０-９]+(?:\.[0-9０-９]+)?)(?:\[[LlＬｌ]([0-9０-９]+)(?::[LlＬｌ]?([0-9０-９]+))?\])?$/iu;
 
-export function parseExtTag(raw: string): { ext: ExtEvidenceKind; id: string; lines?: [number, number] } | null {
+export function parseExtTag(raw: string): { ext: ExtEvidenceKind | 'calc'; id: string; lines?: [number, number] } | null {
   const m = EXT_TAG_RE.exec(raw);
   if (!m) return null;
   const k = m[1].toLowerCase();
   const toAsciiDigits = (s: string) => s.replace(/[０-９]/gu, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0));
   const id = toAsciiDigits(m[2]);
-  const ext: ExtEvidenceKind = k === '증' || k === 'evd' ? 'evd' : 'ref';
+  const ext: ExtEvidenceKind | 'calc' = k === '증' || k === 'evd' ? 'evd' : k === '식' || k === 'calc' ? 'calc' : 'ref';
   if (m[3] !== undefined) {
     const start = Number(toAsciiDigits(m[3]));
     const end = m[4] !== undefined ? Number(toAsciiDigits(m[4])) : start;
@@ -300,13 +301,14 @@ export function parseExtTag(raw: string): { ext: ExtEvidenceKind; id: string; li
   return { ext, id };
 }
 
-/** 줄 안(절 닫는 > 뒤 또는 줄 끝·단독 줄)에 붙은 전용 괄호꺽쇠 근거 블록들을 scanExtBlocks로 떼어 낸다. */
-export function extractTrailingEvidences(line: string): { head: string; evidences: ExtEvidence[]; legacyExt?: string[]; unclosed?: boolean } {
+/** 줄 안(절 닫는 > 뒤 또는 줄 끝·단독 줄)에 붙은 전용 괄호꺽쇠 근거·수식 블록들을 scanExtBlocks로 떼어 낸다. */
+export function extractTrailingEvidences(line: string): { head: string; evidences: ExtEvidence[]; calcs: CalcBlock[]; legacyExt?: string[]; unclosed?: boolean } {
   const s = line.trimEnd();
   const spans = scanExtBlocks(s).filter((sp) => sp.tag !== null);
-  if (!spans.length) return { head: s, evidences: [] };
+  if (!spans.length) return { head: s, evidences: [], calcs: [] };
 
   const out: ExtEvidence[] = [];
+  const calcs: CalcBlock[] = [];
   const legacyExt: string[] = [];
   const headParts: string[] = [];
   let pos = 0;
@@ -335,14 +337,20 @@ export function extractTrailingEvidences(line: string): { head: string; evidence
       break;
     }
     const body = s.slice(sp.innerStart, sp.innerEnd).trim();
-    out.push({ kind: tagInfo.ext, id: tagInfo.id, text: body });
+    if (tagInfo.ext === 'calc') {
+      const { expr, declared } = splitCalcExpression(body);
+      calcs.push({ id: tagInfo.id, expr, ...(declared !== undefined ? { declared } : {}) });
+    } else {
+      out.push({ kind: tagInfo.ext, id: tagInfo.id, text: body });
+    }
     pos = sp.end;
   }
-  if (!out.length && !unclosed && !legacyExt.length) return { head: s, evidences: [] };
+  if (!out.length && !calcs.length && !unclosed && !legacyExt.length) return { head: s, evidences: [], calcs: [] };
   if (pos < s.length) headParts.push(s.slice(pos));
-  const res: { head: string; evidences: ExtEvidence[]; legacyExt?: string[]; unclosed?: boolean } = {
+  const res: { head: string; evidences: ExtEvidence[]; calcs: CalcBlock[]; legacyExt?: string[]; unclosed?: boolean } = {
     head: headParts.join('').trim(),
     evidences: out,
+    calcs,
   };
   if (legacyExt.length) res.legacyExt = legacyExt;
   if (unclosed) res.unclosed = true;
@@ -483,13 +491,30 @@ function takePrefix03(t: string, clause: Clause, ctx: Ctx): boolean {
     }
     return true;
   }
-  const o = /^↔(\d+:.+)$/u.exec(t);
-  if (o) {
-    const r = refOrThread(o[1]);
+  const pm = /^([↔↖])(.+)$/u.exec(t);
+  if (pm) {
+    const rel = pm[1] as PlaceRel;
+    const rawTargets = pm[2].split(/[,，、]/u).filter(Boolean);
+    if (rawTargets.length > 1) {
+      const refs: Ref[] = [];
+      for (const seg of rawTargets) {
+        const r = rel === '↔' ? refOrThread(seg) : parseRefLoose(seg);
+        if (!r) {
+          ctx.err('E19', `가리킴을 읽을 수 없다: '${t}'`);
+          return true;
+        }
+        refs.push(r);
+      }
+      if (clause.place) ctx.err('E18', `자리 앞붙이가 둘 이상이다: '${t}'`);
+      clause.places = refs.map((target) => ({ rel, target }));
+      clause.place = clause.places[0];
+      return true;
+    }
+    const r = rel === '↔' ? refOrThread(pm[2]) : parseRefLoose(pm[2]);
     if (!r) ctx.err('E19', `가리킴을 읽을 수 없다: '${t}'`);
     else {
       if (clause.place) ctx.err('E18', `자리 앞붙이가 둘 이상이다: '${t}'`);
-      clause.place = { rel: '↔', target: r };
+      clause.place = { rel, target: r };
     }
     return true;
   }
@@ -532,6 +557,7 @@ interface MarkBlock {
   nonEnMarks: string[];
   marksOff: boolean;
   legacyChae?: true;
+  autoAct?: true;
 }
 
 function parseMarkBlock(text: string, outerParen: string | null, ctx: Ctx): MarkBlock | null {
@@ -605,9 +631,10 @@ function parseMarkBlock(text: string, outerParen: string | null, ctx: Ctx): Mark
       const en = markOf07(t);
       if (en === undefined) {
         const isPref = /^(?:↔|↖)\s*\d+(?::\d+)?$|^(?:fix|err|sup|고침|철회|맞섬|물음|받침)\s*(?:→|->)\s*\d+/iu.test(t);
+        const near = !isPref ? closestMarkHint(t, ctx.profile === 'lon' ? LON_MARKS : MARKS_07) : null;
         const msg = isPref
           ? `알 수 없는 표지 '${raw}' ('${t}'는 표지가 아니라 앞붙이다. · 뒤 [ 앞에 둔다 예: <7 · fix→3 [see,say]>): ${shown}`
-          : `알 수 없는 표지 '${raw}': ${shown}`;
+          : `알 수 없는 표지 '${raw}'${near ? ` (혹시 '${near}'?)` : ''}: ${shown}`;
         ctx.err('E05', msg);
         return;
       }
@@ -642,14 +669,20 @@ function parseMarkBlock(text: string, outerParen: string | null, ctx: Ctx): Mark
   if (tenses.length > 1) ctx.err('E28', `시제가 둘 이상이다(었·을은 하나까지): ${shown}`);
   if (figs.length > 1) ctx.err('E36', `결 표지가 둘 이상이다(한·역·비는 하나까지): ${shown}`);
   if (acts.length > 1) ctx.err('E04', `화행이 둘 이상이다: ${shown}`);
+  let autoAct = false;
   if (acts.length === 0) {
-    if (!hadLegacyMark) {
-      const [fig0] = figs;
-      const [ev0] = evs;
-      const hint = fig0 ? ` (${fig0}은 결 표지라 화행과 함께 쓴다: [${ev0 ? `${ev0},` : ''}${fig0},say])` : '';
-      ctx.err('E03', `화행이 없다${hint}: ${shown}`);
+    if (!hadLegacyMark && ctx.profile === 'lon' && ctx.is085 && (evs.length > 0 || figs.length > 0)) {
+      acts.push('say');
+      autoAct = true;
+    } else {
+      if (!hadLegacyMark) {
+        const [fig0] = figs;
+        const [ev0] = evs;
+        const hint = fig0 ? ` (${fig0}은 결 표지라 화행과 함께 쓴다: [${ev0 ? `${ev0},` : ''}${fig0},say])` : '';
+        ctx.err('E03', `화행이 없다${hint}: ${shown}`);
+      }
+      return null;
     }
-    return null;
   }
   const [act] = acts;
   const [ev] = evs;
@@ -666,6 +699,7 @@ function parseMarkBlock(text: string, outerParen: string | null, ctx: Ctx): Mark
   const marksOff = ranks.some((r, k) => k > 0 && r < ranks[k - 1]);
   const out: MarkBlock = { marks, aliases, nonEnMarks, marksOff };
   if (legacyChae) out.legacyChae = true;
+  if (autoAct) out.autoAct = true;
   return out;
 }
 
@@ -703,12 +737,17 @@ const SELF_IN = new RegExp(`${SELF_MARK}${SELF_NUM}`, 'gu');
  */
 export const CHAE_COLORS = 'RGBCMYK';
 const END_D = '[0-9０-９]';
+const END_MUK = '[0-9０-９?？]';
 const END_L = '[A-Za-zＡ-Ｚａ-ｚ]';
 const END_REFS = '(?:↓[^\\s↓]+)';
-const END051 = new RegExp(`^${SELF_MARK}(${END_D}?)(${END_L})(${END_D}?)(${END_REFS}*)$`, 'u');
-/** 별 뒤를 띄운 끝 묶음의 뒷부분(* R8의 R8) */
-const END051_BODY = new RegExp(`^${END_D}?${END_L}${END_D}?${END_REFS}*$`, 'u');
-const END051_GLUED = new RegExp(`^(.*[^*＊!！\\s])(${SELF_MARK}${END_D}?${END_L}${END_D}?${END_REFS}*)$`, 'u');
+const END051 = new RegExp(`^${SELF_MARK}(${END_MUK}?)(${END_L})(${END_D}?)(${END_REFS}*)$`, 'u');
+const LON_COLON_END = new RegExp(`^[*＊](${END_MUK}?)[:：](${END_D})(${END_REFS}*)$`, 'u');
+const LON_BARE_END = new RegExp(`^[*＊](${END_D})(${END_REFS}*)$`, 'u');
+/** 별 뒤를 띄운 끝 묶음의 뒷부분(* R8의 R8, * :8의 :8) */
+const END051_BODY = new RegExp(`^(?:${END_MUK}?${END_L}${END_D}?|${END_MUK}?[:：]${END_D})${END_REFS}*$`, 'u');
+const END051_GLUED = new RegExp(`^(.*[^*＊!！\\s])(${SELF_MARK}${END_MUK}?${END_L}${END_D}?${END_REFS}*)$`, 'u');
+const LON_COLON_GLUED = new RegExp(`^(.*[^*＊\\s])([*＊]${END_MUK}?[:：]${END_D}${END_REFS}*)$`, 'u');
+const LON_BARE_GLUED = new RegExp(`^(.*[^*＊\\s])([*＊]${END_D}${END_REFS}*)$`, 'u');
 const SELF_REFS = new RegExp(`^${SELF_MARK}(${SELF_NUM})(${END_REFS}+)$`, 'u');
 const SELF_REFS_GLUED = new RegExp(`^(.*[^*＊!！\\s])(${SELF_MARK}${SELF_NUM}${END_REFS}+)$`, 'u');
 /** 대화 밖의 근거(2026-10-16 Jae): 시험 문제 ↓Q3, 다른 참가자 ↓@kimi(전각 ＠도 읽는다) */
@@ -723,107 +762,180 @@ function threadRef(r: string): { thread: number; clause: string } | null {
 }
 const REFS_ONLY = new RegExp(`^${END_REFS}+$`, 'u');
 /** 끝 묶음처럼 보이지만 읽을 수 없는 것(*67R8, *R8G3): 내용 어절(E19)이 아니라 E32로 알린다 */
-const END_BAD = new RegExp(`^${SELF_MARK}[0-9０-９A-Za-zＡ-Ｚａ-ｚ]*${END_L}[0-9０-９A-Za-zＡ-Ｚａ-ｚ↓/:.]*$`, 'u');
+const END_BAD = new RegExp(`^${SELF_MARK}[0-9０-９?？A-Za-zＡ-Ｚａ-ｚ]*${END_L}[0-9０-９A-Za-zＡ-Ｚａ-ｚ↓/:.]*$`, 'u');
 /** > 밖에 쓴 끝 묶음(<…> *R8↓12)은 E29 */
-const STRAY051 = new RegExp(`^${SELF_MARK}${END_D}?${END_L}${END_D}?${END_REFS}*$`, 'u');
-const fullToHalf = (s: string) => s.replace(/[０-９Ａ-Ｚａ-ｚ]/gu, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0));
+const STRAY051 = new RegExp(`^(?:${SELF_MARK}${END_MUK}?${END_L}${END_D}?|[*＊]${END_MUK}?[:：]${END_D})${END_REFS}*$`, 'u');
+const fullToHalf = (s: string) => s.replace(/[０-９Ａ-Ｚａ-ｚ？]/gu, (c) => (c === '？' ? '?' : String.fromCharCode(c.charCodeAt(0) - 0xfee0)));
+const URI_REF_RE = /^(?:https?:\/\/|urn:|doi:|arxiv:)\S+$/iu;
 
 interface End051 {
   self?: number;
   color?: string;
   muk?: number;
+  unmeasured?: true;
   because: Because[];
   /** 쓴 그대로(진단에 보인다) */
   tok: string;
   legacyChae?: true;
+  lonLegacyChae?: true;
+  dupTail?: true;
 }
 
+const isLon085Ctx = (ctx?: Ctx) => Boolean(ctx && ctx.profile === 'lon' && ctx.is085);
+
 /** 끝 묶음이 될 낱말인가(끝의 문장 부호를 떼어 볼 때 쓴다) */
-const isEnd051 = (t: string, allDot: boolean) => END051.test(t) || SELF_REFS.test(t) || END051_GLUED.test(t) || SELF_REFS_GLUED.test(t) || (allDot && REFS_ONLY.test(t));
+const isEnd051 = (t: string, allDot: boolean, lon085 = false) =>
+  END051.test(t) ||
+  LON_COLON_END.test(t) ||
+  (lon085 && LON_BARE_END.test(t)) ||
+  SELF_REFS.test(t) ||
+  END051_GLUED.test(t) ||
+  LON_COLON_GLUED.test(t) ||
+  (lon085 && LON_BARE_GLUED.test(t)) ||
+  SELF_REFS_GLUED.test(t) ||
+  (allDot && REFS_ONLY.test(t));
+
+const TAIL_CHUNK_RE = new RegExp(
+  `(${SELF_MARK}${END_MUK}?${END_L}${END_D}${END_REFS}*|[*＊]${END_MUK}?[:：]${END_D}${END_REFS}*|[*＊]${END_D}${END_REFS}*)$`,
+  'u',
+);
+
+function isTailToken(t: string, lon085: boolean): boolean {
+  return END051.test(t) || LON_COLON_END.test(t) || (lon085 && LON_BARE_END.test(t));
+}
+
+/** `word*7G7*7G7`, `*5B6 *5B8`, `*:7*:8` 등에서 중복 꼬리를 분리하고 마지막 유효 꼬리를 추출한다. */
+function peelTrailingTails(at: string[], kEnd: number, lon085: boolean): { kStart: number; head: string | null; tok: string | null; dupTail: boolean } {
+  if (kEnd <= 0) return { kStart: kEnd, head: null, tok: null, dupTail: false };
+  const lastTok = at[kEnd - 1];
+  const chunks: string[] = [];
+  let rem = lastTok;
+  // 한 어절 안에 붙은 꼬리 조각(*7G7*7G7, word*5B6*5B8)을 오른쪽부터 벗긴다
+  while (rem) {
+    if (isTailToken(rem, lon085) || (!lon085 && END051.test(rem))) {
+      chunks.unshift(rem);
+      rem = '';
+      break;
+    }
+    const m = TAIL_CHUNK_RE.exec(rem);
+    if (!m) break;
+    const candidate = m[1];
+    if (!lon085 && LON_BARE_END.test(candidate)) break;
+    chunks.unshift(candidate);
+    rem = rem.slice(0, m.index);
+  }
+  if (!chunks.length) {
+    if (SELF_REFS.test(lastTok)) return { kStart: kEnd - 1, head: null, tok: lastTok, dupTail: false };
+    const sg = SELF_REFS_GLUED.exec(lastTok);
+    if (sg) return { kStart: kEnd - 1, head: sg[1], tok: sg[2], dupTail: false };
+    return { kStart: kEnd, head: null, tok: null, dupTail: false };
+  }
+  let kStart = kEnd - 1;
+  let head: string | null = rem || null;
+  // 앞 어절에도 여분의 완전 꼬리 토큰(*5B6 *5B8)이 연달아 있으면 함께 수거
+  if (!head) {
+    while (kStart > 0 && isTailToken(at[kStart - 1], lon085)) {
+      chunks.unshift(at[kStart - 1]);
+      kStart--;
+    }
+  }
+  return { kStart, head, tok: chunks[chunks.length - 1], dupTail: chunks.length > 1 };
+}
 
 /**
- * 내용 쪽 낱말들(at)의 맨 끝에서 v0.5.1 끝 묶음을 떼어 읽는다. 새 꼴이 아니면 at을 건드리지 않고 null.
- * 끝 묶음 뒤에 띄어 쓴 근거(*R8 ↓12)와 내용 끝 어절에 붙여 쓴 것(많다*R8↓12)도 읽는다(진단 없음, v0.5 끝 자신과 같다).
+ * 내용 쪽 낱말들(at)의 맨 끝에서 끝 묶음(*먹채↓근거 또는 *먹:확신↓근거)을 떼어 읽는다.
  */
 function gatherEnd051(at: string[], allDot: boolean, ctx: Ctx, shown: string, odd: { v: boolean }): End051 | null {
+  const lon085 = isLon085Ctx(ctx);
   let k = at.length;
   while (k > 0 && REFS_ONLY.test(at[k - 1])) k--;
-  // v0.5.2(2026-10-17 Jae, 띄어쓰기): 별 뒤를 띄운 끝 묶음(* R8, * 6R8↓12)은 붙여 읽고 W33(전에는 E19·E33이고 R8이 내용으로 샜다)
   if (k >= 2 && /^[*＊]$/u.test(at[k - 2]) && END051_BODY.test(at[k - 1])) {
     ctx.warn('W33', `별 뒤를 띄운 끝 묶음을 붙여 읽었다. 정규형은 '*${at[k - 1]}': ${shown}`);
     at.splice(k - 2, 2, at[k - 2] + at[k - 1]);
     k--;
   }
   const tail = at.slice(k);
-  let head: string | null = null;
-  let tok: string | null = null;
-  if (k > 0) {
-    const t = at[k - 1];
-    if (END051.test(t) || SELF_REFS.test(t)) tok = t;
-    else {
-      const g = END051_GLUED.exec(t) ?? SELF_REFS_GLUED.exec(t);
-      if (g) {
-        head = g[1];
-        tok = g[2];
-      } else if (END_BAD.test(t)) {
-        ctx.err('E32', `끝 묶음을 읽을 수 없다(*먹채↓근거: 먹 한 자리, 색 RGBCMYK 하나, 확신 0~9 한 자리): '${t}' ${shown}`);
-        at.splice(k - 1, at.length);
-        return { because: [], tok: t };
-      }
-    }
+  const peeled = peelTrailingTails(at, k, lon085);
+  let head: string | null = peeled.head;
+  let tok: string | null = peeled.tok;
+  if (tok === null && k > 0 && END_BAD.test(at[k - 1])) {
+    ctx.err('E32', `끝 묶음을 읽을 수 없다(*먹채↓근거: 먹 한 자리, 색 RGBCMYK 하나, 확신 0~9 한 자리): '${at[k - 1]}' ${shown}`);
+    const badTok = at[k - 1];
+    at.splice(k - 1, at.length);
+    return { because: [], tok: badTok };
   }
   if (tok === null && !(allDot && tail.length)) return null;
-  at.splice(tok === null ? k : k - 1, at.length, ...(head ? [head] : []));
+  at.splice(tok === null ? k : peeled.kStart, at.length, ...(head ? [head] : []));
   const end: End051 = { because: [], tok: [tok ?? '', ...tail].join(' ').trim() };
+  if (peeled.dupTail) end.dupTail = true;
   let refs = tail.join('');
   if (tok !== null) {
-    if (tok[0] !== '*') odd.v = true; // 정규형은 *(＊·!·！도 읽는다)
-    const m = END051.exec(tok);
-    if (m) {
+    if (tok[0] !== '*') odd.v = true;
+    const colonM = LON_COLON_END.exec(tok);
+    const bareM = !colonM && lon085 ? LON_BARE_END.exec(tok) : null;
+    const m = !colonM && !bareM ? END051.exec(tok) : null;
+    if (colonM) {
+      const mukRaw = fullToHalf(colonM[1]);
+      if (mukRaw === '?') end.unmeasured = true;
+      else if (mukRaw) end.muk = Number(mukRaw) / 10;
+      end.self = Number(fullToHalf(colonM[2])) / 10;
+      if (!lon085) ctx.err('E32', `결 프로파일에서는 콜론 꼬리('${tok}') 대신 채 색(*5B8)을 함께 쓴다: ${shown}`);
+      refs = colonM[3] + refs;
+    } else if (bareM) {
+      end.self = Number(fullToHalf(bareM[1])) / 10;
+      refs = bareM[2] + refs;
+    } else if (m) {
       if (fullToHalf(tok) !== tok) odd.v = true;
-      if (m[1]) end.muk = Number(fullToHalf(m[1])) / 10;
+      const mukRaw = fullToHalf(m[1]);
+      if (mukRaw === '?') end.unmeasured = true;
+      else if (mukRaw) end.muk = Number(mukRaw) / 10;
       const letter = fullToHalf(m[2]);
       if (letter !== letter.toUpperCase()) odd.v = true;
       const color = letter.toUpperCase();
       if (!CHAE_COLORS.includes(color)) ctx.err('E32', `채의 색은 R·G·B·C·M·Y·K 가운데 하나다: '${m[2]}' ${shown}`);
       else if (!m[3]) ctx.err('E32', `채의 색 뒤에 확신 수(0~9)가 없다: '${tok}' ${shown}`);
       else {
-        end.color = color;
-        end.self = Number(fullToHalf(m[3])) / 10;
+        if (lon085) {
+          end.self = Number(fullToHalf(m[3])) / 10;
+          end.lonLegacyChae = true;
+        } else {
+          end.color = color;
+          end.self = Number(fullToHalf(m[3])) / 10;
+        }
       }
       refs = m[4] + refs;
     } else {
-      // 근거가 붙은 옛 자신(*8↓12): 색이 없는 옛 표기는 E26
       const sr = SELF_REFS.exec(tok)!;
       ctx.err('E26', `끝 묶음에 채 색이 빠진 옛 표기 '${tok}'다. *R8처럼 색과 확신을 함께 쓴다: ${shown}`);
       end.legacyChae = true;
       refs = sr[2] + refs;
     }
   }
-  for (const r of refs.split('↓').slice(1)) {
+  const pushOneGround = (r: string) => {
+    if (!r) return;
+    if (/^(?:dict|사전)$/iu.test(r)) {
+      if (r === '사전') odd.v = true;
+      end.because.push({ reserved: 'dict' });
+      return;
+    }
     let ref = parseRefLoose(r);
-    // 끝의 문장 부호(*R8↓12。)는 내용 어절처럼 떼어 읽고 W10(주소는 그대로 둔다)
     const cut = stripTrailingPunct(r);
     if (!ref && cut !== r && (ref = parseRefLoose(cut))) ctx.warn('W10', `어절 끝의 문장 부호를 뗐다: '↓${r}'`);
     let past: { thread: number; clause: string } | null = null;
     if (ref) end.because.push(ref);
-    else if (/^https?:\/\/\S+$/iu.test(r)) end.because.push({ url: r });
-    // v0.6: 지난 대화의 절(↓53:12). 끝의 문장 부호는 절 번호처럼 떼어 읽고 W10
+    else if (URI_REF_RE.test(r)) end.because.push({ url: r });
     else if ((past = threadRef(r) ?? threadRef(cut))) {
       if (!threadRef(r)) ctx.warn('W10', `어절 끝의 문장 부호를 뗐다: '↓${r}'`);
       if (!/^\d+:[절점]?\d+(?:\.\d+)?$/u.test(threadRef(r) ? r : cut)) ctx.warn('W01', `지난 대화의 절은 ↓대화:절 번호로 쓴다(↓53:12): '↓${r}'`);
       end.because.push(past);
-    }
-    // 2026-10-16 Jae: 대화 밖의 근거 — 시험 문제 ↓Q3(q·Ｑ도 읽고 W01), 다른 참가자 ↓@kimi
-    // 2026-11-11 Jae: 외부·보조 근거 ↓증1·↓근1·↓evd1·↓ref1 (결·론 공통)
-    else if (parseExtTag(r) || (cut !== r && parseExtTag(cut))) {
+    } else if (parseExtTag(r) || (cut !== r && parseExtTag(cut))) {
       const used = parseExtTag(r) ? r : cut;
       const ext = parseExtTag(used)!;
       if (used !== r) ctx.warn('W10', `어절 끝의 문장 부호를 뗐다: '↓${r}'`);
       if (fullToHalf(used) !== used) odd.v = true;
-      end.because.push(ext);
+      if (ext.ext === 'calc') end.because.push({ calc: ext.id });
+      else end.because.push({ ext: ext.ext, id: ext.id, ...(ext.lines ? { lines: ext.lines } : {}) });
     } else if (CTX_REF.test(r)) {
-      // 2026-11-12 Jae(3.22절): 맥락 ↓T0(대화 주제)·↓T3(호출부가 준 배경). t·Ｔ도 읽고 W01. 메시지 밖이라 E17을 보지 않는다
       if (!/^T\d+$/u.test(r)) ctx.warn('W01', `맥락 근거는 ↓T와 번호로 쓴다: '↓${r}'`);
       end.because.push({ ctx: Number(fullToHalf(r.slice(1))) });
     } else if (QUIZ_REF.test(r)) {
@@ -831,7 +943,14 @@ function gatherEnd051(at: string[], allDot: boolean, ctx: Ctx, shown: string, od
     } else if (AGENT_REF.test(r)) {
       if (r[0] !== '@') ctx.warn('W01', `참가자 근거는 ↓@이름으로 쓴다: '↓${r}'`);
       end.because.push({ agent: stripTrailingPunct(r.slice(1)) });
-    } else ctx.err('E32', `근거 ↓를 읽을 수 없다(절 번호, 지난 대화의 절 53:12, 맥락 T0, 받은 자료 evd1·증1, 가져온 자료 ref1·근1, 참가자 @이름, 주소): '↓${r}' ${shown}`);
+    } else ctx.err('E32', `근거 ↓를 읽을 수 없다(절 번호, 지난 대화의 절 53:12, 맥락 T0, 받은 자료 evd1·증1, 가져온 자료 ref1·근1, 수식 calc1, 사전 dict, 참가자 @이름, 주소): '↓${r}' ${shown}`);
+  };
+  for (const rawSeg of refs.split('↓').slice(1)) {
+    if (!URI_REF_RE.test(rawSeg) && /[,，]/u.test(rawSeg)) {
+      for (const piece of rawSeg.split(/[,，]/u).filter(Boolean)) pushOneGround(piece);
+    } else {
+      pushOneGround(rawSeg);
+    }
   }
   return end;
 }
@@ -873,8 +992,11 @@ const LABEL_BEFORE_DOT = new RegExp(`((?:[절점]|[cC])\\s*\\d+(?:\\.\\d+)?)(?=[
 const BARE_BEFORE_DOT = new RegExp(`^(\\s*\\d+(?:\\.\\d+)?)(?=[${DOT_CHARS}${ALL_CHARS}])`, 'u');
 
 /** v0.3 절 하나(꺾쇠 안). lead는 꺾쇠 밖에 쓴 이름표. */
-function parseClause03(rawInner: string, ctx: Ctx, lead: string | null, odd: { v: boolean }, attachedEvds: ExtEvidence[] = []): Clause | null {
-  const raw = tightenPrefixes(rawInner);
+function parseClause03(rawInner: string, ctx: Ctx, lead: string | null, odd: { v: boolean }, attachedEvds: ExtEvidence[] = [], attachedCalcs: CalcBlock[] = []): Clause | null {
+  const lon085 = isLon085Ctx(ctx);
+  // 0.8.5 본문 격리: [표지] 앞만 앞붙이 띄어쓰기 정규화를 적용하고, ] 뒤 본문 안의 화살표('fix→하루참', '↔로')는 건드리지 않는다
+  const rawOpenSq = firstOf(rawInner, SQ_OPEN_CODES);
+  const raw = rawOpenSq >= 0 ? tightenPrefixes(rawInner.slice(0, rawOpenSq)) + rawInner.slice(rawOpenSq) : tightenPrefixes(rawInner);
   const shown = `<${rawInner.trim()}>`;
   const open = firstOf(raw, SQ_OPEN_CODES);
   if (open < 0) {
@@ -887,51 +1009,44 @@ function parseClause03(rawInner: string, ctx: Ctx, lead: string | null, odd: { v
     return null;
   }
   if (raw[open] !== '[' || raw[close] !== ']') odd.v = true;
-  // 이름표에 붙여 쓴 점·앞붙이(<절5·→kimi …>)는 띄어 읽는다(v0.4)
   const before = raw.slice(0, open).replace(LABEL_BEFORE_DOT, '$1 ').replace(BARE_BEFORE_DOT, '$1 ');
   let after = raw.slice(close + 1);
   const markText = raw.slice(open + 1, close);
   let outerParen: string | null = null;
   const pm = /^\s*[(（]([^)）]*)[)）]/u.exec(after);
-  // v0.5.2: 0.5.1 꼴 절에서 수가 아닌 괄호(〔봄,다〕 (de Tür)…)는 내용으로 돌려놓는다(아래 rich). 붙여 쓴 꼬리((x)가)를 알려고 둔다
   const parenGlued = pm !== null && after.length > pm[0].length && !WS.test(after[pm[0].length]);
   if (pm) {
     outerParen = pm[1];
     after = after.slice(pm[0].length);
   }
-  const EXT_SLICE_MASK_RE = /↓(?:증|근|evd|ref)[0-9０-９]+(?:\.[0-9０-９]+)?\[[^\s[\]［］【】〔〕]*\]/giu;
+  const EXT_SLICE_MASK_RE = /↓(?:증|근|식|evd|ref|calc)[0-9０-９]+(?:\.[0-9０-９]+)?\[[^\s[\]［］【】〔〕]*\]/giu;
   const afterMasked = after.replace(EXT_SLICE_MASK_RE, (m) => 'x'.repeat(m.length));
   const second = firstOf(afterMasked, SQ_OPEN_CODES);
   if (second >= 0) {
     ctx.err('E19', `표지 블록이 둘 이상이다: '${shown}'`);
     const end = firstOf(after, SQ_CLOSE_CODES, second + 1);
-    after = after.slice(0, second) + ' ' + (end < 0 ? '' : after.slice(end + 1)); // 같은 까닭으로 오류를 두 번 내지 않게 뗀다
+    after = after.slice(0, second) + ' ' + (end < 0 ? '' : after.slice(end + 1));
   }
 
   const clause: Clause = { label: null, process: null, place: null, to: null, words: [], marks: {} };
   let legacyChae = false;
-  // v0.5.2(2026-10-17 Jae, 띄어쓰기): 점에 붙여 쓴 앞붙이(·↔6, ·↓1, ●↖2)는 띄어 읽는다(판 10.16~17에 7번, 전에는 E25·E19).
-  // 내용의 띄어쓰기는 자율이지만 줄꼴(뼈대)을 벗어난 것은 경고를 남긴다(Jae): W33
   const bt = before.trim() ? before.trim().split(/\s+/u).flatMap((t) => {
     const g = GLUED_DOT_PREFIX.exec(t);
     if (g) ctx.warn('W33', `점과 앞붙이를 붙여 쓴 것을 띄어 읽었다. 정규형은 '${g[1]} ${g[2]}': '${shown}'`);
     return g ? [g[1], g[2]] : [t];
   }) : [];
   const at = after.trim() ? after.trim().split(/\s+/u) : [];
-  // v0.5.1: 맨 끝의 끝 묶음(*먹채↓근거). 끝 묶음 뒤 문장 부호(*R8↓12。)는 내용 어절처럼 떼어 읽고 W10이다
   const allDot = bt.some((t, idx) => ALL_RE.test(t) || DOT_ALL_GLUED.test(t) || DOT_TO_ALL_RE.test(t) || (TO_ALL_RE.test(t) && idx > 0 && DOT_RE.test(bt[idx - 1])));
-  if (at.length && !isEnd051(at[at.length - 1], allDot)) {
+  if (at.length && !isEnd051(at[at.length - 1], allDot, lon085)) {
     const last = at[at.length - 1];
     const cut = stripTrailingPunct(last);
-    if (cut !== '' && cut !== last && isEnd051(cut, allDot)) {
+    if (cut !== '' && cut !== last && isEnd051(cut, allDot, lon085)) {
       ctx.warn('W10', `어절 끝의 문장 부호를 뗐다: '${last}'`);
       at[at.length - 1] = cut;
     }
   }
   const end = gatherEnd051(at, allDot, ctx, shown, odd);
-  // v0.5.2(2026-10-17 Jae): 0.5.1 꼴 절(●, 색이 있는 채, 끝 근거)의 내용은 부호를 받아 쓴 그대로 둔다(parseWord052).
-  // 아래 is051과 같은 조건이다(색 있는 채가 다른 자리의 자신과 겹친 E27 절은 is051이 아니어도 여기서는 부호를 받는다. 오류 줄이다)
-  const rich = allDot || end?.color !== undefined || (end?.because.length ?? 0) > 0;
+  const rich = allDot || end?.color !== undefined || end?.self !== undefined || (end?.because.length ?? 0) > 0;
   if (rich && outerParen !== null && !PAREN_NUMLIKE.test(outerParen)) {
     // 수가 아닌 괄호는 옛 자신·먹 자리가 아니라 내용이다(전에는 E10)
     const back = pm![0].trim().split(/\s+/u);
@@ -971,7 +1086,7 @@ function parseClause03(rawInner: string, ctx: Ctx, lead: string | null, odd: { v
     clause.label ??= lead;
     moved = true;
   }
-  const content: string[] = [];
+  const content: { t: string; afterMarks: boolean }[] = [];
   const first = i;
   let hasDot = false;
   let dotAll = false;
@@ -1037,20 +1152,35 @@ function parseClause03(rawInner: string, ctx: Ctx, lead: string | null, odd: { v
       continue;
     }
     if (takePrefix03(bt[i], clause, ctx)) continue;
-    content.push(...bt.slice(i)); // 내용을 표지 블록 앞에 썼다
+    content.push(...bt.slice(i).map((t) => ({ t, afterMarks: false }))); // 내용을 표지 블록 앞에 썼다
     moved = true;
     break;
   }
+  const bodyIsolated = clause.me === true || end !== null || ctx.profile === 'lon';
   let j = 0;
   if (content.length === 0) {
-    for (; j < at.length && takePrefix03(at[j], clause, ctx); j++) moved = true;
+    for (; j < at.length; j++) {
+      if (bodyIsolated && ctx.is085) {
+        const probeCtx = new Ctx();
+        probeCtx.v08 = ctx.v08;
+        probeCtx.is085 = ctx.is085;
+        probeCtx.profile = ctx.profile;
+        probeCtx.line = ctx.line;
+        probeCtx.mentions = ctx.mentions;
+        const probeClause = structuredClone(clause);
+        if (!takePrefix03(at[j], probeClause, probeCtx) || probeCtx.diags.some((d) => d.severity === '오류')) break;
+      }
+      if (!takePrefix03(at[j], clause, ctx)) break;
+      moved = true;
+    }
   }
-  content.push(...at.slice(j));
+  content.push(...at.slice(j).map((t) => ({ t, afterMarks: true })));
   // 내용 가운데·끝에 둔 화살표 앞붙이(<[봄,다] 雪 →kimi>, 2026-10-14v2 쓰기에서 다섯): v0.2.1의 줄 끝 →이름처럼 읽되 경고한다.
   // 뒤에서부터 읽는다(둘이면 뒤의 것이 받는 이). 2026-10-14: 읽은 것을 그 자리에서 빼던(splice) 것을 한 번에 걸러 낸다.
-  const kept: string[] = [];
+  const kept: { t: string; afterMarks: boolean }[] = [];
   for (let k = content.length - 1; k >= 0; k--) {
-    const t = content[k];
+    const item = content[k];
+    const t = item.t;
     if (SELF_END.test(t)) {
       ctx.err('E26', `옛 자신 표기 '${t}'다. 채 색을 함께 *R8로 끝에 쓴다: '${shown}'`);
       legacyChae = true;
@@ -1060,7 +1190,7 @@ function parseClause03(rawInner: string, ctx: Ctx, lead: string | null, odd: { v
       ctx.err('E29', `자신 ${t}는 절의 맨 끝(> 바로 앞)에 쓴다: '${shown}'`);
       continue;
     }
-    if (PREFIX_LIKE.test(t) && takePrefix03(t, clause, ctx)) {
+    if (!bodyIsolated && PREFIX_LIKE.test(t) && takePrefix03(t, clause, ctx)) {
       if (t.startsWith('→')) ctx.warn('W16', `받는 이 ${t}: 내용 뒤에서 읽었다. 정규형은 [ 앞: '${shown}'`);
       else if (!t.startsWith('↓') && !t.startsWith('∥')) moved = true;
       continue;
@@ -1069,8 +1199,8 @@ function parseClause03(rawInner: string, ctx: Ctx, lead: string | null, odd: { v
     if (glued) {
       for (const g of glued) ctx.err('E26', `옛 자신 표기 '${g}'다. 채 색을 함께 *R8로 끝에 쓴다: '${shown}'`);
       legacyChae = true;
-      kept.push(...t.split(SELF_IN).filter(Boolean).reverse());
-    } else kept.push(t);
+      kept.push(...t.split(SELF_IN).filter(Boolean).reverse().map((part) => ({ t: part, afterMarks: item.afterMarks })));
+    } else kept.push(item);
   }
   kept.reverse();
   if (moved) ctx.warn('W19', `자리를 옮겨 읽었다. 정규형은 <이름 앞붙이 [표지] 내용 *먹채>: '${shown}'`);
@@ -1078,9 +1208,14 @@ function parseClause03(rawInner: string, ctx: Ctx, lead: string | null, odd: { v
   const mk = parseMarkBlock(markText, outerParen, ctx);
   if (!mk) return null;
   const words: Word[] = [];
-  for (const t of kept) {
-    // v0.5(설계 0·4): 새 꼴 줄의 내용은 어느 언어의 낱말이든 읽는다(가나 포함). v0.5.2: 0.5.1 꼴 절은 부호도 쓴 그대로
-    const w = t.includes(MENTION_MARK) ? parseMentionWord(t, ctx) : rich ? parseWord052(t, ctx) : parseWord(t, ctx, true);
+  for (const item of kept) {
+    const t = item.t;
+    const allowBodyArrows = bodyIsolated && item.afterMarks && ctx.is085;
+    const w = t.includes(MENTION_MARK)
+      ? parseMentionWord(t, ctx, allowBodyArrows)
+      : rich
+        ? parseWord052(t, ctx, allowBodyArrows)
+        : parseWord(t, ctx, true);
     if (w) words.push(w);
   }
   if (kept.length === 0 && !(mk.marks.act === 'ask' || clause.process?.kind === 'err')) ctx.err('E16', `내용이 비었다: '${shown}'`);
@@ -1095,14 +1230,50 @@ function parseClause03(rawInner: string, ctx: Ctx, lead: string | null, odd: { v
     color = end.color;
   }
   const muk = end?.muk;
-  const out: Clause = { label: clause.label, process: clause.process, place: clause.place, to: clause.to, words, marks: mk.marks };
-  if (muk !== undefined) out.muk = { conf: muk };
-  if (self !== undefined) out.chae = color ? { self, color } : { self };
+  let conflictFixDropped: string | undefined;
+  if (
+    ctx.is085 &&
+    clause.process &&
+    (clause.process.kind === 'fix' || clause.process.kind === 'err') &&
+    clause.process.target
+  ) {
+    const pTarget = clause.process.target;
+    const pNum = pTarget.label.replace(/^[절점]/u, '');
+    const allPlaces = clause.places?.length ? clause.places : clause.place ? [clause.place] : [];
+    const hasSameOppose = allPlaces.some(
+      (pl) =>
+        pl.rel === '↔' &&
+        pl.target.msg === pTarget.msg &&
+        pl.target.thread === pTarget.thread &&
+        pl.target.label.replace(/^[절점]/u, '') === pNum,
+    );
+    if (hasSameOppose) {
+      conflictFixDropped = `${clause.process.kind}→${pNum}`;
+      clause.process = null;
+    }
+  }
+  const out: Clause = {
+    label: clause.label,
+    process: clause.process,
+    place: clause.place,
+    ...(clause.places?.length ? { places: clause.places } : {}),
+    to: clause.to,
+    words,
+    marks: mk.marks,
+  };
+  if (end?.unmeasured) out.muk = { unmeasured: true };
+  else if (muk !== undefined) out.muk = { conf: muk };
+  if (lon085) {
+    out.chae = null;
+    if (self !== undefined) out.conf = Math.max(0, Math.min(9, Math.round(self * 10)));
+  } else if (self !== undefined) {
+    out.chae = color ? { self, color } : { self };
+  }
   if (clause.toList) out.toList = clause.toList;
   if (clause.me) out.me = true;
   if (clause.all) {
     out.all = true;
-    out.to = null; // E31: ●에는 받는 이를 두지 않는다
+    out.to = null;
     delete out.toList;
   }
   const because = [...(end?.because ?? [])];
@@ -1114,33 +1285,41 @@ function parseClause03(rawInner: string, ctx: Ctx, lead: string | null, odd: { v
       }
     }
   }
-  const is051 = clause.all === true || color !== undefined || because.length > 0;
+  if (attachedCalcs.length) out.calcs = attachedCalcs;
+  const is051 = clause.all === true || color !== undefined || because.length > 0 || lon085;
   if (because.length) out.because = because;
-  // v0.6: 갑 절은 앞의 어떤 절에도 기대지 않는다. 가리킴(앞붙이 자리·고침→·오류→·끝 근거)을 쓰면 E35(reports/v0.6-design.md 1.2)
   if (mk.marks.ev === 'top' && (out.place || out.process?.target || because.length)) {
     ctx.err('E35', `갑(새 화두) 절은 다른 절을 가리키지 않는다(↔ ↖, 고침→, 오류→, 받침→, 끝 근거). 바탕이 있으면 그에 맞는 근거(봄·더·겠 …)를 쓴다: '${shown}'`);
   }
-  // v0.6 덧붙임(2026-10-25 H-261025-8, reports/hunch-design.md 3.2): 받침 절은 직감이 아닌 근거로, ↓근거와 함께 받친다(E37)
   if (out.process?.kind === 'sup') {
     const ev = mk.marks.ev;
     if (ev === 'gut' || ev === 'top') ctx.err('E37', `받침 절의 근거는 촉·갑이 아니다(직감을 직감으로 받칠 수 없다). 뒤늦게 찾은 근거(봄·더·겠 …)와 ↓근거로 쓴다: '${shown}'`);
     else if (!because.length) ctx.err('E37', `받침 절에는 끝에 ↓근거가 있어야 한다(무엇으로 받치는지): '${shown}'`);
   }
-  if (dotAll || (ctx.v08 && out.all)) out.form = '0.8';
-  else if (is051) out.form = '0.5.1';
+  if (ctx.is085 && (lon085 || end?.unmeasured || attachedCalcs.length > 0 || (clause.places?.length ?? 0) > 1)) {
+    out.form = '0.8.5';
+  } else if (dotAll || (ctx.v08 && out.all)) {
+    out.form = '0.8';
+  } else if (is051) {
+    out.form = '0.5.1';
+  }
   ctx.newForm.add(out);
   const wr: ClauseWritten = { aliases: mk.aliases };
   if (mk.marksOff) wr.marksOff = true;
   if (hasDot) wr.hasDot = true;
   if (mk.nonEnMarks.length) wr.nonEnMarks = mk.nonEnMarks;
   if (mk.legacyChae || end?.legacyChae || legacyChae) wr.legacyChae = true;
+  if (end?.dupTail) wr.dupTail = true;
+  if (end?.lonLegacyChae) wr.lonLegacyChae = true;
+  if (mk.autoAct) wr.autoAct = true;
+  if (conflictFixDropped) wr.conflictFixDropped = conflictFixDropped;
   ctx.written.set(out, wr);
   return out;
 }
 
 /** v0.3 줄꼴의 줄을 읽는다. v0.3 줄꼴이 아니면 null. */
 export function parseLine03(line: string, ctx: Ctx): Clause[] | null {
-  const { head: clausePart, evidences: trailingEvds, legacyExt, unclosed } = extractTrailingEvidences(line);
+  const { head: clausePart, evidences: trailingEvds, calcs: trailingCalcs, legacyExt, unclosed } = extractTrailingEvidences(line);
   if (legacyExt?.length) {
     ctx.err('E26', `옛 외부 근거 괄호 '${legacyExt[0]}'다. <[ ... ]>로 쓴다`);
   }
@@ -1150,28 +1329,33 @@ export function parseLine03(line: string, ctx: Ctx): Clause[] | null {
   }
   const form = lineFormOf(clausePart);
   if (!form) return null;
-  // 2026-11-05: 언급(백틱으로 싼 글)은 자리표로 가려 두고 읽는다. 진단 글과 내용 어절에서 되살린다(shared.ts maskMentions)
   const masked = maskMentions(clausePart, ctx.mentions);
-  let s = normalizeArrows(masked);
+  // 본문 격리: 절 앞부분의 화살표만 정규화하거나, v03 전체 호환을 위해 꺾쇠 밖 및 [ 앞만 우선 처리
+  let s = masked;
+  const sq0 = firstOf(s, SQ_OPEN_CODES);
+  if (sq0 >= 0 && form === 'wrapped') {
+    // 꺾쇠/표지 앞부분만 normalizeArrows (본문 속 -> 등이 훼손되지 않게 하되, 옛 bare 줄은 전체)
+    s = normalizeArrows(s.slice(0, sq0)) + s.slice(sq0);
+  } else {
+    s = normalizeArrows(s);
+  }
   const odd = { v: s !== masked };
-  // < > 밖에 붙인 받는 이(→kimi <…>, <…> →kimi, <…> → kimi, →gemma)는 그 절의 [ 앞으로 옮겨 읽는다(W16)
   if (form === 'wrapped') s = moveOutsideTo(s, masked, ctx);
   const out: Clause[] = [];
   if (form === 'bare') {
     ctx.warn('W18', `< >로 싸지 않은 절을 읽었다. 정규형은 <1 · [표지] 내용 *먹채>: '${clausePart}'`);
-    const c = parseClause03(s, ctx, null, odd, trailingEvds);
+    const c = parseClause03(s, ctx, null, odd, trailingEvds, trailingCalcs);
     if (c) out.push(c);
   } else {
     const sp = splitWrapped(s);
     if (sp.odd) odd.v = true;
-    // v0.5: > 밖에 쓴 자신(<…> !8)은 옛 표기 E26, 채(*R8)는 자리 오류 E29
     if (sp.stray && SELF_STRAY.test(sp.stray)) ctx.err('E26', `옛 자신 표기 '${sp.stray}'다. 채 색을 함께 *R8로 꺾쇠 안 끝에 쓴다`);
     else if (sp.stray && STRAY051.test(sp.stray)) ctx.err('E29', `자신 *N은 > 밖이 아니라 꺾쇠 안 맨 끝(> 바로 앞)에 쓴다: '${sp.stray}'`);
     else if (sp.stray) ctx.err('E19', `절 < > 밖에 읽을 수 없는 글이 있다: '${sp.stray}'`);
     sp.parts.forEach((p, k) => {
       if (!p.closed) ctx.warn('W18', `닫는 >가 없어 ${k + 1 < sp.parts.length ? '다음 <' : '줄 끝'}까지를 한 절로 읽었다: '${p.text}'`);
       const isLast = k === sp.parts.length - 1;
-      const c = parseClause03(p.inner, ctx, k === 0 ? sp.lead : null, odd, isLast ? trailingEvds : []);
+      const c = parseClause03(p.inner, ctx, k === 0 ? sp.lead : null, odd, isLast ? trailingEvds : [], isLast ? trailingCalcs : []);
       if (c) out.push(c);
     });
   }

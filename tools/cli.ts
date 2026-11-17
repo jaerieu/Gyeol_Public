@@ -64,12 +64,25 @@ async function main() {
     case 'fold':
       process.stdout.write(format(foldMessage(parse(read(file), { v08: true }).message, (arg ?? '점') as FoldLevel)));
       break;
+    case 'ebnf': {
+      const { generateEbnf } = await import('../src/grammar-gen.ts');
+      const profile = rest.includes('--lon') || arg === '--lon' ? 'lon' : 'gyeol';
+      const mode = rest.includes('--snapshot') || arg === '--snapshot' ? 'snapshot' : rest.includes('--delta') || arg === '--delta' ? 'delta' : undefined;
+      console.log(generateEbnf({ profile, ...(mode ? { mode } : {}) }));
+      break;
+    }
+    case 'gbnf': {
+      const { generateGbnf } = await import('../src/grammar-gen.ts');
+      const profile = rest.includes('--lon') || arg === '--lon' ? 'lon' : 'gyeol';
+      console.log(generateGbnf({ profile }));
+      break;
+    }
     case 'hashes': {
-      const files = ['sources/dict-v0.txt', 'archive/dict/base-v0.2.txt', 'archive/dict/base-v0.2.1.txt', 'archive/dict/base-v0.3.txt', 'archive/dict/base-v0.3.1.txt', 'archive/dict/base-v0.3.2.txt', 'archive/dict/base-v0.4.txt', 'archive/dict/base-v0.5.txt', 'archive/dict/base-v0.5.1.txt', 'archive/dict/base-v0.5.2.txt', 'archive/dict/base-v0.5.5.txt', 'archive/dict/base-v0.6.txt', 'archive/dict/base-v0.6.5.txt', 'archive/dict/base-v0.7.txt', 'dict/base-v0.8.txt', 'dict/lon-v0.8.txt', 'archive/dict/examples-v0.2.txt'];
-      // v0.8.2(2026-11-13, spec/09-names.md 9.4): 사전 정본은 영어(dict/base-v0.8.txt·dict/lon-v0.8.txt)이고 그 해시가 사전의 먹 이름이다. 번역본은 정체가 아니라 따로 적는다
+      const files = ['sources/dict-v0.txt', 'archive/dict/base-v0.2.txt', 'archive/dict/base-v0.2.1.txt', 'archive/dict/base-v0.3.txt', 'archive/dict/base-v0.3.1.txt', 'archive/dict/base-v0.3.2.txt', 'archive/dict/base-v0.4.txt', 'archive/dict/base-v0.5.txt', 'archive/dict/base-v0.5.1.txt', 'archive/dict/base-v0.5.2.txt', 'archive/dict/base-v0.5.5.txt', 'archive/dict/base-v0.6.txt', 'archive/dict/base-v0.6.5.txt', 'archive/dict/base-v0.7.txt', 'archive/dict/base-v0.8.txt', 'archive/dict/lon-v0.8.txt', 'dict/base-v0.8.5.txt', 'dict/lon-v0.8.5.txt', 'archive/dict/examples-v0.2.txt'];
+      // v0.8.5(2026-11-17, spec/09-names.md 9.4): 사전 정본은 영어(dict/base-v0.8.5.txt·dict/lon-v0.8.5.txt)이고 그 해시가 사전의 먹 이름이다. 번역본은 정체가 아니라 따로 적는다
       const translations = [
-        ...['ko', 'zh-Hans', 'zh-Hant', 'ja', 'de', 'fr', 'it', 'es', 'ru'].map((l) => `dict/base-v0.8.${l}.txt`),
-        ...['ko', 'zh-Hans', 'zh-Hant', 'ja', 'de', 'fr', 'it', 'es', 'ru'].map((l) => `dict/lon-v0.8.${l}.txt`),
+        ...['ko', 'zh-Hans', 'zh-Hant', 'ja', 'de', 'fr', 'it', 'es', 'ru'].map((l) => `dict/base-v0.8.5.${l}.txt`),
+        ...['ko', 'zh-Hans', 'zh-Hant', 'ja', 'de', 'fr', 'it', 'es', 'ru'].map((l) => `dict/lon-v0.8.5.${l}.txt`),
       ];
       const rows: string[] = [];
       for (const f of files) {
@@ -92,7 +105,7 @@ async function main() {
         '',
         '## 번역본 (정체가 아니다)',
         '',
-        'v0.8.2(2026-11-13, `spec/09-names.md` 9.4)부터 현행 사전 정본은 영어(`dict/base-v0.8.txt` · `dict/lon-v0.8.txt`)이고 위 표의 그 해시가 사전의 먹 이름이다. 번역본은 정본을 한 문장씩 따르되 언어의 정체가 아니다. 참고로만 적는다.',
+        'v0.8.5(2026-11-17, `spec/09-names.md` 9.4)부터 현행 사전 정본은 영어(`dict/base-v0.8.5.txt` · `dict/lon-v0.8.5.txt`)이고 위 표의 그 해시가 사전의 먹 이름이다. 번역본은 정본을 한 문장씩 따르되 언어의 정체가 아니다. 참고로만 적는다.',
         '',
         '| 파일 | 짧은 이름 | 전체 |',
         '| --- | --- | --- |',

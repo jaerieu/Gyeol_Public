@@ -109,3 +109,14 @@ v0.3 줄꼴의 `(자신|먹)` 한 자리 d는 `chae.self`와 `muk.conf`에 d/10�
 
 10.4의 손실 없는 왕복은 그대로다: 글 → 틀 → 글(정규형)이 고정점이고, `form: '0.2'`·`form: '0.6'`은 옛 꼴·옛 한글 정규형으로 되돌려 쓴다.
 
+## 10.6 v0.8.5 틀 확장 및 RFC 8785 정규 해시 (2026-11-17)
+
+`schema/gyeol-0.8.5.schema.json` 이 본체 `gyeol 0.8.5` 와 `lon 0.8.5` 를 함께 정의한다.
+
+- `Message.head.mode`: `'delta' | 'snapshot'` (원장 증분 · 통째 계보 모드), `Message.calcs`: 메시지 단위 `calcN` 목록, `Message.commentary`: `---` / `gloss:` 이후 비발화 해설.
+- `Clause.conf`: `lon 0.8.5` 콜론 꼬리의 정수 확신도(`0`부터 `9`까지)며 이때 `Clause.chae` 는 `null` 이다.
+- `Clause.muk.unmeasured`: 미측정 상태(`*?B8` · `*?:8`)일 때 `true` 다.
+- `Clause.places`: 다중 관계 앞붙이(`↔2,4` → `places`)이며 `Clause.place` 와 일관되게 유지된다.
+- `Clause.calcs`: 절에 매달린 파생 수식 블록(`calcN <[ expr = val ]>`), `Because`: `{ calc: N }` 및 `{ reserved: 'dict' }` 추가.
+- `src/hash.ts`: `canonicalJson` (IETF RFC 8785 JCS 규격의 UTF-16 코드 단위 키 정렬 및 ECMA-262 숫자 직렬화 클린룸 구현) 과 `jcsSha256` 으로 원장 해시체인을 산출한다.
+

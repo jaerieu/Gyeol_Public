@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { extractTrailingEvidences, format, glossClause, parse, parseTurn, rules08 } from '../src/index.ts';
 
 function codesOf(text: string, opts: Parameters<typeof rules08>[1] = {}) {
-  const r = parse(text, { v08: true });
+  const r = parse(text, { v08: true, profile: opts.profile });
   return [...r.diagnostics, ...rules08(r, opts)].map((d) => d.code);
 }
 
@@ -65,11 +65,11 @@ test('론(Lon: Lineage Oriented Notation) 프로파일: 머리 줄 왕복, *먹�
   assert.equal(r2.message.profile, 'lon');
   assert.equal(format(r2.message), formatted);
 
-  assert.deepEqual(codesOf('<1 · ● [top,say] 화두 열기 *5B7>', { profile: 'lon' }), ['E39']);
-  assert.deepEqual(codesOf('<1 · ● [see,new,say] 새 발견 *5B7↓T0>', { profile: 'lon' }), ['E39']);
-  assert.deepEqual(codesOf('<1 · ● [inf,met,say] 비유 표현 *5B7>', { profile: 'lon' }), ['E39']);
+  assert.deepEqual(codesOf('<1 · ● [top,say] 화두 열기 *5:7>', { profile: 'lon' }), ['E39']);
+  assert.deepEqual(codesOf('<1 · ● [see,new,say] 새 발견 *5:7↓T0>', { profile: 'lon' }), ['E39']);
+  assert.deepEqual(codesOf('<1 · ● [inf,met,say] 비유 표현 *5:7>', { profile: 'lon' }), ['E39']);
   assert.deepEqual(codesOf('<1 · ● [see,say] 채 누락>', { profile: 'lon' }), ['E33', 'W40']);
-  assert.deepEqual(codesOf('<1 · ● [봄,다] 한글 표지 *5B7↓T0>', { profile: 'lon' }), ['W26']);
+  assert.deepEqual(codesOf('<1 · ● [봄,다] 한글 표지 *5:7↓T0>', { profile: 'lon' }), ['W26']);
 
   const gyeolSingle = parse('gyeol 0.8 · lang ko\n<1 · ● [see,say] 한글 어절만 둘 이상 썼다 *5B8>');
   const gd = rules08(gyeolSingle);

@@ -4,14 +4,14 @@ import { extractTrailingEvidences, parse, rules08, scanExtBlocks } from '../src/
 
 test('v0.8.2 코어: 이모지 내용 허용 및 숨김 제어문자·문법 기호 E41/E19 유지', () => {
   const codes = (s: string) => {
-    const r = parse(s, { v08: true });
+    const r = parse(s, { v08: true, profile: 'lon' });
     return [...r.diagnostics, ...(rules08(r, { lang: 'en', profile: 'lon' }) ?? [])].map((d) => d.code);
   };
-  assert.deepEqual(codes('<1 · ● [inf,say] deploy ok ✅ 🔥 *5B7>'), []);
-  assert.deepEqual(codes('<1 · ● [inf,say] family 👨‍👩‍👧‍👦 ok *5B7>'), []);
-  assert.ok(codes('<1 · ● [see,say] bad\u202Edir *5B7>').includes('E41'));
-  assert.ok(codes('<1 · ● [see,say] bad\u200Bzwsp *5B7>').includes('E41'));
-  assert.ok(codes('<1 · ● [see,say] dot●x *5B7>').includes('E19'));
+  assert.deepEqual(codes('<1 · ● [inf,say] deploy ok ✅ 🔥 *5:7>'), []);
+  assert.deepEqual(codes('<1 · ● [inf,say] family 👨‍👩‍👧‍👦 ok *5:7>'), []);
+  assert.ok(codes('<1 · ● [see,say] bad\u202Edir *5:7>').includes('E41'));
+  assert.ok(codes('<1 · ● [see,say] bad\u200Bzwsp *5:7>').includes('E41'));
+  assert.ok(codes('<1 · ● [see,say] dot●x *5:7>').includes('E19'));
 });
 
 test('v0.8.2 코어: 외부 근거 스캐너와 extractTrailingEvidences는 닫히지 않은 블록에서도 선형 시간으로 동작한다', () => {
@@ -29,16 +29,16 @@ test('v0.8.2 코어: 외부 근거 스캐너와 extractTrailingEvidences는 닫�
 });
 
 test('v0.8.2 코어: W43 NUM_UNIT_RE는 두 자리 이상 양수(85 °C)와 부호 있는 수치 대조를 정확히 처리한다', () => {
-  const p85 = parse('<1 · ● [see,say] core temp 85 °C normal *6B7↓evd101> evd101 <[온도 85 °C 유지]>', { v08: true });
+  const p85 = parse('<1 · ● [see,say] core temp 85 °C normal *6:7↓evd101> evd101 <[온도 85 °C 유지]>', { v08: true, profile: 'lon' });
   assert.equal(p85.ok, true);
   assert.equal(rules08(p85, { lang: 'en', profile: 'lon' }).length, 0);
 
-  const p12 = parse('<1 · ● [see,say] node db-01 latency 12ms delta -5% ≤ limit *6B7↓evd1> evd1 <[db-01 latency=12ms delta=-5% ≤ limit]>', { v08: true });
+  const p12 = parse('<1 · ● [see,say] node db-01 latency 12ms delta -5% ≤ limit *6:7↓evd1> evd1 <[db-01 latency=12ms delta=-5% ≤ limit]>', { v08: true, profile: 'lon' });
   assert.equal(p12.ok, true);
   assert.equal(rules08(p12, { lang: 'en', profile: 'lon' }).length, 0);
 
   for (const signed of ['+85 °C', '-85 °C', '−85 °C']) {
-    const p = parse(`<1 · ● [see,say] temp ${signed} ok *6B7↓evd101> evd101 <[temp ${signed}]>`, { v08: true });
+    const p = parse(`<1 · ● [see,say] temp ${signed} ok *6:7↓evd101> evd101 <[temp ${signed}]>`, { v08: true, profile: 'lon' });
     assert.equal(p.ok, true);
     assert.equal(rules08(p, { lang: 'en', profile: 'lon' }).length, 0);
   }

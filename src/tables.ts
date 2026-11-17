@@ -1,9 +1,10 @@
-// 결 v0.8.2 — 표지, 별칭, 프로파일 기준값. spec/03-grammar.md.
-// v0.8.2(2026-11-13): v0.2 한자 핵·조율·어조 테이블 제거, 현행 표지·열 언어 별칭·진단 전용 옛 표지(LEGACY_FULLNAME_MARKS·REMOVED_065_MARKS)로 정리.
+// 결 v0.8.5 — 표지, 별칭, 프로파일 기준값, 진단 3계층(tier) 및 E05 편집 거리 힌트. spec/03-grammar.md.
+// v0.8.5(2026-11-17): 판본 단일화(gyeol 0.8.5 · lon 0.8.5 · Muk 0.8.5), 진단 3계층(form · provenance · content) 내장.
 
-import type { Act, Ev, Fig, ProcessKind, Tense } from './types.ts';
+import type { Act, DiagnosticTier, Ev, Fig, ProcessKind, Tense } from './types.ts';
 
-export const SPEC_VERSION = '0.8.2';
+export const SPEC_VERSION = '0.8.5';
+export const LON_VERSION = '0.8.5';
 
 /** 이 구현이 경고 없이 읽는 판의 갈래(앞 두 자리). 그 밖의 판을 머리에 적으면 W14로 알린다. */
 export const READ_FAMILIES = ['0.7', '0.8'] as const;
@@ -196,3 +197,66 @@ export const LON_TENSE: ReadonlySet<string> = new Set(['pst', 'fut']);
 export const LON_ACT: ReadonlySet<string> = new Set(['say', 'ask', 'req', 'let', 'vow', 'nay', 'ack']);
 export const LON_MARKS: ReadonlySet<string> = new Set([...LON_EV, ...LON_FIG, ...LON_TENSE, ...LON_ACT]);
 export const LON_PROCESS: ReadonlySet<string> = new Set(['fix', 'err', 'sup']);
+
+// ───────── v0.8.5 진단 3계층(tier) 및 E05 편집 거리 1 오타 힌트 ─────────
+
+const PROVENANCE_CODES: ReadonlySet<string> = new Set([
+  'E07', 'E17', 'E34', 'E35', 'E37',
+  'W36', 'W40', 'W44',
+]);
+
+const CONTENT_CODES: ReadonlySet<string> = new Set([
+  'W43',
+  'W50',
+  'E_CALC_SYNTAX',
+  'E_CALC_MISMATCH',
+  'E_STALE_INF',
+]);
+
+/** 모든 진단 코드에 'form' | 'provenance' | 'content' 3계층을 결정론적으로 배정한다. */
+export function tierOfCode(code: string): DiagnosticTier {
+  if (CONTENT_CODES.has(code)) return 'content';
+  if (PROVENANCE_CODES.has(code)) return 'provenance';
+  return 'form';
+}
+
+function editDistance1OrLess(a: string, b: string): boolean {
+  const la = a.length;
+  const lb = b.length;
+  if (Math.abs(la - lb) > 1) return false;
+  if (a === b) return true;
+  if (la === lb) {
+    let diff = 0;
+    for (let i = 0; i < la; i++) if (a[i] !== b[i] && ++diff > 1) return false;
+    return diff === 1;
+  }
+  const [shorter, longer] = la < lb ? [a, b] : [b, a];
+  let i = 0;
+  let j = 0;
+  let skipped = false;
+  while (i < shorter.length && j < longer.length) {
+    if (shorter[i] === longer[j]) {
+      i++;
+      j++;
+    } else if (skipped) {
+      return false;
+    } else {
+      skipped = true;
+      j++;
+    }
+  }
+  return true;
+}
+
+/** E05 미등록 표지에 대한 레벤슈타인 편집 거리 1 후보 힌트를 반환한다. */
+export function closestMarkHint(unknown: string, allowed: Iterable<string> = MARKS_07): string | null {
+  const target = String(unknown ?? '').trim().toLowerCase();
+  if (!target || target.length < 2) return null;
+  const candidates: string[] = [];
+  for (const cand of allowed) {
+    if (editDistance1OrLess(target, cand.toLowerCase())) candidates.push(cand);
+  }
+  if (!candidates.length) return null;
+  candidates.sort();
+  return candidates[0];
+}
