@@ -200,14 +200,15 @@ export const LON_PROCESS: ReadonlySet<string> = new Set(['fix', 'err', 'sup']);
 
 // ───────── v0.8.5 진단 3계층(tier) 및 E05 편집 거리 1 오타 힌트 ─────────
 
-const PROVENANCE_CODES: ReadonlySet<string> = new Set([
+export const PROVENANCE_CODES: ReadonlySet<string> = new Set([
   'E07', 'E17', 'E34', 'E35', 'E37',
-  'W36', 'W40', 'W44',
+  'W36', 'W40', 'W44', 'W52',
 ]);
 
-const CONTENT_CODES: ReadonlySet<string> = new Set([
+export const CONTENT_CODES: ReadonlySet<string> = new Set([
   'W43',
   'W50',
+  'W54',
   'E_CALC_SYNTAX',
   'E_CALC_MISMATCH',
   'E_STALE_INF',

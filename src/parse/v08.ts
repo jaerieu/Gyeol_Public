@@ -16,8 +16,16 @@
 //   6. 론(Lon) 표지 집합(E39·W26): 근거 5종(see·rec·inf·gut·if), 결 1종(lim), 시제 2종(pst·fut), 화행 7종(say·ask·req·let·vow·nay·ack),
 //      앞붙이 ↔·↖·fix→·err→·sup→ 및 끝 근거 ↓만 허용하고 영어 3글자 정본 표지를 쓴다(top·new·met·pdx 등은 E39).
 
-import type { Clause, Diagnostic, ExtEvidence, ParseResult, Profile, Word } from '../types.ts';
-import { extractNumbersFromClause } from '../calc.ts';
+import type { CalcBlock, Clause, Diagnostic, ExtEvidence, ParseResult, Profile, Word } from '../types.ts';
+import {
+  evaluateCalcExpression,
+  extractNumbersFromClause,
+  extractNumbersFromText,
+  extractPrimaryNumeric,
+  numbersMatch,
+  splitCalcExpression,
+} from '../calc.ts';
+import { computeClauseLattice, type LedgerContext, type LedgerEpistemicLattice } from '../ledger.ts';
 import {
   LON_ACT,
   LON_EV,
@@ -43,6 +51,8 @@ export interface Rules08Options {
   mode?: 'delta' | 'snapshot';
   priorClauses?: readonly Clause[];
   priorEvidences?: readonly ExtEvidence[];
+  /** 선택적 원장 컨텍스트(미전달 시에도 priorClauses로부터 계보·충돌·격자 상태를 결정론적으로 복원) */
+  ledger?: LedgerContext;
   issued?: readonly string[];
   /** 게이트웨이 참조 복사(ref_copy)가 이미 해당 줄 범위만 잘라 주입했으면 true */
   preSlicedExt?: boolean;
@@ -65,26 +75,31 @@ export function hasUserScript(words: Word[], group: ScriptGroup): boolean {
 const INLINE_GLOSS = /[(（]\s*[a-z]{2}(?:\s*[)）]|\s+\p{Script=Hangul})/u;
 const BACKABLE_EV: ReadonlySet<string> = new Set(['gut', 'top']);
 const ASCII_ID_RE = /^[A-Za-z0-9_.:-]+$/;
-// v0.8.2 재검토(2026-11-13): 한 글자 단위(s·h·b·k·m·g·w·v·a)는 수에 바로 붙었을 때만 단위로 읽는다('3 a test'의 a는 낱말).
-const UNIT_MULTI = '%|퍼센트|ms|us|µs|ns|sec|min|hr|kb|mb|gb|tb|khz|mhz|ghz|hz|℃|°c|°f|km|cm|mm|kg|mg|kw|mw|mv|ma|초|분|시간';
-const UNIT_SINGLE = 's|h|b|k|m|g|w|v|a';
+// v0.8.2 · v0.8.5: 한 글자 단위(s·h·b·k·m·g·w·v·a·l)는 수에 바로 붙었을 때만 단위로 읽는다('3 a test'의 a는 낱말).
+const UNIT_MULTI =
+  'l/min|l/hr|l/h|l/s|ml/min|units/h|units/hr|percent|퍼센트|%|samples|sample|minutes|seconds|hours|hrs|hr|min|sec|ms|us|µs|ns|mbar|bar|mpa|kpa|pa|psi|gwh|mwh|kwh|gw|mw|kw|wh|kv|mv|ma|ghz|mhz|khz|hz|tb|gb|mb|kb|km|cm|mm|ml|kg|mg|ug|µg|℃|°c|°f|ppm|ppb|bps|slots|lines|units|초|분|시간';
+const UNIT_SINGLE = 's|h|b|k|m|g|w|v|a|l';
 // 부호 글자 집합 안의 줄표를 이스케이프해 숫자가 부호로 먹히지 않게 한다.
 const NUM_UNIT_RE = new RegExp(
   `(?<![A-Za-z0-9_])([+\\-−])?(\\d+(?:[.,]\\d+)?)(?:\\s*(${UNIT_MULTI})|(${UNIT_SINGLE}))(?![A-Za-z0-9_])`,
   'giu',
 );
 const CODE_ID_RE = /\b[A-Za-z]{1,12}[-_][A-Za-z0-9_-]*\d[A-Za-z0-9_-]*\b/gu;
-const TAG_STRIP_RE = /(?:^|\s)(?:(?:evd|ref|Q|T)\d+(?:\.\d+)?|(?:증|근)\d+(?:\.\d+)?)[가-힣]*/giu;
+const TAG_STRIP_RE = /(?:^|\s)(?:(?:evd|ref|calc|Q|T)\d+(?:\.\d+)?|(?:증|근|식)\d+(?:\.\d+)?)[가-힣]*/giu;
 
 function canonUnit(u: string): string {
   const l = u.toLowerCase();
-  if (l === '퍼센트') return '%';
-  if (l === 'sec' || l === '초') return 's';
-  if (l === '분') return 'min';
-  if (l === 'hr' || l === '시간') return 'h';
+  if (l === '퍼센트' || l === 'percent') return '%';
+  if (l === 'sec' || l === 'seconds' || l === '초') return 's';
+  if (l === 'minutes' || l === '분') return 'min';
+  if (l === 'hr' || l === 'hrs' || l === 'hours' || l === '시간') return 'h';
+  if (l === 'l/hr') return 'l/h';
+  if (l === 'units/hr') return 'units/h';
+  if (l === 'sample') return 'samples';
   if (l === '℃' || l === '°c') return 'c';
   if (l === '°f') return 'f';
   if (l === 'µs') return 'us';
+  if (l === 'µg') return 'ug';
   return l;
 }
 
@@ -102,7 +117,20 @@ function escRe(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
 }
 
-function checkGhostW43(bodyText: string, evdBlob: string): string | null {
+interface ProvenGroundContext {
+  nums: number[];
+  blob: string;
+  hasOpaqueGround: boolean;
+}
+
+function numberPatternOf(numNorm: string): RegExp {
+  const esc = escRe(numNorm);
+  const numWithComma = /\d{4,}/.test(numNorm) ? numNorm.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : null;
+  const escPat = numWithComma ? `(?:${esc}|${escRe(numWithComma)})` : esc;
+  return new RegExp(`(?<!\\d)${escPat}(?!\\d)`, 'u');
+}
+
+function checkGhostW43(bodyText: string, evdBlob: string, provenCtx?: ProvenGroundContext): string | null {
   const clean = bodyText.replace(/`[^`]*`/gu, ' ').replace(TAG_STRIP_RE, ' ');
   NUM_UNIT_RE.lastIndex = 0;
   let m: RegExpExecArray | null;
@@ -114,6 +142,17 @@ function checkGhostW43(bodyText: string, evdBlob: string): string | null {
     const numWithComma = /\d{4,}/.test(numNorm) ? numNorm.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : null;
     const escPat = numWithComma ? `(?:${esc}|${escRe(numWithComma)})` : esc;
     const numRe = new RegExp(`(?<!\\d)${escPat}(?!\\d)`, 'u');
+
+    if (provenCtx) {
+      const absVal = Number(numNorm);
+      const signedVal = (sign === '-' || sign === '−' ? -1 : 1) * absVal;
+      const alreadyProven =
+        (Number.isFinite(absVal) &&
+          provenCtx.nums.some((p) => numbersMatch(p, absVal) || numbersMatch(p, signedVal))) ||
+        (provenCtx.blob !== '' && numRe.test(provenCtx.blob));
+      if (alreadyProven || provenCtx.hasOpaqueGround) continue;
+    }
+
     if (!numRe.test(evdBlob)) return `외부 근거에 없는 수치 '${rawNum}'`;
     if (sign === '+') {
       const hasNeg = new RegExp(`[-−]\\s*${escPat}(?!\\d)`, 'u').test(evdBlob);
@@ -131,14 +170,20 @@ function checkGhostW43(bodyText: string, evdBlob: string): string | null {
       return `외부 근거와 단위가 다르다('${rawNum}${rawUnit}')`;
     }
   }
-  const cd = cmpDir(clean);
-  const ed = cmpDir(evdBlob);
-  if (((cd.hasHigh && !cd.hasLow) && (ed.hasLow && !ed.hasHigh)) || ((cd.hasLow && !cd.hasHigh) && (ed.hasHigh && !ed.hasLow))) {
-    return '외부 근거와 비교 방향이 반대다';
+  if (!provenCtx || (!provenCtx.hasOpaqueGround && provenCtx.blob === '')) {
+    const cd = cmpDir(clean);
+    const ed = cmpDir(evdBlob);
+    if (((cd.hasHigh && !cd.hasLow) && (ed.hasLow && !ed.hasHigh)) || ((cd.hasLow && !cd.hasHigh) && (ed.hasHigh && !ed.hasLow))) {
+      return '외부 근거와 비교 방향이 반대다';
+    }
   }
   const evLower = evdBlob.toLowerCase();
+  const provenLower = provenCtx?.blob.toLowerCase() ?? '';
   for (const idm of clean.matchAll(CODE_ID_RE)) {
     const id = idm[0];
+    if (provenCtx) {
+      if (provenCtx.hasOpaqueGround || provenLower.includes(id.toLowerCase())) continue;
+    }
     if (!evLower.includes(id.toLowerCase())) return `외부 근거에 없는 식별자 '${id}'`;
   }
   return null;
@@ -235,6 +280,11 @@ export function rules08(r: ParseResult, opts: Rules08Options = {}): Diagnostic[]
   for (const ac of priorClauses) for (const ev of ac.evidences ?? []) addExtText(ev.kind, ev.id, ev.text);
   for (const ev of r.message.evidences ?? []) addExtText(ev.kind, ev.id, ev.text);
   for (const ac of clauses) for (const ev of ac.evidences ?? []) addExtText(ev.kind, ev.id, ev.text);
+  if (opts.ledger) {
+    for (const [k, ev] of opts.ledger.evidencesByKey) {
+      if (!extTextMap.has(k)) extTextMap.set(k, [ev.text]);
+    }
+  }
 
   const allClauses = priorClauses.length ? [...priorClauses, ...clauses] : clauses;
   const allLabels = new Set<string>();
@@ -251,6 +301,257 @@ export function rules08(r: ParseResult, opts: Rules08Options = {}): Diagnostic[]
     const alt = (lbl.startsWith('절') ? '점' : '절') + lbl.slice(1);
     return allLabels.has(lbl) || allLabels.has(alt);
   };
+
+  // calcN 색인 및 O(1) 재귀 평가 도우미 (priorClauses + 현재 메시지 + 선택적 ledger 통합)
+  const calcById = new Map<string, CalcBlock>();
+  if (opts.ledger) {
+    for (const [id, cb] of opts.ledger.calcsById) calcById.set(id, cb);
+  }
+  for (const ac of priorClauses) for (const cb of ac.calcs ?? []) calcById.set(cb.id, cb);
+  for (const cb of r.message.calcs ?? []) calcById.set(cb.id, cb);
+  for (const ac of clauses) for (const cb of ac.calcs ?? []) calcById.set(cb.id, cb);
+
+  // 계보·대체·철회·미해결 맞섬(↔) 시점별 상태 복원 (opts.ledger 없이 priorClauses만으로도 100% 동일 복원)
+  interface ReconstructedNodeState {
+    num: string;
+    clause: Clause;
+    createdAt: number;
+    supersededAt?: number;
+    supersededBy?: string;
+    retractedAt?: number;
+    retractedBy?: string;
+    fixTargetAtWrite?: { targetNum: string; status: 'active' | 'superseded' | 'retracted'; latestActive: string };
+  }
+  interface ReconstructedConflict {
+    clauseNum: string;
+    targetNum: string;
+    createdAt: number;
+    resolvedAt?: number;
+  }
+
+  const nodeStateByNum = new Map<string, ReconstructedNodeState>();
+  const conflictsTimeline: ReconstructedConflict[] = [];
+  if (opts.ledger && priorClauses.length === 0) {
+    for (const [num, ent] of opts.ledger.clausesByNum) {
+      nodeStateByNum.set(num, {
+        num,
+        clause: ent.clause,
+        createdAt: -2,
+        ...(ent.supersededBy ? { supersededAt: -1, supersededBy: ent.supersededBy } : {}),
+        ...(ent.retractedBy ? { retractedAt: -1, retractedBy: ent.retractedBy } : {}),
+      });
+      if (!nums.has(num)) nums.set(num, ent.clause);
+    }
+    for (const oc of opts.ledger.unresolvedConflicts()) {
+      conflictsTimeline.push({ clauseNum: oc.clauseNum, targetNum: oc.targetNum, createdAt: -1 });
+    }
+  }
+
+  const latestActiveInTimeline = (rawNum: string, beforeIdx: number): string => {
+    let cur = rawNum;
+    const seen = new Set<string>([cur]);
+    while (true) {
+      const st = nodeStateByNum.get(cur);
+      if (
+        !st ||
+        st.supersededAt === undefined ||
+        st.supersededAt >= beforeIdx ||
+        !st.supersededBy ||
+        seen.has(st.supersededBy)
+      ) {
+        break;
+      }
+      seen.add(st.supersededBy);
+      cur = st.supersededBy;
+    }
+    return cur;
+  };
+
+  const isNodeActiveBefore = (num: string, beforeIdx: number): boolean => {
+    const st = nodeStateByNum.get(num);
+    if (!st || st.createdAt >= beforeIdx) return false;
+    if (st.retractedAt !== undefined && st.retractedAt < beforeIdx) return false;
+    if (st.supersededAt !== undefined && st.supersededAt < beforeIdx) return false;
+    return true;
+  };
+
+  allClauses.forEach((ac, idx) => {
+    const acNum = (ac.label ?? `절${idx + 1}`).replace(/^[절점]/u, '');
+    let node = nodeStateByNum.get(acNum);
+    const isDuplicateCarry = node !== undefined;
+    if (!node) {
+      node = { num: acNum, clause: ac, createdAt: idx };
+      nodeStateByNum.set(acNum, node);
+    }
+    if (!isDuplicateCarry && ac.process?.target && ac.process.target.msg === null && ac.process.target.thread === undefined) {
+      const tNum = ac.process.target.label.replace(/^[절점]/u, '');
+      const tNode = nodeStateByNum.get(tNum);
+      if (tNode && tNode.createdAt < idx) {
+        if (ac.process.kind === 'fix') {
+          if (tNode.retractedAt !== undefined && tNode.retractedAt < idx) {
+            node.fixTargetAtWrite = { targetNum: tNum, status: 'retracted', latestActive: tNum };
+          } else if (tNode.supersededAt !== undefined && tNode.supersededAt < idx) {
+            const pLat = latestActiveInTimeline(tNum, idx);
+            node.fixTargetAtWrite = { targetNum: tNum, status: 'superseded', latestActive: pLat };
+            const latNode = nodeStateByNum.get(pLat);
+            if (latNode && latNode.retractedAt === undefined && latNode.supersededAt === undefined && pLat !== acNum) {
+              latNode.supersededAt = idx;
+              latNode.supersededBy = acNum;
+            }
+          } else {
+            node.fixTargetAtWrite = { targetNum: tNum, status: 'active', latestActive: tNum };
+            tNode.supersededAt = idx;
+            tNode.supersededBy = acNum;
+          }
+          const resolvedLat = node.fixTargetAtWrite.latestActive;
+          for (const cf of conflictsTimeline) {
+            if (
+              cf.resolvedAt === undefined &&
+              (cf.clauseNum === tNum || cf.targetNum === tNum || cf.clauseNum === resolvedLat || cf.targetNum === resolvedLat)
+            ) {
+              cf.resolvedAt = idx;
+            }
+          }
+        } else if (ac.process.kind === 'err') {
+          if (tNode.supersededAt !== undefined && tNode.supersededAt < idx && tNode.retractedAt === undefined) {
+            const pLat = latestActiveInTimeline(tNum, idx);
+            const latNode = nodeStateByNum.get(pLat);
+            if (latNode && latNode.retractedAt === undefined && pLat !== acNum) {
+              latNode.retractedAt = idx;
+              latNode.retractedBy = acNum;
+            }
+          } else if (tNode.retractedAt === undefined) {
+            tNode.retractedAt = idx;
+            tNode.retractedBy = acNum;
+          }
+          for (const cf of conflictsTimeline) {
+            if (cf.resolvedAt === undefined && (cf.clauseNum === tNum || cf.targetNum === tNum)) {
+              cf.resolvedAt = idx;
+            }
+          }
+        }
+      }
+    }
+
+    if (!isDuplicateCarry) {
+      const pls = ac.places?.length ? ac.places : ac.place ? [ac.place] : [];
+      if (ac.marks.act === 'ack') {
+        const ackTargets = new Set<string>();
+        for (const pl of pls) {
+          if (pl.target.msg === null && pl.target.thread === undefined) {
+            ackTargets.add(pl.target.label.replace(/^[절점]/u, ''));
+          }
+        }
+        for (const b of ac.because ?? []) {
+          if ('label' in b && b.msg === null && b.thread === undefined) {
+            ackTargets.add(b.label.replace(/^[절점]/u, ''));
+          }
+        }
+        for (const cf of conflictsTimeline) {
+          if (cf.resolvedAt === undefined && (ackTargets.has(cf.clauseNum) || ackTargets.has(cf.targetNum))) {
+            cf.resolvedAt = idx;
+          }
+        }
+      }
+      for (const pl of pls) {
+        if (pl.rel === '↔' && pl.target.msg === null && pl.target.thread === undefined) {
+          const tNum = pl.target.label.replace(/^[절점]/u, '');
+          if (tNum && tNum !== acNum && nodeStateByNum.has(tNum)) {
+            if (!conflictsTimeline.some((cf) => cf.clauseNum === acNum && cf.targetNum === tNum && cf.resolvedAt === undefined)) {
+              conflictsTimeline.push({ clauseNum: acNum, targetNum: tNum, createdAt: idx });
+            }
+          }
+        }
+      }
+    }
+  });
+
+  const isInUnresolvedConflictAt = (num: string, beforeIdx: number): boolean => {
+    for (const cf of conflictsTimeline) {
+      if (cf.createdAt >= beforeIdx) continue;
+      if (cf.resolvedAt !== undefined && cf.resolvedAt < beforeIdx) continue;
+      if (cf.clauseNum !== num && cf.targetNum !== num) continue;
+      if (isNodeActiveBefore(cf.clauseNum, beforeIdx) && isNodeActiveBefore(cf.targetNum, beforeIdx)) return true;
+    }
+    return false;
+  };
+
+  // 절별 수식 평가 캐시
+  const calcValueCache = new Map<string, number | null>();
+  const calcVisiting = new Set<string>();
+  const findDirectCalcOfClause = (c: Clause | undefined): CalcBlock | undefined => {
+    if (!c) return undefined;
+    if (c.calcs?.length) return c.calcs[0];
+    for (const b of c.because ?? []) {
+      if ('calc' in b) {
+        const found = calcById.get(b.calc);
+        if (found) return found;
+      }
+    }
+    return undefined;
+  };
+  const findCalcOfClause = (c: Clause | undefined): CalcBlock | undefined => {
+    if (!c) return undefined;
+    const direct = findDirectCalcOfClause(c);
+    if (direct) return direct;
+    if (c.process?.kind !== 'fix' || !c.process.target) return undefined;
+    const seen = new Set<string>();
+    const queue: string[] = [c.process.target.label.replace(/^[절점]/u, '')];
+    const startNum = (c.label ?? '').replace(/^[절점]/u, '');
+    if (startNum && opts.ledger) {
+      for (const anc of opts.ledger.lineageAncestorsOf(startNum)) {
+        if (!queue.includes(anc)) queue.push(anc);
+      }
+    }
+    while (queue.length > 0) {
+      const cur = queue.shift()!;
+      if (!cur || seen.has(cur)) continue;
+      seen.add(cur);
+      const ancClause = nums.get(cur) ?? opts.ledger?.getClause(cur)?.clause;
+      const hit = findDirectCalcOfClause(ancClause);
+      if (hit) return { id: hit.id, expr: splitCalcExpression(hit.expr).expr };
+      if (ancClause?.process?.kind === 'fix' && ancClause.process.target) {
+        const nxt = ancClause.process.target.label.replace(/^[절점]/u, '');
+        if (nxt && !seen.has(nxt)) queue.push(nxt);
+      }
+    }
+    return undefined;
+  };
+  const resolveClauseNumericAt = (rawNum: string, beforeIdx: number): number | null => {
+    const num = latestActiveInTimeline(rawNum, beforeIdx);
+    const cacheKey = `${num}@${beforeIdx}`;
+    if (calcValueCache.has(cacheKey)) return calcValueCache.get(cacheKey)!;
+    if (calcVisiting.has(num)) return null;
+    const cTarget = nums.get(num) ?? nums.get(rawNum);
+    if (!cTarget) return null;
+    calcVisiting.add(num);
+    let val: number | null = null;
+    const cb = findCalcOfClause(cTarget);
+    if (cb) {
+      const ev = evaluateCalcExpression(cb.expr, (ref) => resolveClauseNumericAt(ref, beforeIdx));
+      if (ev.ok && ev.value !== undefined) val = ev.value;
+    }
+    if (val === null) val = extractPrimaryNumeric(cTarget);
+    calcVisiting.delete(num);
+    calcValueCache.set(cacheKey, val);
+    return val;
+  };
+
+  const clauseProvenBlob = (target: Clause): { nums: number[]; blob: string } => {
+    const body = target.words.map((wd) => wd.text).join(' ');
+    const blobs: string[] = [body];
+    for (const ev of target.evidences ?? []) blobs.push(ev.text);
+    for (const b of target.because ?? []) {
+      if ('ext' in b) {
+        const texts = extTextMap.get(`${b.ext}:${b.id}`);
+        if (texts) blobs.push(...texts);
+      }
+    }
+    const combined = blobs.join('\n');
+    const extracted = [...extractNumbersFromClause(target), ...extractNumbersFromText(combined)];
+    return { nums: extracted, blob: combined };
+  };
+
   const badGrounds = new Map<string, number>();
   const markBad = (num: string, idx: number) => {
     const prev = badGrounds.get(num);
@@ -310,6 +611,8 @@ export function rules08(r: ParseResult, opts: Rules08Options = {}): Diagnostic[]
     const c = clauses[k];
     const w = r.written?.[k];
     const where = c.label ?? `절 ${k + 1}째`;
+    const absIdx = priorClauses.length + k;
+    const cNum = (c.label ?? `절${absIdx + 1}`).replace(/^[절점]/u, '');
     const push = (code: string, message: string) =>
       out.push({ code, severity: code.startsWith('E') ? '오류' : '경고', tier: tierOfCode(code), line: k + 1, message: `${message}: ${where}` });
 
@@ -357,9 +660,10 @@ export function rules08(r: ParseResult, opts: Rules08Options = {}): Diagnostic[]
 
     // 4. *먹채(E33) 및 먹 누락(W38) — lon 0.8.5에서는 Chae를 면제하고 확신 숫자(:N)만 검사한다 (W46은 예약 유지, 신규 안내는 W47~W49)
     const effSpec = opts.spec ?? r.message.gyeol;
-    const isLon085Clause = c.chae === null || (isLon && effSpec !== '0.7' && effSpec !== '0.8' && effSpec !== '0.8.2');
+    const is085Spec = effSpec !== '0.7' && effSpec !== '0.8' && effSpec !== '0.8.2';
+    const isLon085Clause = c.chae === null || (isLon && is085Spec);
+    const effConf = c.conf ?? (c.chae?.self !== undefined ? Math.max(0, Math.min(9, Math.round(c.chae.self * 10))) : undefined);
     if (isLon085Clause) {
-      const effConf = c.conf ?? (c.chae?.self !== undefined ? Math.max(0, Math.min(9, Math.round(c.chae.self * 10))) : undefined);
       const hadLegacyChae = Boolean(w?.lonLegacyChae || c.chae?.color !== undefined);
       if (effConf === undefined && !w?.legacyChae) {
         push('E33', '확신 수(0부터 9)는 꼭 쓴다: 끝에 *:8처럼 쓴다');
@@ -381,23 +685,51 @@ export function rules08(r: ParseResult, opts: Rules08Options = {}): Diagnostic[]
     if (w?.conflictFixDropped) {
       push('W51', `동일 절에 맞섬(↔)과 확정 대체·철회(${w.conflictFixDropped})를 함께 쓸 수 없어 ${w.conflictFixDropped}를 제거하고 맞섬(↔)으로 정규화했다`);
     }
-    const isDelta085 = isLon085Clause && !isSnapshot && (opts.mode === 'delta' || r.message.head?.mode === 'delta');
-    if (
-      isDelta085 &&
-      c.marks.ev === 'inf' &&
-      c.marks.act === 'say' &&
-      !c.marks.fig &&
-      !(c.calcs && c.calcs.length > 0) &&
-      !(c.because ?? []).some((b) => 'calc' in b)
-    ) {
-      const bodyJoined = c.words.map((wd) => wd.text).join(' ');
-      if (bodyJoined.includes('=') || extractNumbersFromClause(c).length > 0) {
-        push('W50', 'lon 0.8.5 delta에서 수치를 단언하는 추론([inf,say]) 절에 파생 수식 블록(calcN <[...]>)이 빠졌다');
+
+    // 절에 결합된 calcN 블록 평가 결과 수집(조상 fix→ 상속 포함; W43·W50·W54 증인 판정에 공유)
+    const cCalcs: CalcBlock[] = [...(c.calcs ?? [])];
+    for (const b of c.because ?? []) {
+      if ('calc' in b) {
+        const found = calcById.get(b.calc);
+        if (found && !cCalcs.includes(found)) cCalcs.push(found);
       }
     }
+    if (cCalcs.length === 0 && c.process?.kind === 'fix' && c.marks.ev === 'inf') {
+      const inheritedCb = findCalcOfClause(c);
+      if (inheritedCb) cCalcs.push(inheritedCb);
+    }
+    const evaluatedCalcValues: number[] = [];
+    const calcInputClauseNums = new Set<string>();
+    let hasVerifiedCalc = false;
+    const cExtractedNums = extractNumbersFromClause(c);
+    if (cCalcs.length > 0) {
+      let allCalcsClean = true;
+      for (const cb of cCalcs) {
+        const ev = evaluateCalcExpression(cb.expr, (ref) => resolveClauseNumericAt(ref, absIdx + 1));
+        for (const depRef of ev.deps) calcInputClauseNums.add(depRef);
+        if (!ev.ok || ev.value === undefined) {
+          allCalcsClean = false;
+          continue;
+        }
+        if (ev.declared !== undefined && !numbersMatch(ev.declared, ev.value)) {
+          allCalcsClean = false;
+          continue;
+        }
+        if (cExtractedNums.length > 0 && !cExtractedNums.some((n) => numbersMatch(n, ev.value!))) {
+          allCalcsClean = false;
+          continue;
+        }
+        evaluatedCalcValues.push(ev.value);
+      }
+      hasVerifiedCalc = allCalcsClean && evaluatedCalcValues.length > 0;
+    }
+
+    const grounds = [...(c.because ?? []).filter((b) => 'label' in b), ...(c.place?.rel === '↓' ? [c.place.target] : [])];
+    const cPlaces = c.places?.length ? c.places : c.place ? [c.place] : [];
+    const hasOppose = cPlaces.some((pl) => pl.rel === '↔');
+    const hasAskBack = cPlaces.some((pl) => pl.rel === '↖');
 
     // 5. 근거 자격(E34: v0.8은 gut만 금지·top 허용, spec '0.7'은 gut·top 금지) 및 받침 대상(W36: gut·top)
-    const grounds = [...(c.because ?? []).filter((b) => 'label' in b), ...(c.place?.rel === '↓' ? [c.place.target] : [])];
     for (const g of grounds) {
       if (g.msg !== null) continue;
       const t = nums.get(g.label.slice(1));
@@ -425,7 +757,6 @@ export function rules08(r: ParseResult, opts: Rules08Options = {}): Diagnostic[]
 
     // 5c. 철회(err→) 또는 의미 오류(E17·E34) 절 인용(W44) — ↓N과 sup→N에만 적용
     const w44Seen = new Set<string>();
-    const absIdx = priorClauses.length + k;
     const citeRefs = [...grounds, ...(back ? [back] : [])];
     for (const ref of citeRefs) {
       if (ref.msg !== null || ref.thread !== undefined) continue;
@@ -438,17 +769,46 @@ export function rules08(r: ParseResult, opts: Rules08Options = {}): Diagnostic[]
       }
     }
 
-    // 5d. 유령 수치·단위·부호·비교어·식별자 대조(W43) — 외부 근거(evd·ref)만 단독 인용하고 원문이 있을 때만
+    // 5d. 유령 수치·단위·부호·비교어·식별자 대조(W43) — 복합 근거(otherGrounds > 0) 시에도 선행 절·calcN으로 입증되지 않은 수치는 원문 대조 수행
     const extRefs = (c.because ?? []).filter((b): b is Extract<typeof b, { ext: 'evd' | 'ref' }> => 'ext' in b);
-    const otherGrounds =
-      (c.because ?? []).filter((b) => !('ext' in b)).length + (c.place?.rel === '↓' ? 1 : 0);
-    if (extRefs.length > 0 && otherGrounds === 0 && extRefs.every((b) => extTextMap.has(`${b.ext}:${b.id}`))) {
-      const blobs: string[] = [];
+    const nonExtBecause = (c.because ?? []).filter((b) => !('ext' in b));
+    const otherGrounds = nonExtBecause.length + (c.place?.rel === '↓' ? 1 : 0);
+
+    const hasOpaqueGround = nonExtBecause.some(
+      (b) =>
+        'ctx' in b ||
+        'url' in b ||
+        'agent' in b ||
+        'thread' in b ||
+        'quiz' in b ||
+        'reserved' in b ||
+        ('label' in b && (b.msg !== null || b.thread !== undefined)),
+    ) || extRefs.some((b) => !extTextMap.has(`${b.ext}:${b.id}`));
+
+    const provenNums: number[] = [...evaluatedCalcValues];
+    const provenBlobs: string[] = [];
+    for (const g of grounds) {
+      if (g.msg !== null || g.thread !== undefined) continue;
+      const gNum = g.label.replace(/^[절점]/u, '');
+      const t = nums.get(gNum);
+      if (t && t !== c) {
+        const pb = clauseProvenBlob(t);
+        provenNums.push(...pb.nums);
+        if (pb.blob) provenBlobs.push(pb.blob);
+      }
+    }
+    if (c.process?.kind === 'fix' && c.process.target && c.process.target.msg === null && c.process.target.thread === undefined) {
+      // fix→ 대상 자체 수치가 아닌 다른 근거만 포함(개정 절 본문에는 새 수치를 적음)
+    }
+
+    let w43Fired = false;
+    const citedEvdBlobs: string[] = [];
+    if (extRefs.length > 0 && extRefs.every((b) => extTextMap.has(`${b.ext}:${b.id}`))) {
       let sliceOutOfRange: string | null = null;
       for (const b of extRefs) {
         const blocks = extTextMap.get(`${b.ext}:${b.id}`) ?? [];
         if (!b.lines) {
-          blobs.push(...blocks);
+          citedEvdBlobs.push(...blocks);
           continue;
         }
         const [startLine, endLine] = b.lines;
@@ -469,14 +829,166 @@ export function rules08(r: ParseResult, opts: Rules08Options = {}): Diagnostic[]
           sliceOutOfRange = `외부 근거 ${b.ext}${b.id}의 줄 범위 ${tagRange}가 원문 줄 수(${maxLines})를 벗어난다(인용한 외부 근거와 대조 필요)`;
           break;
         }
-        blobs.push(...matchedSlices);
+        citedEvdBlobs.push(...matchedSlices);
       }
       if (sliceOutOfRange) {
+        w43Fired = true;
         push('W43', sliceOutOfRange);
       } else {
-        const evdBlob = blobs.join('\n');
-        const w43Reason = checkGhostW43(c.words.map((wd) => wd.text).join(' '), evdBlob);
-        if (w43Reason) push('W43', `${w43Reason}(인용한 외부 근거와 대조 필요)`);
+        const evdBlob = citedEvdBlobs.join('\n');
+        const provenCtx: ProvenGroundContext | undefined =
+          otherGrounds > 0
+            ? { nums: provenNums, blob: provenBlobs.join('\n'), hasOpaqueGround }
+            : undefined;
+        const w43Reason = checkGhostW43(c.words.map((wd) => wd.text).join(' '), evdBlob, provenCtx);
+        if (w43Reason) {
+          w43Fired = true;
+          push('W43', `${w43Reason}(인용한 외부 근거와 대조 필요)`);
+        }
+      }
+    }
+
+    // 5e. W50: lon 0.8.5 delta 파생 수식 누락 및 [see|rec,say] · [inf,lim,say] 수치 단언 우회 차단
+    const isDelta085 = isLon085Clause && !isSnapshot && (opts.mode === 'delta' || r.message.head?.mode === 'delta');
+    const hasAnyCalcRef = cCalcs.length > 0 || (c.because ?? []).some((b) => 'calc' in b);
+    if (isDelta085 && c.marks.act === 'say' && c.process?.kind !== 'err' && !hasAnyCalcRef && !hasOppose) {
+      const bodyJoined = c.words.map((wd) => wd.text).join(' ');
+      if (c.marks.ev === 'inf' && (!c.marks.fig || c.marks.fig === 'lim')) {
+        if ((!c.marks.fig && bodyJoined.includes('=')) || cExtractedNums.length > 0) {
+          push('W50', 'lon 0.8.5 delta에서 수치를 단언하는 추론([inf,say]·[inf,lim,say]) 절에 파생 수식 블록(calcN <[...]>)이 빠졌다');
+        }
+      } else if ((c.marks.ev === 'see' || c.marks.ev === 'rec') && cExtractedNums.length > 0 && !hasOpaqueGround) {
+        const evdCombined = citedEvdBlobs.join('\n');
+        const evdExtracted = evdCombined ? extractNumbersFromText(evdCombined) : [];
+        const allVerbatimOrProven = cExtractedNums.every((num) => {
+          const absStr = String(Math.abs(num));
+          const pat = numberPatternOf(absStr);
+          if (evdCombined && pat.test(evdCombined)) return true;
+          if (evdExtracted.some((v) => numbersMatch(v, num))) return true;
+          if (provenNums.some((v) => numbersMatch(v, num))) return true;
+          if (provenBlobs.some((b) => pat.test(b))) return true;
+          return false;
+        });
+        if (!allVerbatimOrProven) {
+          push(
+            'W50',
+            `lon 0.8.5 delta에서 인용 원문·선행 절에 없는 수치를 [${c.marks.ev},say]로 단언했다(파생 계산이면 [inf,say]와 calcN <[...]>을 쓴다)`,
+          );
+        }
+      }
+    }
+
+    // 5f. W52 (provenance): 비활성(대체·철회) 절 대상 fix→ 및 미해결 맞섬(↔) 절 무유보 직접 인용
+    if (is085Spec) {
+      const curState = nodeStateByNum.get(cNum);
+      const fixInfo = curState?.fixTargetAtWrite;
+      if (fixInfo && c.process?.kind === 'fix') {
+        if (fixInfo.status === 'retracted') {
+          push('W52', `이미 err→로 철회된 절(${fixInfo.targetNum})을 fix→${fixInfo.targetNum}로 수정할 수 없다`);
+        } else if (fixInfo.status === 'superseded') {
+          push(
+            'W52',
+            `이미 대체된 비활성 절(${fixInfo.targetNum})을 fix→${fixInfo.targetNum}로 가리켰다(최신 활성 절은 ${fixInfo.latestActive}이며 호스트 별칭으로 이어 붙인다)`,
+          );
+        }
+      }
+      if (isLon085Clause && c.marks.fig !== 'lim' && c.process?.kind !== 'err' && c.marks.act !== 'ack' && !hasOppose && !hasAskBack) {
+        const w52ConflictSeen = new Set<string>();
+        for (const g of grounds) {
+          if (g.msg !== null || g.thread !== undefined) continue;
+          const gNum = g.label.replace(/^[절점]/u, '');
+          if (gNum && gNum !== cNum && !w52ConflictSeen.has(gNum) && isInUnresolvedConflictAt(gNum, absIdx)) {
+            w52ConflictSeen.add(gNum);
+            push('W52', `미해결 맞섬(↔) 상태인 절(${gNum})을 한계 유보(lim) 없이 직접 근거(↓${gNum})로 단언했다`);
+          }
+        }
+      }
+    }
+
+    // 5g. W54 (content): 상위 [if|gut|lim]·미측정(*?)·저신뢰 절 무증거 고확신 세탁(합모 세탁) 차단
+    if (
+      isLon085Clause &&
+      c.marks.act === 'say' &&
+      (c.marks.ev === 'see' || c.marks.ev === 'rec' || c.marks.ev === 'inf') &&
+      c.marks.fig !== 'lim' &&
+      c.process?.kind !== 'err' &&
+      !hasOppose &&
+      !hasAskBack &&
+      effConf !== undefined
+    ) {
+      const upstreamNums = new Set<string>();
+      for (const g of grounds) {
+        if (g.msg !== null || g.thread !== undefined) continue;
+        const gNum = g.label.replace(/^[절점]/u, '');
+        if (gNum && gNum !== cNum && !w44Seen.has(gNum)) upstreamNums.add(gNum);
+      }
+      if (upstreamNums.size > 0) {
+        const latticeOfUpstream = (uNum: string): { clause: Clause; lat: LedgerEpistemicLattice; unmeasured: boolean; extKeys: Set<string> } | null => {
+          const uClause = nums.get(uNum);
+          if (!uClause || uClause === c) return null;
+          const uNode = nodeStateByNum.get(uNum);
+          const retracted = Boolean(
+            (uNode?.retractedAt !== undefined && uNode.retractedAt < absIdx) ||
+              opts.ledger?.getClause(uNum)?.retractedBy,
+          );
+          const inConflict = isInUnresolvedConflictAt(uNum, absIdx);
+          const extKeys = new Set<string>();
+          for (const ev of uClause.evidences ?? []) extKeys.add(`${ev.kind}:${ev.id}`);
+          for (const b of uClause.because ?? []) {
+            if ('ext' in b && allExt.has(`${b.ext}:${b.id}`)) extKeys.add(`${b.ext}:${b.id}`);
+          }
+          const ledgerLat = opts.ledger?.getClause(uNum)?.epistemic;
+          const calcAnc = Boolean(ledgerLat?.calcAnc || findCalcOfClause(uClause));
+          const lat = computeClauseLattice(uClause, {
+            retracted,
+            inOpenConflict: inConflict,
+            hasCleanExt: extKeys.size > 0,
+            calcAnc,
+          });
+          return { clause: uClause, lat, unmeasured: Boolean(uClause.muk?.unmeasured), extKeys };
+        };
+
+        const upInfos = [...upstreamNums].map(latticeOfUpstream).filter((x): x is NonNullable<typeof x> => x !== null);
+        const laundered = upInfos.filter(({ lat, unmeasured }) => {
+          const minTrust = Math.min(lat.m, lat.c);
+          const isWeak = lat.tau <= 1 || unmeasured || minTrust <= 4;
+          const inflates = effConf >= 8 || effConf >= minTrust + 2;
+          return isWeak && inflates;
+        });
+
+        if (laundered.length > 0) {
+          const ownExtKeys = new Set<string>();
+          for (const ev of c.evidences ?? []) ownExtKeys.add(`${ev.kind}:${ev.id}`);
+          for (const b of extRefs) {
+            if (extTextMap.has(`${b.ext}:${b.id}`) || allExt.has(`${b.ext}:${b.id}`)) {
+              ownExtKeys.add(`${b.ext}:${b.id}`);
+            }
+          }
+          const hasNewCleanEvd =
+            !w43Fired &&
+            ownExtKeys.size > 0 &&
+            (Boolean(c.evidences && c.evidences.length > 0) ||
+              [...ownExtKeys].some((ek) => !laundered.every((u) => u.extKeys.has(ek))));
+
+          // calcN 증인은 참조된 모든 상위 절(↓ 및 @)의 tau_up >= 2일 때만 고확신 승격을 허용한다
+          const allCalcRefNums = new Set<string>([...upstreamNums, ...calcInputClauseNums]);
+          const allTauGe2 =
+            allCalcRefNums.size > 0 &&
+            [...allCalcRefNums].every((refNum) => {
+              const info = latticeOfUpstream(refNum);
+              return info !== null && info.lat.tau >= 2;
+            });
+          const hasValidCalcWitness = hasVerifiedCalc && allTauGe2;
+
+          if (!hasNewCleanEvd && !hasValidCalcWitness) {
+            const firstWeak = laundered[0];
+            const weakNum = (firstWeak.clause.label ?? '').replace(/^[절점]/u, '') || '?';
+            push(
+              'W54',
+              `상위 절(${weakNum}, tau=${firstWeak.lat.tau}, min=${Math.min(firstWeak.lat.m, firstWeak.lat.c)})을 새 외부 원문 근거(<[...]>)나 검증된 calcN 없이 고확신(:${effConf}) 단언으로 격상했다`,
+            );
+          }
+        }
       }
     }
 

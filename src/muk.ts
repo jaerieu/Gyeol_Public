@@ -107,8 +107,22 @@ export const MUK = {
   low: 65,
   /** 상대 점수의 평균을 낼 다른 모델의 가장 적은 수(v4). 모자라면 그 답은 상대 몫 없이 옛 점수만 줄인다 */
   minPeers: 3,
-  /** v5 신빙성: 치지 않는 반 칸, 채 없는 답의 차, 차 1당 깎는 바탕, 답이 적을 때 보통(4) 쪽으로 당기는 답 수, v0.8.5 비대칭 감쇠(alphaUnder·adaptK) */
-  trust: { tol: 0.05, miss: 0.3, slope: 25, evidence: 6, alphaOver: 1.0, alphaUnder: 0.18, adaptK: 20 },
+  /** v5 신빙성: 치지 않는 반 칸, 채 없는 답의 차, 차 1당 깎는 바탕, 답이 적을 때 당기는 답 수, v0.8.5 비대칭 감쇠·CUSUM·플러시 상수 */
+  trust: {
+    tol: 0.05,
+    miss: 0.3,
+    slope: 25,
+    evidence: 6,
+    alphaOver: 1.0,
+    alphaUnder: 0.18,
+    adaptK: 20,
+    deltaFloor: -0.0025,
+    cusumSlack: 0.25,
+    cusumThreshold: 4.2,
+    cusumFloor: 0.12,
+    cusumEvBeta: 0.12,
+    flushEps: 1e-15,
+  },
   /** v5 능력(먹 밖): 상대 맞음 몫의 끝. 다른 모델보다 답마다 0.5 더 맞히면(0.5 × 60/ln2 ≈ 43) 9 */
   ability: { full: 43, low: 43 },
   /** 옛 셈(v3)의 끝: +108(확신 9로 늘 맞히는 참가자의 고른 점수, 답마다 1.2475 × 60/ln2)이면 바탕 9, −40이면 0 */
@@ -373,11 +387,16 @@ export function quizAnchor(folds: Fold[], v: 3 | 4 = 4) {
  * 돌려주는 것: gap(차, 답이 없으면 null), n(줄여 쌓은 답 수), base(바탕점).
  */
 export interface CredibilityOptions {
-  /** '0.8.5' (기본): Kish n_eff + 비대칭 과신 벌점 + status 분리. 5 | 6: v5/v6 수식 호환 */
+  /** '0.8.5' (기본): Kish n_eff + 비대칭 과신 벌점 + Page CUSUM + status 분리. 5 | 6: v5·v6 수식 호환 */
   v?: 5 | 6 | '0.8.5';
   alphaUnder?: number;
   alphaOver?: number;
   adaptK?: number;
+  cusumSlack?: number;
+  cusumThreshold?: number;
+  cusumFloor?: number;
+  cusumEvBeta?: number;
+  flushEps?: number;
 }
 
 export function mukStatusOf(rawAll: number): MukStatus {
@@ -386,11 +405,563 @@ export function mukStatusOf(rawAll: number): MukStatus {
   return 'calibrated';
 }
 
+const binaryEntropy = (p: number) => -(p * Math.log(p) + (1 - p) * Math.log(1 - p));
+
+const STREAM_BYTE_LENGTH = 320;
+const STREAM_F64_LEN = 36; // 36 * 8 = 288 B
+const STREAM_U32_OFFSET = 288;
+const STREAM_U32_LEN = 8; // 8 * 4 = 32 B -> 합계 320 B
+
+// Float64Array 슬롯 인덱스 (0부터 19까지는 5개 확신 칸 × [W, W2, P, H])
+const F_MISS_W = 20;
+const F_MISS_W2 = 21;
+const F_PEN_N = 22;
+const F_CUSUM = 23;
+const F_CUSUM_ATTEN = 24;
+const F_MID = 25;
+const F_REL_SCORE = 26;
+const F_AB_SCORE = 27;
+const F_WN = 28;
+const F_WSB = 29;
+const F_WALL = 30;
+const F_WHIT = 31;
+const F_REQ_WEIGHT = 32;
+const F_LAST_REQ_MS = 33;
+const F_HIGH_SINCE_MS = 34;
+const F_LAST_TEN_WEEK = 35;
+
+// Uint32Array 슬롯 인덱스 (0부터 4까지는 5개 확신 칸의 rawCount)
+const U_MISS_RAW = 5;
+const U_RHN_TOTAL = 6;
+const U_META_COUNTS = 7; // 상위 16비트 tenWeeks, 하위 16비트 reqCount
+
+/**
+ * O(1) 스트리밍 먹 상태 기계 (고정 320 B ArrayBuffer, 원시 응답 배열 미보관).
+ */
+export interface MukStreamState {
+  readonly byteLength: 320;
+  readonly buf: ArrayBuffer;
+  readonly f64: Float64Array;
+  readonly u32: Uint32Array;
+}
+
+export interface MukStreamOptions extends CredibilityOptions {
+  mid?: number;
+  now?: string | number;
+  highSince?: string | null;
+}
+
+export type MukStreamObservation =
+  | (AnswerRow & { at?: string | number; skip?: number; dormantSteps?: number; requestAt?: string | number })
+  | (Fold & { dormantSteps?: number; requestAt?: string | number })
+  | (QuizSummary & { at?: string | number; dormantSteps?: number; requestAt?: string | number })
+  | { dormantSteps?: number; skip?: number; requestAt?: string | number; at?: string | number };
+
+export interface MukStreamSnapshot {
+  v: '0.8.5';
+  status: MukStatus;
+  grade: number;
+  point: number;
+  base: number;
+  gap: number | null;
+  n: number;
+  neff: number;
+  highNeff: number;
+  cusum: number;
+  rawAll: number;
+  shown: boolean;
+  acc: number | null;
+  brier: number | null;
+  skill: number | null;
+  ability: { grade: number; score: number; n: number } | null;
+  req_bonus: number;
+  ten_bonus: number;
+}
+
+export function createMukStream(opts: MukStreamOptions = {}): MukStreamState {
+  const buf = new ArrayBuffer(STREAM_BYTE_LENGTH);
+  const f64 = new Float64Array(buf, 0, STREAM_F64_LEN);
+  const u32 = new Uint32Array(buf, STREAM_U32_OFFSET, STREAM_U32_LEN);
+  f64[F_CUSUM_ATTEN] = 1;
+  f64[F_MID] = finiteNum(opts.mid) ?? MUK.mid;
+  f64[F_LAST_REQ_MS] = Number.NaN;
+  f64[F_HIGH_SINCE_MS] = opts.highSince ? Date.parse(opts.highSince) : Number.NaN;
+  f64[F_LAST_TEN_WEEK] = -1;
+  return { byteLength: STREAM_BYTE_LENGTH, buf, f64, u32 };
+}
+
+function resolveCusumTargetAtten(cusum: number, threshold: number, floor: number): number {
+  if (!(cusum > threshold)) return 1;
+  return Math.max(floor, Math.exp(-(cusum - threshold)));
+}
+
+function decayStreamBuckets(f64: Float64Array, u32: Uint32Array, stepAnswers: number, flushEps: number): void {
+  if (!(stepAnswers > 0)) return;
+  const d = decayOf(stepAnswers);
+  const d2 = d * d;
+  for (let b = 0; b < 5; b++) {
+    const off = b * 4;
+    const nw = f64[off] * d;
+    if (nw < flushEps) {
+      f64[off] = 0;
+      f64[off + 1] = 0;
+      f64[off + 2] = 0;
+      f64[off + 3] = 0;
+      u32[b] = 0;
+    } else {
+      f64[off] = nw;
+      f64[off + 1] *= d2;
+      f64[off + 2] *= d;
+      f64[off + 3] *= d;
+    }
+  }
+  const nm = f64[F_MISS_W] * d;
+  if (nm < flushEps) {
+    f64[F_MISS_W] = 0;
+    f64[F_MISS_W2] = 0;
+    u32[U_MISS_RAW] = 0;
+  } else {
+    f64[F_MISS_W] = nm;
+    f64[F_MISS_W2] *= d2;
+  }
+  const np = f64[F_PEN_N] * d;
+  f64[F_PEN_N] = np < flushEps ? 0 : np;
+  const nc = f64[F_CUSUM] * d;
+  f64[F_CUSUM] = nc < flushEps ? 0 : nc;
+}
+
+function applyCusumAttenuation(
+  f64: Float64Array,
+  u32: Uint32Array,
+  deltaC: number,
+  threshold: number,
+  floor: number,
+  flushEps: number,
+): void {
+  f64[F_CUSUM] = Math.max(0, f64[F_CUSUM] + deltaC);
+  const tgt = resolveCusumTargetAtten(f64[F_CUSUM], threshold, floor);
+  const prevAtten = f64[F_CUSUM_ATTEN] > 0 ? f64[F_CUSUM_ATTEN] : 1;
+  if (tgt < prevAtten) {
+    const scale = tgt / prevAtten;
+    const scale2 = scale * scale;
+    for (let b = 0; b < 5; b++) {
+      const off = b * 4;
+      const nw = f64[off] * scale;
+      if (nw < flushEps) {
+        f64[off] = 0;
+        f64[off + 1] = 0;
+        f64[off + 2] = 0;
+        f64[off + 3] = 0;
+        u32[b] = 0;
+      } else {
+        f64[off] = nw;
+        f64[off + 1] *= scale2;
+        f64[off + 2] *= scale;
+        f64[off + 3] *= scale;
+      }
+    }
+    const nm = f64[F_MISS_W] * scale;
+    if (nm < flushEps) {
+      f64[F_MISS_W] = 0;
+      f64[F_MISS_W2] = 0;
+      u32[U_MISS_RAW] = 0;
+    } else {
+      f64[F_MISS_W] = nm;
+      f64[F_MISS_W2] *= scale2;
+    }
+    f64[F_CUSUM_ATTEN] = tgt;
+  } else if (tgt > prevAtten) {
+    f64[F_CUSUM_ATTEN] = tgt;
+  }
+}
+
+function finalizeDormantIfZero(f64: Float64Array, u32: Uint32Array, threshold: number, floor: number): void {
+  const sumW = f64[0] + f64[4] + f64[8] + f64[12] + f64[16] + f64[F_MISS_W];
+  if (!(sumW > 0)) {
+    f64[F_PEN_N] = 0;
+    f64[F_CUSUM] = 0;
+    f64[F_CUSUM_ATTEN] = 1;
+    for (let b = 0; b < 5; b++) u32[b] = 0;
+    u32[U_MISS_RAW] = 0;
+  } else {
+    const tgt = resolveCusumTargetAtten(f64[F_CUSUM], threshold, floor);
+    if (tgt > f64[F_CUSUM_ATTEN]) f64[F_CUSUM_ATTEN] = tgt;
+  }
+}
+
+function stepStreamQuizSummary(
+  state: MukStreamState,
+  s: QuizSummary,
+  dormantSteps: number,
+  opts: CredibilityOptions,
+): void {
+  const { f64, u32 } = state;
+  const slack = opts.cusumSlack ?? MUK.trust.cusumSlack;
+  const threshold = opts.cusumThreshold ?? MUK.trust.cusumThreshold;
+  const floor = Math.max(0.1, opts.cusumFloor ?? MUK.trust.cusumFloor);
+  const flushEps = opts.flushEps ?? MUK.trust.flushEps;
+
+  // skip(미채점·잘림)은 신빙성 반감기를 진행시키지 않아 과신 오답 세탁을 원천 차단한다
+  const all = Math.max(0, s.all ?? (s.n ?? 0) + (s.miss ?? 0));
+  const stepAnswers = all + Math.max(0, dormantSteps);
+  decayStreamBuckets(f64, u32, stepAnswers, flushEps);
+
+  const calDecaySteps = all + Math.max(0, s.skip ?? 0) + Math.max(0, dormantSteps);
+  if (calDecaySteps > 0) {
+    const dc = decayOf(calDecaySteps);
+    const wc = decayOf(calDecaySteps / 2);
+    f64[F_REL_SCORE] = Math.max(-MUK.low, Math.min(MUK.full, f64[F_REL_SCORE] * dc + (s.rel ?? 0) * wc));
+    f64[F_AB_SCORE] = Math.max(-MUK.ability.low, Math.min(MUK.ability.full, f64[F_AB_SCORE] * dc + (s.rh ?? 0) * wc));
+    f64[F_WN] = f64[F_WN] * dc + (s.n ?? 0);
+    f64[F_WSB] = f64[F_WSB] * dc + (s.sb ?? 0);
+    f64[F_WALL] = f64[F_WALL] * dc + all;
+    f64[F_WHIT] = f64[F_WHIT] * dc + (s.right ?? 0) + (s.mr ?? 0);
+    if (s.rhn) u32[U_RHN_TOTAL] = Math.min(0xffff_ffff, u32[U_RHN_TOTAL] + s.rhn);
+  }
+
+  if (!(all > 0)) {
+    finalizeDormantIfZero(f64, u32, threshold, floor);
+    return;
+  }
+
+  let deltaC = 0;
+  const by = s.by ?? [];
+  for (let conf = 0; conf < by.length; conf++) {
+    const pair = by[conf];
+    if (!pair || !pair[0]) continue;
+    const n = pair[0];
+    const right = pair[1];
+    const pMean =
+      s.ps && Number.isFinite(s.ps[conf])
+        ? Math.max(0.05, Math.min(0.95, s.ps[conf] / n))
+        : probOf(conf);
+    if (pMean > 0.5) {
+      const wrong = n - right;
+      const lossSum = right * -Math.log(pMean) + wrong * -Math.log(1 - pMean);
+      deltaC += lossSum - n * (binaryEntropy(pMean) + slack);
+    } else {
+      deltaC -= (n - right) * slack;
+    }
+  }
+  applyCusumAttenuation(f64, u32, deltaC, threshold, floor, flushEps);
+
+  const w = decayOf(all / 2);
+  const w2 = w * w;
+  f64[F_PEN_N] += w * all;
+  for (let conf = 0; conf < by.length; conf++) {
+    const pair = by[conf];
+    if (!pair || !pair[0]) continue;
+    const n = pair[0];
+    const right = pair[1];
+    const bIdx = confBucket(conf);
+    const off = bIdx * 4;
+    const pSum = s.ps && Number.isFinite(s.ps[conf]) ? s.ps[conf] : n * probOf(conf);
+    f64[off] += w * n;
+    f64[off + 1] += w2 * n;
+    f64[off + 2] += w * pSum;
+    f64[off + 3] += w * right;
+    u32[bIdx] = Math.min(0xffff_ffff, u32[bIdx] + n);
+  }
+  const m = s.miss ?? 0;
+  if (m > 0) {
+    f64[F_MISS_W] += w * m;
+    f64[F_MISS_W2] += w2 * m;
+    u32[U_MISS_RAW] = Math.min(0xffff_ffff, u32[U_MISS_RAW] + m);
+  }
+}
+
+function stepStreamSingleRow(
+  state: MukStreamState,
+  row: AnswerRow & { skip?: number; dormantSteps?: number },
+  opts: CredibilityOptions,
+): void {
+  const { f64, u32 } = state;
+  const slack = opts.cusumSlack ?? MUK.trust.cusumSlack;
+  const threshold = opts.cusumThreshold ?? MUK.trust.cusumThreshold;
+  const floor = Math.max(0.1, opts.cusumFloor ?? MUK.trust.cusumFloor);
+  const flushEps = opts.flushEps ?? MUK.trust.flushEps;
+
+  const dormantSteps = Math.max(0, finiteNum(row.dormantSteps) ?? 0);
+  decayStreamBuckets(f64, u32, 1 + dormantSteps, flushEps);
+
+  const ok = Boolean(Number(row.ok));
+  const expC = finiteNum(row.expectedConf);
+  const intC = row.conf == null ? null : finiteNum(row.conf);
+  let effConf: number | null = null;
+  let bucketConf = -1;
+  let continuous = false;
+  if (expC != null) {
+    effConf = Math.max(0, Math.min(9, expC));
+    bucketConf = Math.max(0, Math.min(9, Math.round(effConf)));
+    if (!Number.isInteger(effConf)) continuous = true;
+  } else if (isConf(intC)) {
+    effConf = intC;
+    bucketConf = intC;
+  }
+
+  const calDecaySteps = 1 + Math.max(0, finiteNum(row.skip) ?? 0) + dormantSteps;
+  const dc = decayOf(calDecaySteps);
+  const wc = decayOf(calDecaySteps / 2);
+  const relVal = typeof row.rel === 'number' && Number.isFinite(row.rel) ? round(row.rel, 6) : 0;
+  const rhVal = typeof row.rh === 'number' && Number.isFinite(row.rh) ? round(row.rh, 6) : 0;
+  f64[F_REL_SCORE] = Math.max(-MUK.low, Math.min(MUK.full, f64[F_REL_SCORE] * dc + relVal * wc));
+  f64[F_AB_SCORE] = Math.max(-MUK.ability.low, Math.min(MUK.ability.full, f64[F_AB_SCORE] * dc + rhVal * wc));
+  if (typeof row.rh === 'number' && Number.isFinite(row.rh)) {
+    u32[U_RHN_TOTAL] = Math.min(0xffff_ffff, u32[U_RHN_TOTAL] + 1);
+  }
+  f64[F_WALL] = f64[F_WALL] * dc + 1;
+  f64[F_WHIT] = f64[F_WHIT] * dc + (ok ? 1 : 0);
+
+  let deltaC = 0;
+  let pVal = 0.5;
+  if (effConf != null) {
+    pVal = continuous ? round(probOf(effConf), 6) : probOf(bucketConf);
+    const pClamped = Math.max(0.05, Math.min(0.95, pVal));
+    if (pClamped > 0.5) {
+      const loss = ok ? -Math.log(pClamped) : -Math.log(1 - pClamped);
+      deltaC = loss - (binaryEntropy(pClamped) + slack);
+    } else if (!ok) {
+      deltaC = -slack;
+    }
+    f64[F_WN] = f64[F_WN] * dc + 1;
+    f64[F_WSB] = f64[F_WSB] * dc + round(brierOf(effConf, ok), 6);
+  }
+  applyCusumAttenuation(f64, u32, deltaC, threshold, floor, flushEps);
+
+  const w = decayOf(0.5);
+  const w2 = w * w;
+  f64[F_PEN_N] += w;
+  if (effConf == null) {
+    f64[F_MISS_W] += w;
+    f64[F_MISS_W2] += w2;
+    u32[U_MISS_RAW] = Math.min(0xffff_ffff, u32[U_MISS_RAW] + 1);
+  } else {
+    const bIdx = confBucket(bucketConf);
+    const off = bIdx * 4;
+    f64[off] += w;
+    f64[off + 1] += w2;
+    f64[off + 2] += w * pVal;
+    if (ok) f64[off + 3] += w;
+    u32[bIdx] = Math.min(0xffff_ffff, u32[bIdx] + 1);
+  }
+}
+
+function evalStreamTrust(state: MukStreamState, opts: CredibilityOptions = {}) {
+  const { f64, u32 } = state;
+  const mid = f64[F_MID];
+  const sumW = f64[0] + f64[4] + f64[8] + f64[12] + f64[16] + f64[F_MISS_W];
+  const sumW2 = f64[1] + f64[5] + f64[9] + f64[13] + f64[17] + f64[F_MISS_W2];
+  const rawAll = u32[0] + u32[1] + u32[2] + u32[3] + u32[4] + u32[U_MISS_RAW];
+  if (!(sumW > 0 && sumW2 > 0)) {
+    return {
+      gap: null as number | null,
+      n: 0,
+      neff: 0,
+      highNeff: 0,
+      cusum: 0,
+      rawAll: 0,
+      status: 'unmeasured' as MukStatus,
+      base: mid,
+    };
+  }
+  const globalNeff = (sumW * sumW) / sumW2;
+  const status: MukStatus = globalNeff + 1e-9 >= MUK.showN ? 'calibrated' : 'provisional';
+  const highW = f64[12] + f64[16];
+  const highW2 = f64[13] + f64[17];
+  const highNeff = highW > 0 && highW2 > 0 ? (highW * highW) / highW2 : 0;
+
+  const { tol, slope, evidence, alphaOver, alphaUnder, adaptK, deltaFloor } = MUK.trust;
+  const aOver = opts.alphaOver ?? alphaOver;
+  const aUnderFloor = opts.alphaUnder ?? alphaUnder;
+  const kAdapt = opts.adaptK ?? adaptK;
+  const evBeta = opts.cusumEvBeta ?? MUK.trust.cusumEvBeta;
+
+  let err = f64[F_MISS_W] * MUK.trust.miss ** 2;
+  for (let b = 0; b < 5; b++) {
+    const off = b * 4;
+    const n = f64[off];
+    const w2 = f64[off + 1];
+    if (!(n > 0 && w2 > 0)) continue;
+    const neff = Math.max(1, (n * n) / w2);
+    const p = f64[off + 2] / n;
+    const rate = f64[off + 3] / n;
+    const diff = p - rate;
+    // neff = 1부터 무한대까지 C^0 연속 분산 차감 (사전 분산과 경험적 표본 분산의 선형 블렌딩)
+    const varTerm =
+      neff >= 2
+        ? (rate * (1 - rate)) / (neff - 1)
+        : (2 - neff) * ((p * (1 - p)) / neff) + (neff - 1) * (rate * (1 - rate));
+    const boundedDelta = Math.max(deltaFloor, diff * diff - varTerm);
+    const aU = kAdapt > 0 ? 1 - (1 - aUnderFloor) * (neff / (neff + kAdapt)) : aUnderFloor;
+    const alpha = boundedDelta < 0 || diff < 0 ? aU : aOver;
+    err += n * alpha * boundedDelta;
+  }
+
+  const gap = Math.max(0, Math.sqrt(Math.max(0, err) / sumW) - tol);
+  const raw = Math.max(0, Math.min(9, 9 - slope * gap));
+  const cusum = f64[F_CUSUM];
+  const effN =
+    raw < mid
+      ? Math.max(sumW, f64[F_PEN_N])
+      : cusum > 0
+        ? sumW / (1 + evBeta * cusum)
+        : sumW;
+  const base = mid + ((raw - mid) * effN) / (effN + evidence);
+  return {
+    gap,
+    n: sumW,
+    neff: round(globalNeff, 2),
+    highNeff: round(highNeff, 2),
+    cusum: round(cusum, 4),
+    rawAll,
+    status,
+    base,
+  };
+}
+
+export function updateMukStream(
+  state: MukStreamState,
+  observation: MukStreamObservation,
+  opts: MukStreamOptions = {},
+): MukStreamState {
+  const { f64, u32 } = state;
+  if (opts.mid != null && finiteNum(opts.mid) != null) {
+    f64[F_MID] = Number(opts.mid);
+  }
+  const obsObj = observation as Record<string, unknown>;
+  const atRaw = obsObj.at ?? opts.now;
+  const atMs = atRaw != null ? msOf(atRaw as string | number) : Number.NaN;
+  const reqRaw = obsObj.requestAt;
+  if (reqRaw != null) {
+    const reqMs = msOf(reqRaw as string | number);
+    if (Number.isFinite(reqMs)) {
+      const prevReq = f64[F_LAST_REQ_MS];
+      f64[F_REQ_WEIGHT] = Number.isFinite(prevReq)
+        ? f64[F_REQ_WEIGHT] * weightOf(Math.max(0, reqMs - prevReq)) + 1
+        : 1;
+      f64[F_LAST_REQ_MS] = reqMs;
+      const meta = u32[U_META_COUNTS];
+      const tenW = meta >>> 16;
+      const reqC = Math.min(0xffff, (meta & 0xffff) + 1);
+      u32[U_META_COUNTS] = (tenW << 16) | reqC;
+    }
+  }
+
+  const dormantSteps = Math.max(0, finiteNum(obsObj.dormantSteps) ?? 0);
+  let hadGraded = false;
+
+  if ('s' in obsObj && obsObj.s && typeof obsObj.s === 'object') {
+    const foldS = obsObj.s as QuizSummary;
+    const all = foldS.all ?? (foldS.n ?? 0) + (foldS.miss ?? 0);
+    hadGraded = all > 0;
+    stepStreamQuizSummary(state, foldS, dormantSteps, opts);
+  } else if ('by' in obsObj && Array.isArray(obsObj.by)) {
+    const qs = observation as QuizSummary;
+    const all = qs.all ?? (qs.n ?? 0) + (qs.miss ?? 0);
+    hadGraded = all > 0;
+    stepStreamQuizSummary(state, qs, dormantSteps, opts);
+  } else if ('ok' in obsObj && obsObj.ok !== undefined) {
+    hadGraded = true;
+    stepStreamSingleRow(state, observation as AnswerRow & { skip?: number; dormantSteps?: number }, opts);
+  } else if (dormantSteps > 0) {
+    const threshold = opts.cusumThreshold ?? MUK.trust.cusumThreshold;
+    const floor = Math.max(0.1, opts.cusumFloor ?? MUK.trust.cusumFloor);
+    const flushEps = opts.flushEps ?? MUK.trust.flushEps;
+    decayStreamBuckets(f64, u32, dormantSteps, flushEps);
+    const dc = decayOf(dormantSteps);
+    f64[F_REL_SCORE] *= dc;
+    f64[F_AB_SCORE] *= dc;
+    f64[F_WN] *= dc;
+    f64[F_WSB] *= dc;
+    f64[F_WALL] *= dc;
+    f64[F_WHIT] *= dc;
+    finalizeDormantIfZero(f64, u32, threshold, floor);
+  }
+
+  if (hadGraded) {
+    const trust = evalStreamTrust(state, opts);
+    const baseG = gradeOf(trust.base);
+    if (baseG >= MUK.high) {
+      if (!Number.isFinite(f64[F_HIGH_SINCE_MS]) && Number.isFinite(atMs)) {
+        f64[F_HIGH_SINCE_MS] = atMs;
+        f64[F_LAST_TEN_WEEK] = 0;
+      } else if (Number.isFinite(f64[F_HIGH_SINCE_MS]) && Number.isFinite(atMs)) {
+        const weekK = Math.floor((atMs - f64[F_HIGH_SINCE_MS]) / (7 * DAY));
+        if (weekK >= 1 && weekK > f64[F_LAST_TEN_WEEK]) {
+          f64[F_LAST_TEN_WEEK] = weekK;
+          const meta = u32[U_META_COUNTS];
+          const tenW = Math.min(0xffff, (meta >>> 16) + 1);
+          u32[U_META_COUNTS] = (tenW << 16) | (meta & 0xffff);
+        }
+      }
+    } else {
+      f64[F_HIGH_SINCE_MS] = Number.NaN;
+      f64[F_LAST_TEN_WEEK] = -1;
+      u32[U_META_COUNTS] = u32[U_META_COUNTS] & 0xffff;
+    }
+  }
+
+  return state;
+}
+
+export function snapshotMukStream(state: MukStreamState, opts: MukStreamOptions = {}): MukStreamSnapshot {
+  const { f64, u32 } = state;
+  const trust = evalStreamTrust(state, opts);
+  const nowMs = opts.now != null ? msOf(opts.now) : Number.NaN;
+  const lastReq = f64[F_LAST_REQ_MS];
+  const reqDecay = Number.isFinite(nowMs) && Number.isFinite(lastReq) ? weightOf(Math.max(0, nowMs - lastReq)) : 1;
+  const req_bonus = Number.isFinite(lastReq) ? Math.min(MUK.reqMax, MUK.reqEach * f64[F_REQ_WEIGHT] * reqDecay) : 0;
+  const tenWeeks = u32[U_META_COUNTS] >>> 16;
+  const baseGrade = gradeOf(trust.base);
+  const ten_bonus = baseGrade >= MUK.high ? Math.min(MUK.tenMax, MUK.tenEach * tenWeeks) : 0;
+  const point = trust.base + req_bonus + ten_bonus;
+  const grade = baseGrade < MUK.high ? Math.min(gradeOf(point), MUK.high - 1) : gradeOf(point);
+  const wn = f64[F_WN];
+  const wall = f64[F_WALL];
+  const brier = wn > 0 ? f64[F_WSB] / wn : null;
+  const abSc = f64[F_AB_SCORE];
+  return {
+    v: '0.8.5',
+    status: trust.status,
+    grade,
+    point: round(point, 3),
+    base: trust.base,
+    gap: trust.gap,
+    n: trust.n,
+    neff: trust.neff,
+    highNeff: trust.highNeff,
+    cusum: trust.cusum,
+    rawAll: trust.rawAll,
+    shown: trust.status === 'calibrated',
+    acc: wall > 0 ? round(f64[F_WHIT] / wall, 3) : null,
+    brier: brier == null ? null : round(brier, 4),
+    skill: brier == null ? null : round(1 - 4 * brier, 3),
+    ability: {
+      score: round(abSc, 4),
+      grade: gradeOf(basePoint(abSc, MUK.ability.full, MUK.ability.low)),
+      n: u32[U_RHN_TOTAL],
+    },
+    req_bonus: round(req_bonus, 3),
+    ten_bonus: round(ten_bonus, 3),
+  };
+}
+
 export function credibility(folds: Fold[], mid = 4, opts: CredibilityOptions = {}) {
   const ver = opts.v ?? MUK.version;
   const use085 = ver === '0.8.5';
   const list = [...folds].sort((a, b) => msOf(a.at) - msOf(b.at));
-  // 칸 0부터 4 = 확신 0~2 · 3~4 · 5~6 · 7~8 · 9. [W, P, H, rawCount, W2]
+  if (use085) {
+    const st = createMukStream({ ...opts, mid });
+    for (const f of list) {
+      stepStreamQuizSummary(st, f.s, 0, opts);
+    }
+    const res = evalStreamTrust(st, opts);
+    if (!(res.n > 0)) {
+      return { gap: null, n: 0, neff: 0, rawAll: 0, status: 'unmeasured' as MukStatus, base: mid };
+    }
+    return res;
+  }
+  // v5·v6 호환 수식 보존: 칸 0부터 4 = 확신 0..2 · 3..4 · 5..6 · 7..8 · 9. [W, P, H, rawCount, W2]
   const bins = Array.from({ length: 5 }, () => [0, 0, 0, 0, 0]);
   let miss = 0;
   let missW2 = 0;
@@ -426,29 +997,18 @@ export function credibility(folds: Fold[], mid = 4, opts: CredibilityOptions = {
   const rawAll = bins.reduce((sum, b) => sum + b[3], 0) + missRaw;
   const status = mukStatusOf(rawAll);
   if (!(N > 0)) return { gap: null, n: 0, neff: 0, rawAll: 0, status, base: mid };
-  const { tol, slope, evidence, alphaOver, alphaUnder, adaptK } = MUK.trust;
-  const aOver = opts.alphaOver ?? alphaOver;
-  const aUnderFloor = opts.alphaUnder ?? alphaUnder;
-  const kAdapt = opts.adaptK ?? adaptK;
+  const { tol, slope, evidence } = MUK.trust;
   let err = miss * MUK.trust.miss ** 2;
   let neffTotal = missW2 > 0 ? (miss * miss) / missW2 : 0;
-  for (const [n, ps, hits, rawCount, w2] of bins) {
+  for (const [n, ps, hits, rawCount] of bins) {
     if (!(rawCount >= 2 && n > 0)) continue;
-    const neff = use085 && w2 > 0 ? (n * n) / w2 : n;
-    neffTotal += neff;
-    if (use085 && neff <= 1.05) continue;
+    neffTotal += n;
     const p = ps / n;
     const rate = hits / n;
     const diff = p - rate;
-    const varTerm = (rate * (1 - rate)) / Math.max(1, neff - 1);
+    const varTerm = (rate * (1 - rate)) / Math.max(1, n - 1);
     const delta = diff * diff - varTerm;
-    if (!use085) {
-      err += n * delta;
-    } else {
-      const aU = kAdapt > 0 ? 1 - (1 - aUnderFloor) * (neff / (neff + kAdapt)) : aUnderFloor;
-      const alpha = diff < 0 && delta > 0 ? aU : aOver;
-      err += n * alpha * delta;
-    }
+    err += n * delta;
   }
   const gap = Math.max(0, Math.sqrt(Math.max(0, err) / N) - tol);
   const raw = Math.max(0, Math.min(9, 9 - slope * gap));
@@ -481,6 +1041,8 @@ export interface LangTrust {
  * 돌려주는 것: credibility와 같은 gap·n·base에 언어별 기록 langs({ 언어: LangTrust })를 더한 것.
  */
 export function credibilityByLang(folds: Fold[], mid = 4, fallbackLang = 'ko', opts: CredibilityOptions = {}) {
+  const ver = opts.v ?? MUK.version;
+  const use085 = ver === '0.8.5';
   const groups = new Map<string, Fold[]>();
   for (const f of folds) {
     const k = f.lang || fallbackLang;
@@ -490,23 +1052,38 @@ export function credibilityByLang(folds: Fold[], mid = 4, fallbackLang = 'ko', o
   const langs: Record<string, LangTrust> = {};
   const trusts = new Map<string, ReturnType<typeof credibility>>();
   for (const [k, fs] of [...groups].sort(([a], [b]) => a.localeCompare(b))) {
+    // 언어별로 독립된 Page CUSUM 및 신빙성을 산출해 특정 약세 언어의 드리프트가 강세 언어를 오염시키지 않게 격리한다
     const t = credibility(fs, mid, opts);
     trusts.set(k, t);
     const all = fs.reduce((sum, f) => sum + (f.s.all ?? (f.s.n ?? 0) + (f.s.miss ?? 0)), 0);
     langs[k] = { base: round(t.base, 3), grade: gradeOf(t.base), gap: t.gap == null ? null : round(t.gap, 4), n: round(t.n, 2), all, used: all >= MUK.langMinN };
   }
   const used = Object.keys(langs).filter((k) => langs[k].used);
-  const pooled = credibility(folds, mid, opts);
+  const isolateLangCusum = use085 && groups.size > 1 && used.length > 0;
+  const pooled = credibility(
+    folds,
+    mid,
+    isolateLangCusum ? { ...opts, cusumThreshold: Number.POSITIVE_INFINITY, cusumEvBeta: 0 } : opts,
+  );
   if (!used.length) return { ...pooled, langs };
   const ts = used.map((k) => trusts.get(k)!);
   const wsum = ts.reduce((sum, t) => sum + t.n, 0);
   if (!(wsum > 0)) return { ...pooled, langs };
   const withGap = ts.filter((t) => t.gap != null);
   const gsum = withGap.reduce((sum, t) => sum + t.n, 0);
+  const weightedCusum = isolateLangCusum
+    ? round(
+        ts.reduce((sum, t) => sum + ('cusum' in t && typeof t.cusum === 'number' ? t.cusum : 0) * t.n, 0) / wsum,
+        4,
+      )
+    : 'cusum' in pooled
+      ? pooled.cusum
+      : undefined;
   return {
     gap: withGap.length && gsum > 0 ? withGap.reduce((sum, t) => sum + t.gap! * t.n, 0) / gsum : null,
     n: pooled.n,
     neff: pooled.neff,
+    ...('highNeff' in pooled ? { highNeff: pooled.highNeff, cusum: weightedCusum ?? 0 } : {}),
     rawAll: pooled.rawAll,
     status: pooled.status,
     base: ts.reduce((sum, t) => sum + t.base * t.n, 0) / wsum,
@@ -559,6 +1136,9 @@ export interface AgentMuk {
   gap: number | null;
   /** v0.8.5: Kish 유효 표본수 합 */
   neff?: number;
+  /** v0.8.5: 고확신 구간(conf >= 7) 유효 표본수 및 Page CUSUM 드리프트 통계량 */
+  highNeff?: number;
+  cusum?: number;
   /** v5+: 먹 밖의 능력 칸(쪽지 시험 정답률을 다른 모델과 견준 것, 임시 기준). v4·v3은 null */
   ability: { grade: number; score: number; n: number } | null;
   /** 쪽지 시험 몫의 점수(v4는 상대 점수, v3은 맞음 점수. 답 수로 줄여 쌓고 끝에서 자른 것) */
@@ -617,6 +1197,12 @@ export function agentMuk(
     anchors,
     gap: trust?.gap == null ? null : round(trust.gap, 4),
     ...(trust && 'neff' in trust ? { neff: trust.neff } : {}),
+    ...(v === '0.8.5'
+      ? {
+          highNeff: trust && 'highNeff' in trust ? trust.highNeff : 0,
+          cusum: trust && 'cusum' in trust ? trust.cusum : 0,
+        }
+      : {}),
     ability,
     score: round(cal.score, 4),
     rel_n: cal.rn,
@@ -804,7 +1390,16 @@ export function counterShare(
   return Number.isFinite(out) ? out : 0.5;
 }
 
-// ───────── v0.8.5 다중 에이전트 합의·라우팅 가중치 (Satopaa et al., 2014 원리) ─────────
+// ───────── v0.8.5 다중 에이전트 합의·라우팅 가중치 (Satopaa et al., 2014 · Clemen & Winkler, 1985 원리) ─────────
+
+export interface MukExperimentalOptions {
+  /** Clemen & Winkler (1985) 상관 투표 할인 w_i / (1 + (m_G - 1) * rho_G). 기본값 false */
+  clemenWinkler?: boolean | { rho?: number; groupRho?: Record<string, number> };
+  /** 동료 상대 능력 점수(s_rel) 로지스틱 및 표본수 경험적 베이즈 수축. 기본값 false */
+  peerRelativeShrinkage?: boolean | { scale?: number; priorN?: number };
+  /** base = 5 경계 C^0 연속 콜드스타트 앵커 및 N_eff/12 보간. 기본값 false */
+  continuousColdStartAnchor?: boolean;
+}
 
 export type MukProfileInput =
   | number
@@ -812,8 +1407,11 @@ export type MukProfileInput =
       base?: number;
       grade?: number;
       status?: MukStatus;
+      neff?: number;
+      highNeff?: number;
+      highBinCount?: number;
       acc?: number | null;
-      ability?: number | { grade?: number; score?: number; point?: number } | null;
+      ability?: number | { grade?: number; score?: number; point?: number; n?: number } | null;
     }
   | null
   | undefined;
@@ -827,6 +1425,10 @@ export interface ConsensusWeightOptions {
   abilityScale?: 'rate' | 'grade';
   /** 기저 역량 결합 비율 (0 = 먹 보정만, 0..1) */
   abilityMix?: number;
+  /** 고확신 구간(conf >= 7) 유효 표본수 명시 주입 (2 미만이면 unmeasuredWeight 이하로 상한 제한) */
+  highNeff?: number;
+  /** 실험적 보정 옵션 묶음 (명시적 opt-in 전까지 기본값 모두 비활성 false) */
+  experimental?: MukExperimentalOptions;
 }
 
 function normalizeAbilityScalar(raw: number, scale?: 'rate' | 'grade'): number {
@@ -836,11 +1438,18 @@ function normalizeAbilityScalar(raw: number, scale?: 'rate' | 'grade'): number {
   return Math.max(0, Math.min(1, raw));
 }
 
+function isUnmeasuredProfile(mukProfile: MukProfileInput): boolean {
+  if (mukProfile == null) return true;
+  if (typeof mukProfile === 'number') return finiteNum(mukProfile) == null;
+  return mukProfile.status === 'unmeasured' || finiteNum(mukProfile.base ?? mukProfile.grade) == null;
+}
+
 /**
  * 다중 에이전트 합의·검증 게이트용 가중치.
  * - 불량 보정 셀(base <= 2)은 0으로 차단하고, 2 < base < 5 구간은 세제곱으로 급격히 감쇠시킨다.
  * - 검증 구간(base >= 5)은 보정 정합성과 확신 선명도(sharpness)를 결합해 고품질 응답에 집중한다.
- * - 선택적으로 기저 역량(ability: 연속 오즈 스킬 r / (20 * max(tol, 1 - r)))을 단조 증가 방식으로 결합한다.
+ * - 고확신(conf >= 7) 발화 시 고확신 유효 표본수(highNeff)가 2 미만이면 unmeasuredWeight(0.20) 이하로 제한한다.
+ * - 선택적으로 기저 역량을 단조 증가 방식으로 결합하며, 실험적 옵션(experimental)은 기본 비활성(false)으로 격리한다.
  */
 export function consensusWeight(mukProfile: MukProfileInput, conf: number, options: ConsensusWeightOptions = {}): number {
   const unmeasuredW = options.unmeasuredWeight ?? MUK.share.hint;
@@ -848,11 +1457,17 @@ export function consensusWeight(mukProfile: MukProfileInput, conf: number, optio
   let base: number | undefined;
   let status: MukStatus | undefined;
   let profileAbilityNorm: number | undefined;
+  let peerScore: number | null = null;
+  let peerDomainN: number | null = null;
+  let profileNeff: number | null = null;
+  let profileHighNeff: number | null = null;
   if (typeof mukProfile === 'number') {
     base = finiteNum(mukProfile) ?? undefined;
   } else {
     status = mukProfile.status;
     base = finiteNum(mukProfile.base ?? mukProfile.grade) ?? undefined;
+    profileNeff = finiteNum(mukProfile.neff);
+    profileHighNeff = finiteNum(mukProfile.highNeff ?? mukProfile.highBinCount);
     const rawAb = mukProfile.ability;
     if (typeof rawAb === 'number') {
       const n = finiteNum(rawAb);
@@ -860,6 +1475,8 @@ export function consensusWeight(mukProfile: MukProfileInput, conf: number, optio
     } else if (rawAb && typeof rawAb === 'object') {
       const sc = finiteNum(rawAb.score);
       const pt = finiteNum(rawAb.point ?? rawAb.grade);
+      peerScore = sc;
+      peerDomainN = finiteNum(rawAb.n) ?? profileNeff;
       if (sc != null) {
         profileAbilityNorm = Math.max(0, Math.min(1, basePoint(sc, MUK.ability.full, MUK.ability.low) / 9));
       } else if (pt != null) {
@@ -872,24 +1489,55 @@ export function consensusWeight(mukProfile: MukProfileInput, conf: number, optio
   if (status === 'unmeasured' || base === undefined) return unmeasuredW;
   const b = Math.max(0, Math.min(9, base));
   const { lowE } = MUK.share;
+  const p = probOf(conf);
+  const sharpness = Math.max(0.2, Math.abs(p - 0.5) * 2);
+  const sharpFactor = 0.7 + 0.3 * sharpness;
   let wCal: number;
-  if (b <= lowE) {
+  if (options.experimental?.continuousColdStartAnchor === true) {
+    const w0 = unmeasuredW * sharpFactor;
+    const wMax = sharpFactor;
+    if (b <= lowE) {
+      wCal = 0;
+    } else if (b < MUK.mid) {
+      wCal = w0 * ((b - lowE) / (MUK.mid - lowE)) ** 3;
+    } else {
+      const gFactor = Math.sqrt((b - MUK.mid) / (9 - MUK.mid));
+      const wTarget = w0 + (wMax - w0) * gFactor;
+      const eta = profileNeff != null ? Math.max(0, Math.min(1, profileNeff / MUK.showN)) : 1;
+      wCal = (1 - eta) * w0 + eta * wTarget;
+    }
+  } else if (b <= lowE) {
     wCal = 0;
   } else if (b < MUK.mid) {
     wCal = 0.01 * ((b - lowE) / (MUK.mid - lowE)) ** 3;
   } else {
     const gFactor = Math.sqrt((b - MUK.mid) / (9 - MUK.mid));
-    const p = probOf(conf);
-    const sharpness = Math.max(0.2, Math.abs(p - 0.5) * 2);
-    wCal = (0.5 + 0.5 * gFactor) * (0.7 + 0.3 * sharpness);
+    wCal = (0.5 + 0.5 * gFactor) * sharpFactor;
   }
+
+  const cf = finiteNum(conf);
+  const hNeff = finiteNum(options.highNeff) ?? profileHighNeff;
+  if (cf != null && cf >= 7 && hNeff != null && hNeff < 2) {
+    wCal = Math.min(wCal, unmeasuredW);
+  }
+
   const abMix = Math.max(0, Math.min(1, options.abilityMix ?? 0));
   const optAb = finiteNum(options.ability);
   const abNorm = optAb != null ? normalizeAbilityScalar(optAb, options.abilityScale) : profileAbilityNorm;
-  if (abMix > 0 && abNorm !== undefined) {
-    const tol = MUK.trust.tol;
-    const abSkill = Math.max(0, Math.min(1, abNorm / ((1 / tol) * Math.max(tol, 1 - abNorm))));
-    wCal = wCal * (1 - abMix + abMix * abSkill);
+  if (abMix > 0) {
+    const prsOpt = options.experimental?.peerRelativeShrinkage;
+    if (prsOpt && peerScore != null) {
+      const scale = typeof prsOpt === 'object' && finiteNum(prsOpt.scale) != null && Number(prsOpt.scale) > 0 ? Number(prsOpt.scale) : 12;
+      const priorN = typeof prsOpt === 'object' && finiteNum(prsOpt.priorN) != null && Number(prsOpt.priorN) >= 0 ? Number(prsOpt.priorN) : 24;
+      const nDom = Math.max(0, peerDomainN ?? 24);
+      const sigRel = 1 / (1 + Math.exp(-peerScore / scale));
+      const abSkill = 0.5 + ((sigRel - 0.5) * nDom) / (nDom + priorN);
+      wCal = wCal * (1 - abMix + abMix * abSkill);
+    } else if (abNorm !== undefined) {
+      const tol = MUK.trust.tol;
+      const abSkill = Math.max(0, Math.min(1, abNorm / ((1 / tol) * Math.max(tol, 1 - abNorm))));
+      wCal = wCal * (1 - abMix + abMix * abSkill);
+    }
   }
   return Number.isFinite(wCal) ? wCal : 0;
 }
@@ -899,6 +1547,10 @@ export interface ConsensusVote {
   muk: MukProfileInput;
   conf: number;
   ability?: number;
+  /** 실험적 Clemen-Winkler 상관 그룹 식별자 */
+  groupId?: string;
+  /** 그룹 내 상관 계수 rho (0..1, experimental.clemenWinkler 활성 시 사용) */
+  rho?: number;
 }
 
 export interface PoolConsensusOptions extends ConsensusWeightOptions {
@@ -906,12 +1558,58 @@ export interface PoolConsensusOptions extends ConsensusWeightOptions {
   mode?: 'linear' | 'log-odds';
   /** log-odds 극단화 계수 (기본 1.0) */
   gamma?: number;
+  /** 미측정('unmeasured') 투표자 전체 가중치 총합 상한 (기본 0.20 = MUK.share.hint) */
+  unmeasuredTotalCap?: number;
 }
 
-/** 다중 에이전트 확률·신빙성 투표 집계기 */
+/** 다중 에이전트 확률·신빙성 투표 집계기 (미측정 Sybil 상한 기본 활성) */
 export function poolConsensus(votes: readonly ConsensusVote[], options: PoolConsensusOptions = {}) {
   if (!votes.length) return { prob: 0.5, weights: [] as number[], totalWeight: 0 };
   const weights = votes.map((v) => consensusWeight(v.muk, v.conf, { ...options, ability: v.ability ?? options.ability }));
+
+  // 미측정(unmeasured) Sybil 총합 상한: min(w_i, unmCap / m_unm)
+  const unmIndices: number[] = [];
+  for (let i = 0; i < votes.length; i++) {
+    if (isUnmeasuredProfile(votes[i].muk)) unmIndices.push(i);
+  }
+  if (unmIndices.length > 0) {
+    const unmCap = Math.max(0, finiteNum(options.unmeasuredTotalCap) ?? (options.unmeasuredWeight ?? MUK.share.hint));
+    const perUnmMax = unmCap / unmIndices.length;
+    for (const idx of unmIndices) {
+      weights[idx] = Math.min(weights[idx], perUnmMax);
+    }
+  }
+
+  // 실험적 Clemen & Winkler (1985) 상관 투표 할인 (기본 비활성)
+  const cwOpt = options.experimental?.clemenWinkler;
+  if (cwOpt) {
+    const defaultRho = typeof cwOpt === 'object' ? (finiteNum(cwOpt.rho) ?? 0) : 0;
+    const groupRhoMap = typeof cwOpt === 'object' && cwOpt.groupRho ? cwOpt.groupRho : undefined;
+    const byGroup = new Map<string, number[]>();
+    for (let i = 0; i < votes.length; i++) {
+      const gid = votes[i].groupId;
+      if (!gid) continue;
+      let arr = byGroup.get(gid);
+      if (!arr) {
+        arr = [];
+        byGroup.set(gid, arr);
+      }
+      arr.push(i);
+    }
+    for (const [gid, indices] of byGroup) {
+      if (indices.length < 2) continue;
+      const gRhoRaw =
+        (groupRhoMap && finiteNum(groupRhoMap[gid]) != null ? Number(groupRhoMap[gid]) : null) ??
+        finiteNum(votes[indices[0]].rho) ??
+        defaultRho;
+      const rhoG = Math.max(0, Math.min(1, gRhoRaw));
+      if (rhoG > 0) {
+        const denom = 1 + (indices.length - 1) * rhoG;
+        for (const idx of indices) weights[idx] /= denom;
+      }
+    }
+  }
+
   const totalWeight = weights.reduce((a, b) => a + b, 0);
   const normW = totalWeight > 0 ? weights.map((w) => w / totalWeight) : weights.map(() => 1 / votes.length);
   const clampP = (p: number) => Math.max(1e-6, Math.min(1 - 1e-6, finiteNum(p) ?? 0.5));

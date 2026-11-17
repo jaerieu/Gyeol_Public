@@ -217,21 +217,47 @@ export function evaluateCalcExpression(
 }
 
 const DATE_OR_TIME_RE = /\b\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2})?)?\b|\b\d{1,2}:\d{2}(?::\d{2})?\b/gu;
-const TAG_OR_CODE_RE = /\b(?:evd|ref|calc|Q|T)\d+(?:\.\d+)?\b|[A-Za-z]+[-_/]\d+[A-Za-z0-9\-_/]*|[A-Za-z]\d+/giu;
+const RADIX_LITERAL_RE = /(?<![A-Za-z0-9_])[+\-−]?0[xXbBoO][0-9A-Fa-f_]+[A-Za-z0-9_./-]*/gu;
+const MULTI_DOT_TOKEN_RE = /(?<![A-Za-z0-9_])[+\-−]?\d+(?:\.\d+){2,}[A-Za-z0-9_./-]*/gu;
+const IDENT_PREFIX_TOKEN_RE = /(?<![A-Za-z0-9_])(?<!\d[-./])[A-Za-z_][A-Za-z0-9_]*(?:[./-][A-Za-z0-9_]+)*/gu;
+const DIGIT_CODE_TOKEN_RE =
+  /(?<![A-Za-z0-9_])[+\-−]?\d+(?:\.\d+)?(?:_[A-Za-z0-9_./-]*|-[A-Za-z][A-Za-z0-9_./-]*|\/(?!(?:min|hr|hrs|h|sec|s|ms)\b)[A-Za-z]{2,}[A-Za-z0-9_./-]*|(?!(?:l\/min|l\/hr|l\/h|l\/s|ml\/min|units\/h|units\/hr)(?![A-Za-z0-9_]))[A-Za-z_]+[./-][A-Za-z0-9_./-]*)/giu;
+const NUM_TOKEN_RE = /(?<![A-Za-z0-9_.])[+\-−]?\d+(?:,\d{3})*(?:\.\d+)?/gu;
+const GLUED_UNIT_SUFFIX_RE =
+  /^(?:%|퍼센트|percent|l\/min|l\/hr|l\/h|l\/s|ml\/min|units\/h|units\/hr|samples|sample|minutes|seconds|hours|hrs|hr|min|sec|ms|us|µs|ns|mbar|bar|mpa|kpa|pa|psi|gwh|mwh|kwh|gw|mw|kw|wh|kv|mv|ma|ghz|mhz|khz|hz|tb|gb|mb|kb|km|cm|mm|ml|kg|mg|ug|µg|℃|°c|°f|ppm|ppb|bps|slots|lines|units|초|분|시간|개|건|명|회|배|점|도|s|h|b|k|m|g|w|v|a|l)(?![A-Za-z0-9_])/iu;
 
-/** 절 본문 텍스트에서 식별자·날짜·태그가 아닌 독립 정량 수치 목록을 추출한다. */
-export function extractNumbersFromClause(clause: Clause): number[] {
-  const raw = clause.words.map((w) => w.text).join(' ');
-  const cleaned = raw
-    .replace(/`[^`]*`/gu, ' ')
-    .replace(DATE_OR_TIME_RE, ' ')
-    .replace(TAG_OR_CODE_RE, ' ');
+const blankMask = (m: string): string => ' '.repeat(m.length);
+
+function maskNonQuantitySpans(raw: string): string {
+  return String(raw ?? '')
+    .replace(/`[^`]*`/gu, blankMask)
+    .replace(DATE_OR_TIME_RE, blankMask)
+    .replace(RADIX_LITERAL_RE, blankMask)
+    .replace(MULTI_DOT_TOKEN_RE, blankMask)
+    .replace(DIGIT_CODE_TOKEN_RE, blankMask)
+    .replace(IDENT_PREFIX_TOKEN_RE, blankMask);
+}
+
+function isAcceptableNumTail(rest: string): boolean {
+  return !/^[A-Za-z0-9_]/u.test(rest) || GLUED_UNIT_SUFFIX_RE.test(rest);
+}
+
+/** 본문 문자열에서 식별자·진법 리터럴·버전·날짜·태그가 아닌 독립 정량 수치(단위 결합 5837kW·310L/min·42.5bar 포함) 목록을 추출한다. */
+export function extractNumbersFromText(raw: string): number[] {
+  const masked = maskNonQuantitySpans(raw);
   const out: number[] = [];
-  for (const m of cleaned.matchAll(/(?<![A-Za-z0-9_])[+\-−]?\d+(?:,\d{3})*(?:\.\d+)?(?![A-Za-z0-9_])/gu)) {
+  for (const m of masked.matchAll(NUM_TOKEN_RE)) {
+    const endIdx = (m.index ?? 0) + m[0].length;
+    if (!isAcceptableNumTail(masked.slice(endIdx))) continue;
     const num = Number(m[0].replaceAll(',', '').replace('−', '-'));
     if (Number.isFinite(num)) out.push(num);
   }
   return out;
+}
+
+/** 절 본문 텍스트에서 식별자·날짜·태그가 아닌 독립 정량 수치 목록을 추출한다. */
+export function extractNumbersFromClause(clause: Clause): number[] {
+  return extractNumbersFromText(clause.words.map((w) => w.text).join(' '));
 }
 
 export function extractPrimaryNumeric(clause: Clause): number | null {
@@ -249,6 +275,12 @@ export interface CalcVerifyContext {
   alreadySuperseded?: ReadonlySet<string>;
   /** 상위 절 k -> 이를 참조하는 기존 활성 [inf] 절 목록 */
   dependentsOf?: (num: string) => readonly Clause[];
+  /** 원장 누적 calcN 블록 맵 */
+  priorCalcsById?: ReadonlyMap<string, CalcBlock>;
+  /** priorCalcsById 호환 별칭 */
+  calcsById?: ReadonlyMap<string, CalcBlock>;
+  /** 원장 조상 체인 조회기(별칭 치유 반영 조상 탐색용) */
+  lineageAncestorsOf?: (num: string) => readonly string[];
 }
 
 export function numbersMatch(a: number, b: number): boolean {
@@ -261,7 +293,18 @@ function buildLatestFixAliases(clausesByNum: ReadonlyMap<string, Clause>): Map<s
   for (const [k, c] of clausesByNum) {
     if (c.process?.kind === 'fix' && c.process.target) {
       const targetNum = c.process.target.label.replace(/^[절점]/u, '');
-      if (targetNum && targetNum !== k) direct.set(targetNum, k);
+      if (targetNum && targetNum !== k) {
+        // 이미 대체된 절 p0을 다시 fix→p0으로 가리키면 현재 최신 활성 끝점(tip)에 이어 붙여 계보 분기를 막는다
+        let tip = targetNum;
+        const seenTip = new Set<string>([tip]);
+        while (direct.has(tip)) {
+          const nxt = direct.get(tip)!;
+          if (seenTip.has(nxt) || nxt === k) break;
+          seenTip.add(nxt);
+          tip = nxt;
+        }
+        if (tip !== k) direct.set(tip, k);
+      }
     }
   }
   const resolved = new Map<string, string>();
@@ -277,6 +320,55 @@ function buildLatestFixAliases(clausesByNum: ReadonlyMap<string, Clause>): Map<s
     resolved.set(orig, cur);
   }
   return resolved;
+}
+
+function findInheritedCalc(
+  startNum: string,
+  clausesByNum: ReadonlyMap<string, Clause>,
+  calcById?: ReadonlyMap<string, CalcBlock>,
+  lineageAncestorsOf?: (num: string) => readonly string[],
+): CalcBlock | undefined {
+  const findDirect = (c: Clause | undefined): CalcBlock | undefined => {
+    if (!c) return undefined;
+    if (c.calcs?.length) return c.calcs[0];
+    if (calcById) {
+      for (const b of c.because ?? []) {
+        if ('calc' in b) {
+          const found = calcById.get(b.calc);
+          if (found) return found;
+        }
+      }
+    }
+    return undefined;
+  };
+
+  const seen = new Set<string>();
+  const queue: string[] = [startNum];
+  if (lineageAncestorsOf) {
+    for (const anc of lineageAncestorsOf(startNum)) {
+      if (!queue.includes(anc)) queue.push(anc);
+    }
+  }
+  while (queue.length > 0) {
+    const cur = queue.shift()!;
+    if (!cur || seen.has(cur)) continue;
+    seen.add(cur);
+    const c = clausesByNum.get(cur);
+    const hit = findDirect(c);
+    if (hit) return hit;
+    if (c?.process?.kind === 'fix' && c.process.target) {
+      const prev = c.process.target.label.replace(/^[절점]/u, '');
+      if (prev && !seen.has(prev)) {
+        queue.push(prev);
+        if (lineageAncestorsOf) {
+          for (const anc of lineageAncestorsOf(prev)) {
+            if (!seen.has(anc) && !queue.includes(anc)) queue.push(anc);
+          }
+        }
+      }
+    }
+  }
+  return undefined;
 }
 
 /** 메시지 안의 모든 calcN 블록을 평가·대조하고, 상위 fix→/err→ 변경 시 미갱신 하위 [inf] 절에 E_STALE_INF를 발행한다. */
@@ -299,8 +391,17 @@ export function verifyMessageCalculations(
   });
   const fixAliases = buildLatestFixAliases(clauseByNum);
 
-  // calcN 인덱스(메시지 전체 또는 절 부착)
+  // calcN 인덱스(선행 절·원장·현재 메시지 전체)
   const calcById = new Map<string, CalcBlock>();
+  for (const pc of clauseByNum.values()) {
+    for (const cb of pc.calcs ?? []) calcById.set(cb.id, cb);
+  }
+  if (ctx.priorCalcsById) {
+    for (const [k, v] of ctx.priorCalcsById) calcById.set(k, v);
+  }
+  if (ctx.calcsById) {
+    for (const [k, v] of ctx.calcsById) calcById.set(k, v);
+  }
   for (const cb of msg.calcs ?? []) calcById.set(cb.id, cb);
   for (const c of msg.clauses) for (const cb of c.calcs ?? []) calcById.set(cb.id, cb);
 
@@ -312,13 +413,10 @@ export function verifyMessageCalculations(
     const c = clauseByNum.get(num);
     if (!c) return null;
     visiting.add(num);
-    const attachedCalc = c.calcs?.[0] ?? (() => {
-      const refCalc = (c.because ?? []).find((b): b is { calc: string } => 'calc' in b);
-      return refCalc ? calcById.get(refCalc.calc) : undefined;
-    })();
+    const attachedCalc = findInheritedCalc(num, clauseByNum, calcById, ctx.lineageAncestorsOf);
     let val: number | null = null;
     if (attachedCalc) {
-      const ev = evaluateCalcExpression(attachedCalc.expr, resolveValue);
+      const ev = evaluateCalcExpression(splitCalcExpression(attachedCalc.expr).expr, resolveValue);
       if (ev.ok && ev.value !== undefined) {
         val = ev.value;
         evaluated.set(num, val);
@@ -338,6 +436,12 @@ export function verifyMessageCalculations(
       if ('calc' in b) {
         const found = calcById.get(b.calc);
         if (found && !calcBlocks.includes(found)) calcBlocks.push(found);
+      }
+    }
+    if (calcBlocks.length === 0 && c.process?.kind === 'fix' && c.marks.ev === 'inf') {
+      const inherited = findInheritedCalc(num, clauseByNum, calcById, ctx.lineageAncestorsOf);
+      if (inherited) {
+        calcBlocks.push({ id: inherited.id, expr: splitCalcExpression(inherited.expr).expr });
       }
     }
     for (const cb of calcBlocks) {
@@ -425,6 +529,10 @@ export interface PropagateOptions {
   activeClauses: ReadonlyMap<string, Clause>;
   /** 전체 누적 절 맵(다중 홉 체인 1 -> 15 -> 28 최신 별칭 추적용). 생략 시 activeClauses 사용 */
   allClauses?: ReadonlyMap<string, Clause>;
+  /** 원장 누적 calcN 블록 맵(조상 calcN 상속용) */
+  calcsById?: ReadonlyMap<string, CalcBlock>;
+  /** 원장 조상 체인 조회기(별칭 치유 반영 조상 탐색용) */
+  lineageAncestorsOf?: (num: string) => readonly string[];
   dependentsOf: (num: string) => readonly Clause[];
   changedTargets: readonly string[];
   nextClauseNumStart: number;
@@ -436,13 +544,18 @@ export interface PropagateLedgerSource {
   activeClausesMap(): Map<string, Clause>;
   readonly priorClauseMap: Map<string, Clause>;
   readonly priorClauses: readonly Clause[];
+  readonly calcsById?: ReadonlyMap<string, CalcBlock>;
+  latestActiveOf?: (num: string) => string;
+  lineageAncestorsOf?: (num: string) => string[];
   dependentsOf: (num: string) => readonly Clause[];
 }
 
 function formatRecomputedBody(dep: Clause, oldVal: number | null, newVal: number): string {
   const oldWords = dep.words.map((w) => w.text).join(' ').trim();
-  const numTokRe = /(?<![A-Za-z0-9_])[+\-−]?\d+(?:,\d{3})*(?:\.\d+)?(?![A-Za-z0-9_])/gu;
-  const matches = [...oldWords.matchAll(numTokRe)];
+  const maskedWords = maskNonQuantitySpans(oldWords);
+  const matches = [...maskedWords.matchAll(NUM_TOKEN_RE)].filter((m) =>
+    isAcceptableNumTail(maskedWords.slice((m.index ?? 0) + m[0].length)),
+  );
   let chosen: RegExpExecArray | undefined;
   if (oldVal !== null) {
     for (let i = matches.length - 1; i >= 0; i--) {
@@ -462,9 +575,12 @@ function formatRecomputedBody(dep: Clause, oldVal: number | null, newVal: number
     .slice(0, chosen.index)
     .replace(/\s*(?:=|is|recomputed(?:\s+to)?|revised(?:\s+to)?|updated(?:\s+to)?|:)\s*$/iu, '')
     .trim();
-  const after = oldWords.slice(chosen.index + chosen[0].length).trim();
-  if (!before) return `${newVal}${after ? ' ' + after : ''}`;
-  return `${before}=${newVal}${after ? ' ' + after : ''}`;
+  const rawAfter = oldWords.slice(chosen.index + chosen[0].length);
+  const afterTrimmed = rawAfter.trim();
+  const afterSep = afterTrimmed ? (/^\s/u.test(rawAfter) ? ' ' : '') : '';
+  const afterPart = afterTrimmed ? `${afterSep}${afterTrimmed}` : '';
+  if (!before) return `${newVal}${afterPart}`;
+  return `${before}=${newVal}${afterPart}`;
 }
 
 function inferTailForDerived(dep: Clause, profile: 'gyeol' | 'lon', defaultTail?: string): string {
@@ -483,6 +599,7 @@ function inferTailForDerived(dep: Clause, profile: 'gyeol' | 'lon', defaultTail?
  * 상위 절이 fix→k로 바뀌었을 때, calcN 수식이 결합된 하위 활성 [inf] 절들을 위상 정렬 순서대로 자동 재계산해
  * 비파괴 추가(`append`) 방식의 결정론적 `fix→q` 갱신 절 목록을 생성한다.
  * - `propagateCalculations(ledger, turnAst?, extraOpts?)` 및 `propagateCalculations(opts)` 두 호출 형식을 모두 지원한다.
+ * - 중간 개정판에서 `calcN`을 생략했더라도 `fix→` / `supersededBy` 조상 사슬에서 유효한 `calcN`을 상속한다.
  * - 기존 절을 제자리 덮어쓰지 않고 새 절 번호 `q'`를 부여하며, `↓` 근거와 `@` 참조를 모두 최신 활성 절 번호로 갱신한다.
  */
 export function propagateCalculations(
@@ -492,29 +609,42 @@ export function propagateCalculations(
 ): PropagatedFix[] {
   let opts: PropagateOptions;
   const alreadyUpdatedInTurn = new Map<string, Clause>();
+  const calcById = new Map<string, CalcBlock>();
   if ('activeClausesMap' in ledgerOrOpts) {
+    if (ledgerOrOpts.calcsById) {
+      for (const [k, v] of ledgerOrOpts.calcsById) calcById.set(k, v);
+    }
+    for (const cb of turnAst?.calcs ?? []) calcById.set(cb.id, cb);
+    for (const c of turnAst?.clauses ?? []) for (const cb of c.calcs ?? []) calcById.set(cb.id, cb);
+
     const activeMap = ledgerOrOpts.activeClausesMap();
     const allMap = ledgerOrOpts.priorClauseMap;
     for (const c of turnAst?.clauses ?? []) {
       const cNum = (c.label ?? '').replace(/^[절점]/u, '');
+      const tRaw = c.process?.target ? c.process.target.label.replace(/^[절점]/u, '') : '';
+      const tLat = tRaw && ledgerOrOpts.latestActiveOf ? ledgerOrOpts.latestActiveOf(tRaw) : tRaw;
       if (cNum && !allMap.has(cNum)) {
         allMap.set(cNum, c);
         activeMap.set(cNum, c);
-        if (c.process?.kind === 'fix' && c.process.target) {
-          activeMap.delete(c.process.target.label.replace(/^[절점]/u, ''));
-        } else if (c.process?.kind === 'err' && c.process.target) {
-          activeMap.delete(c.process.target.label.replace(/^[절점]/u, ''));
+        if ((c.process?.kind === 'fix' || c.process?.kind === 'err') && tRaw) {
+          activeMap.delete(tRaw);
+          if (tLat && tLat !== cNum) activeMap.delete(tLat);
         }
       }
-      if (c.process?.kind === 'fix' && c.process.target && c.marks.ev === 'inf') {
-        alreadyUpdatedInTurn.set(c.process.target.label.replace(/^[절점]/u, ''), c);
+      if (c.process?.kind === 'fix' && tRaw && c.marks.ev === 'inf') {
+        alreadyUpdatedInTurn.set(tRaw, c);
+        if (tLat) alreadyUpdatedInTurn.set(tLat, c);
       }
     }
     const changedTargets: string[] = [];
     for (const c of turnAst?.clauses ?? []) {
       if (c.process?.kind === 'fix' && c.process.target) {
         const tNum = c.process.target.label.replace(/^[절점]/u, '');
-        if (tNum) changedTargets.push(tNum);
+        if (tNum) {
+          changedTargets.push(tNum);
+          const tLat = ledgerOrOpts.latestActiveOf ? ledgerOrOpts.latestActiveOf(tNum) : tNum;
+          if (tLat && tLat !== tNum && !changedTargets.includes(tLat)) changedTargets.push(tLat);
+        }
       }
     }
     let maxExisting = 0;
@@ -529,6 +659,8 @@ export function propagateCalculations(
     opts = {
       activeClauses: activeMap,
       allClauses: allMap,
+      calcsById: calcById,
+      lineageAncestorsOf: ledgerOrOpts.lineageAncestorsOf?.bind(ledgerOrOpts),
       dependentsOf: ledgerOrOpts.dependentsOf,
       changedTargets,
       nextClauseNumStart: extraOpts.nextClauseNumStart ?? (maxExisting + 1),
@@ -537,11 +669,19 @@ export function propagateCalculations(
     };
   } else {
     opts = ledgerOrOpts;
+    if (opts.calcsById) {
+      for (const [k, v] of opts.calcsById) calcById.set(k, v);
+    }
   }
 
   const profile = opts.profile ?? 'gyeol';
   const fixes: PropagatedFix[] = [];
   const fullClauses = opts.allClauses ?? opts.activeClauses;
+  for (const c of fullClauses.values()) {
+    for (const cb of c.calcs ?? []) {
+      if (!calcById.has(cb.id)) calcById.set(cb.id, cb);
+    }
+  }
   const fixAliases = buildLatestFixAliases(fullClauses);
 
   const resolveLatest = (rawNum: string): string => {
@@ -588,7 +728,11 @@ export function propagateCalculations(
       visited.add(depNum);
       visited.add(rawDepNum);
 
-      const cb = effectiveDep.calcs?.[0] ?? dep.calcs?.[0];
+      const cb =
+        effectiveDep.calcs?.[0] ??
+        dep.calcs?.[0] ??
+        findInheritedCalc(depNum, fullClauses, calcById, opts.lineageAncestorsOf) ??
+        (rawDepNum !== depNum ? findInheritedCalc(rawDepNum, fullClauses, calcById, opts.lineageAncestorsOf) : undefined);
       if (!cb) continue;
       const ev = evaluateCalcExpression(cb.expr, (ref) => {
         const latestRef = resolveLatest(ref);
