@@ -1,0 +1,22 @@
+{
+  "name": "@gyeol/api-client",
+  "version": "0.8.5",
+  "description": "Zero-dependency HTTP client skeleton for api.gyeol.link and offline Ed25519 receipt signature verifier",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./index.mjs",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./index.mjs",
+      "types": "./index.d.ts"
+    }
+  },
+  "engines": {
+    "node": ">=22.18"
+  },
+  "dependencies": {},
+  "scripts": {
+    "test": "node test/selftest.mjs"
+  }
+}
