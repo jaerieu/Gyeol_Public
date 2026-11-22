@@ -2,12 +2,14 @@
 
 Copyright (c) 2026 Jae (Gyeol Project).
 
-This repository (`jaerieu/Gyeol_Public`) separates its public client software
-from the private proprietary core engine and hosted services as follows:
+This repository (`jaerieu/Gyeol_Public`) separates its public client software,
+frozen academic reproducibility records, historical snapshots, and the private
+proprietary core engine and hosted services as follows:
 
 1. PUBLIC CLIENT SDK AND EXAMPLES (`client/`): Apache License, Version 2.0
-   All source files, type declarations, tests, and usage examples located
-   exclusively under the `client/` directory of this repository are licensed
+   All source files, type declarations, offline Ed25519 receipt verification
+   utilities, tests, and usage examples located exclusively under the `client/`
+   directory of this repository (from commit `6df5a84` onward) are licensed
    under the Apache License, Version 2.0 (`SPDX-License-Identifier: Apache-2.0`),
    the full text of which is set forth below.
 
@@ -15,22 +17,45 @@ from the private proprietary core engine and hosted services as follows:
    The Gyeol (`결`), Gyeol;Shim (`결;심`), Gyeol;Lon (`결;론`), Muk (`먹`),
    and Chae (`채`) core verification engine, formal grammar specifications,
    dictionaries, parsers, lineage engines, calibration algorithms, SDK runtimes,
-   and hosted services (`api.gyeol.link` and `gyeol.link`) are proprietary
-   commercial assets retained exclusively in the private repository
-   (`jaerieu/Gyeol`). All rights are strictly reserved by the creator (Jae).
-   No license, implied or express, is granted under this file to access, copy,
-   reverse-engineer, redistribute, or build competing verification engines or
-   hosted services derived from the private core. Commercial access to hosted
-   APIs or enterprise licensing requires a separate written commercial agreement
-   issued by the creator.
+   all post-`e063668` core modifications and repairs, private domain scenario
+   packs, and hosted services (`api.gyeol.link` and `gyeol.link`) are proprietary
+   commercial assets retained exclusively in private repositories (`jaerieu/Gyeol`
+   and designated private domain-pack repositories). All rights are strictly
+   reserved by the creator (Jae). No license, implied or express, is granted
+   under this file to access, copy, reverse-engineer, redistribute, or build
+   competing verification engines or hosted services derived from the private
+   post-`e063668` core. Commercial access to hosted APIs, custom domain
+   evaluation packs, or enterprise assurance requires a separate written
+   commercial agreement.
+   (Note: The standalone open-source evaluation benchmark `gyeol-bench`, hosted
+   separately at `jaerieu/gyeol-bench` with zero lines of private core engine
+   code, is governed independently by its own `Apache-2.0` license.)
 
 3. FROZEN ACADEMIC BENCHMARK ARCHIVE (`benchmarks/apart-epistemics-2026/`):
-   The 18 files and 2 SHA-256 manifest files preserved verbatim under
+   The 18 files and 2 SHA-256 manifest files (`prereg-e13.sha256` covering 7
+   files and `prereg-e5-e6.sha256` covering 11 files) preserved verbatim under
    `benchmarks/apart-epistemics-2026/` are historical academic reproducibility
    artifacts cryptographically frozen prior to the private-core transition.
    They are retained unmodified solely for independent verification of published
-   benchmark hashes and confer no rights to the private Gyeol core engine or
-   hosted commercial services.
+   benchmark hashes and confer no license or rights to post-`e063668` private
+   core assets or hosted commercial services.
+
+4. HISTORICAL SNAPSHOT NON-RETROACTIVITY NOTICE (`e063668` / Tag `v0.8.5`):
+   Prior public repository snapshots up to and including commit `e063668`
+   (tagged `v0.8.5`) were distributed under the GNU Affero General Public
+   License, Version 3.0 or later (`SPDX-License-Identifier: AGPL-3.0-or-later`).
+   In accordance with Section 2 (Basic Permissions) and Section 10 (Automatic
+   Licensing of Downstream Recipients) of the GNU Affero General Public License
+   v3.0, permissions previously granted with respect to the exact historical
+   code up to commit `e063668` are not retroactively revoked for recipients who
+   remain in full compliance with all terms and conditions of `AGPL-3.0-or-later`
+   (including Section 13 network-interaction source disclosure requirements and
+   copyright attribution notices). Those `AGPL-3.0-or-later` terms apply strictly
+   to the historical `e063668` (and earlier) snapshot as distributed at that
+   time and do NOT extend to: (a) commit `6df5a84` or subsequent commits on this
+   repository, (b) any post-`e063668` unpublished modifications, bug fixes, or
+   proprietary domain packs developed in `jaerieu/Gyeol`, or (c) trademarks,
+   service marks, and official hosted endpoints (`gyeol.link`, `api.gyeol.link`).
 
 ================================================================================
                                  Apache License
